@@ -19,3 +19,13 @@ pub fn parse_calldata(offsets: Span<u128>, calldata: Span<u256>) -> Span<felt252
 pub fn find_selector(functions: Span<ByteArray>, signature: u16) -> felt252 {
 
 }
+
+/// Parse parameters bit offsets according their sizes in ethereum slot
+/// It has to be called after function name is found and matched.
+/// # Params
+/// `function` - Ethereum function name and parameters e.g. balanceOf(address), witharray(uint256[]), withtuple((uint128,uint64,uint256),address)
+/// # Returns
+/// `Span<u128>` - Calldata read offsets in bits
+pub fn parse_calldata_offsets(function: ByteArray) -> Span<u128> {
+
+}
