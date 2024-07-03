@@ -10,7 +10,7 @@ trait IFactory<TContractState> {
 #[starknet::contract]
 mod Factory {
     use core::option::OptionTrait;
-use starknet::{ContractAddress, ClassHash, EthAddress};
+    use starknet::{ContractAddress, ClassHash, EthAddress};
     use core::traits::{Into, TryInto};
 
     #[storage]
