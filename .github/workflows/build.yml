@@ -23,5 +23,7 @@ jobs:
         scarb-version: ${{ env.SCARB_VERSION }}
     - name: Cairo lint
       run: scarb fmt --check
+    - name: Cairo build
+      run: scarb build
     - name: Cairo test
       run: scarb test
