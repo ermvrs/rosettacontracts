@@ -43,7 +43,9 @@ mod Factory {
         /// `address` - Ethereum Address that will be used to precalculate starknet account address.
         /// # Returns
         /// `ContractAddress` - Precalculated starknet address
-        fn precalculate_starknet_address(self: @ContractState, address: EthAddress) -> ContractAddress {
+        fn precalculate_starknet_address(
+            self: @ContractState, address: EthAddress
+        ) -> ContractAddress {
             // todo
             0.try_into().unwrap()
         }

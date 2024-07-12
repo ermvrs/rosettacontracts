@@ -79,7 +79,9 @@ mod LensDev {
 
         // Function just for development tests. We can match any address with any eth address we want.
         // Helps developing.
-        fn register_address_dev(ref self: ContractState, address: ContractAddress, eth: EthAddress) {
+        fn register_address_dev(
+            ref self: ContractState, address: ContractAddress, eth: EthAddress
+        ) {
             assert(self.sn_address_to_eth_address.read(address).is_zero(), 'already registered');
 
             self.eth_address_to_sn_address.write(eth, address);
