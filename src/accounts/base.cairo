@@ -29,7 +29,9 @@ mod RosettaAccount {
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState) {}
+    fn constructor(ref self: ContractState, eth_account: EthAddress) {
+        self.ethereum_address.write(eth_account);
+    }
 
     #[abi(embed_v0)]
     impl AccountImpl of super::IRosettaAccount<ContractState> {

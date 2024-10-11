@@ -5,13 +5,16 @@ trait IFactory<TContractState> {
     fn lens(self: @TContractState) -> ContractAddress;
     fn current_account_class(self: @TContractState) -> ClassHash;
     fn precalculate_starknet_address(self: @TContractState, address: EthAddress) -> ContractAddress;
+    fn deploy_account(self: @TContractState, address: EthAddress) -> ContractAddress;
 }
 
 #[starknet::contract]
 mod Factory {
     use core::option::OptionTrait;
     use starknet::{ContractAddress, ClassHash, EthAddress};
+    use starknet::syscalls::{deploy_syscall};
     use core::traits::{Into, TryInto};
+    use openzeppelin::utils::deployments::{calculate_contract_address_from_deploy_syscall};
 
     #[storage]
     struct Storage {
@@ -46,8 +49,25 @@ mod Factory {
         fn precalculate_starknet_address(
             self: @ContractState, address: EthAddress
         ) -> ContractAddress {
-            // todo
-            0.try_into().unwrap()
+            // TODO: Tests
+
+            let eth_address_felt: felt252 = address.into();
+            calculate_contract_address_from_deploy_syscall(eth_address_felt, self.account_class.read(), array![eth_address_felt].span(), 0.try_into().unwrap())
+        }
+
+        /// Deploys new rosettanet account. Fails if account already deployed
+        /// # Params
+        /// `address` - Ethereum Address that will be used to deploy starknet account.
+        /// # Returns
+        /// `ContractAddress` - Newly deployed starknet account
+        fn deploy_account(self: @ContractState, address: EthAddress) -> ContractAddress {
+            // TODO: Tests
+            let eth_address_felt: felt252 = address.into();
+
+            let (account, _) = deploy_syscall(self.account_class.read(), eth_address_felt, array![eth_address_felt].span(), true).unwrap();
+
+            // Todo: register lens if needed ?? Or we can use precalculate
+            account
         }
     }
 }
