@@ -21,7 +21,9 @@ pub trait IRosettaAccount<TState> {
 mod RosettaAccount {
     use super::EthPublicKey;
     use core::num::traits::Zero;
-    use starknet::{EthAddress, get_execution_info, get_contract_address, get_caller_address, get_tx_info};
+    use starknet::{
+        EthAddress, get_execution_info, get_contract_address, get_caller_address, get_tx_info
+    };
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use rosettacontracts::accounts::utils::{is_valid_eth_signature, Secp256k1PointStorePacking};
 
@@ -46,11 +48,11 @@ mod RosettaAccount {
 
     #[abi(embed_v0)]
     impl AccountImpl of super::IRosettaAccount<ContractState> {
-        // Instead of Array<Call> we use Array<felt252> since we pass different values to the parameter
+        // Instead of Array<Call> we use Array<felt252> since we pass different values to the
+        // parameter
         fn __execute__(self: @ContractState, calls: Array<felt252>) -> Array<Span<felt252>> {
             let sender = get_caller_address();
-            assert(sender.is_zero(), Errors::INVALID_CALLER);  
-
+            assert(sender.is_zero(), Errors::INVALID_CALLER);
             // TODO: Check tx version
 
             // TODO: Exec calls
@@ -61,7 +63,9 @@ mod RosettaAccount {
             self.validate_transaction()
         }
 
-        fn is_valid_signature(self: @ContractState, hash: felt252, signature: Array<felt252>) -> felt252 {
+        fn is_valid_signature(
+            self: @ContractState, hash: felt252, signature: Array<felt252>
+        ) -> felt252 {
             if self._is_valid_signature(hash, signature.span()) {
                 starknet::VALIDATED
             } else {
@@ -97,7 +101,9 @@ mod RosettaAccount {
             ref self: ContractState, new_public_key: EthPublicKey, signature: Span<felt252>
         ) {}
 
-        fn isValidSignature(self: @ContractState, hash: felt252, signature: Array<felt252>) -> felt252 {
+        fn isValidSignature(
+            self: @ContractState, hash: felt252, signature: Array<felt252>
+        ) -> felt252 {
             self.is_valid_signature(hash, signature)
         }
 
@@ -106,7 +112,9 @@ mod RosettaAccount {
         }
 
         // We dont need that function
-        fn setPublicKey(ref self: ContractState, newPublicKey: EthPublicKey, signature: Span<felt252>) {
+        fn setPublicKey(
+            ref self: ContractState, newPublicKey: EthPublicKey, signature: Span<felt252>
+        ) {
             self.set_public_key(newPublicKey, signature)
         }
     }

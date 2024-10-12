@@ -52,7 +52,12 @@ mod Factory {
             // TODO: Tests
 
             let eth_address_felt: felt252 = address.into();
-            calculate_contract_address_from_deploy_syscall(eth_address_felt, self.account_class.read(), array![eth_address_felt].span(), 0.try_into().unwrap())
+            calculate_contract_address_from_deploy_syscall(
+                eth_address_felt,
+                self.account_class.read(),
+                array![eth_address_felt].span(),
+                0.try_into().unwrap()
+            )
         }
 
         /// Deploys new rosettanet account. Fails if account already deployed
@@ -64,7 +69,10 @@ mod Factory {
             // TODO: Tests
             let eth_address_felt: felt252 = address.into();
 
-            let (account, _) = deploy_syscall(self.account_class.read(), eth_address_felt, array![eth_address_felt].span(), true).unwrap();
+            let (account, _) = deploy_syscall(
+                self.account_class.read(), eth_address_felt, array![eth_address_felt].span(), true
+            )
+                .unwrap();
 
             // Todo: register lens if needed ?? Or we can use precalculate
             account
