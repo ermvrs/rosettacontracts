@@ -77,7 +77,8 @@ mod LensDev {
             }
         }
 
-        // Function just for development tests. We can match any address with any eth address we want.
+        // Function just for development tests. We can match any address with any eth address we
+        // want.
         // Helps developing.
         fn register_address_dev(
             ref self: ContractState, address: ContractAddress, eth: EthAddress
