@@ -1,7 +1,7 @@
 use starknet::{ContractAddress, ClassHash, EthAddress};
 
 #[starknet::interface]
-trait IFactory<TContractState> {
+pub trait IFactory<TContractState> {
     fn lens(self: @TContractState) -> ContractAddress;
     fn current_account_class(self: @TContractState) -> ClassHash;
     fn precalculate_starknet_address(self: @TContractState, address: EthAddress) -> ContractAddress;
@@ -9,7 +9,7 @@ trait IFactory<TContractState> {
 }
 
 #[starknet::contract]
-mod Factory {
+pub mod Factory {
     use core::option::OptionTrait;
     use starknet::{ContractAddress, ClassHash, EthAddress};
     use starknet::syscalls::{deploy_syscall};

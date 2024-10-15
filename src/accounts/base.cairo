@@ -1,4 +1,5 @@
 pub type EthPublicKey = starknet::secp256k1::Secp256k1Point;
+use starknet::EthAddress;
 #[starknet::interface]
 pub trait IRosettaAccount<TState> {
     fn __execute__(self: @TState, calls: Array<felt252>) -> Array<Span<felt252>>;
@@ -10,15 +11,17 @@ pub trait IRosettaAccount<TState> {
         self: @TState, class_hash: felt252, contract_address_salt: felt252, public_key: EthPublicKey
     ) -> felt252;
     fn get_public_key(self: @TState) -> EthPublicKey;
+    fn get_ethereum_address(self: @TState) -> EthAddress;
     fn set_public_key(ref self: TState, new_public_key: EthPublicKey, signature: Span<felt252>);
     // Camel case
     fn isValidSignature(self: @TState, hash: felt252, signature: Array<felt252>) -> felt252;
     fn getPublicKey(self: @TState) -> EthPublicKey;
+    fn getEthereumAddress(self: @TState) -> EthAddress;
     fn setPublicKey(ref self: TState, newPublicKey: EthPublicKey, signature: Span<felt252>);
 }
 
 #[starknet::contract(account)]
-mod RosettaAccount {
+pub mod RosettaAccount {
     use super::EthPublicKey;
     use core::num::traits::Zero;
     use starknet::{
@@ -45,17 +48,23 @@ mod RosettaAccount {
     fn constructor(ref self: ContractState, eth_account: EthAddress) {
         self.ethereum_address.write(eth_account);
     }
-
+    // TODO: Raw transaction tx.signature da, __execute__ parametresindede bit locationlar mı olacak??
     #[abi(embed_v0)]
     impl AccountImpl of super::IRosettaAccount<ContractState> {
         // Instead of Array<Call> we use Array<felt252> since we pass different values to the
         // parameter
+        // It is EOA execution so multiple calls are not possible
+        // calls params can include raw signed tx or can include the abi parsing bit locations for calldata
         fn __execute__(self: @ContractState, calls: Array<felt252>) -> Array<Span<felt252>> {
             let sender = get_caller_address();
             assert(sender.is_zero(), Errors::INVALID_CALLER);
             // TODO: Check tx version
 
-            // TODO: Exec calls
+            // TODO: Exec call
+
+            // 1) Deserialize tx data from signature to get calldata and target contract.
+            // 2) Match the entrypoint and call contract with calldata parsed according this function bit size param
+            array![array!['todo'].span()]
         }
 
         fn __validate__(self: @ContractState, calls: Array<felt252>) -> felt252 {
@@ -96,6 +105,10 @@ mod RosettaAccount {
             self.ethereum_public_key.read()
         }
 
+        fn get_ethereum_address(self: @ContractState) -> EthAddress {
+            self.ethereum_address.read()
+        }
+
         // We dont need that function
         fn set_public_key(
             ref self: ContractState, new_public_key: EthPublicKey, signature: Span<felt252>
@@ -109,6 +122,10 @@ mod RosettaAccount {
 
         fn getPublicKey(self: @ContractState) -> EthPublicKey {
             self.get_public_key()
+        }
+
+        fn getEthereumAddress(self: @ContractState) -> EthAddress {
+            self.get_ethereum_address()
         }
 
         // We dont need that function
