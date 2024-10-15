@@ -25,7 +25,7 @@ pub mod RosettaAccount {
     use super::EthPublicKey;
     use core::num::traits::Zero;
     use starknet::{
-        EthAddress, get_execution_info, get_contract_address, get_caller_address, get_tx_info
+        EthAddress, get_contract_address, get_caller_address, get_tx_info
     };
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use rosettacontracts::accounts::utils::{is_valid_eth_signature, Secp256k1PointStorePacking};

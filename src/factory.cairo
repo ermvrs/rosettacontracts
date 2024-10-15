@@ -15,6 +15,7 @@ pub mod Factory {
     use starknet::syscalls::{deploy_syscall};
     use core::traits::{Into, TryInto};
     use openzeppelin::utils::deployments::{calculate_contract_address_from_deploy_syscall};
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
 
     #[storage]
     struct Storage {
@@ -60,6 +61,7 @@ pub mod Factory {
             )
         }
 
+            // TODO: this funcation can be removed
         /// Deploys new rosettanet account. Fails if account already deployed
         /// # Params
         /// `address` - Ethereum Address that will be used to deploy starknet account.
