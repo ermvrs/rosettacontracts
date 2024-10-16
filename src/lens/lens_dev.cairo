@@ -14,15 +14,15 @@ mod LensDev {
     use super::ILensDev;
     use starknet::{ContractAddress, EthAddress};
     use core::poseidon::PoseidonTrait;
-    use core::hash::{HashStateTrait, HashStateExTrait};
+    use core::hash::{HashStateTrait};
     use core::traits::{Into, TryInto};
     use core::num::traits::{Zero};
-
+    use starknet::storage::{Map};
 
     #[storage]
     struct Storage {
-        eth_address_to_sn_address: LegacyMap::<EthAddress, ContractAddress>,
-        sn_address_to_eth_address: LegacyMap::<ContractAddress, EthAddress>,
+        eth_address_to_sn_address: Map<EthAddress, ContractAddress>,
+        sn_address_to_eth_address: Map<ContractAddress, EthAddress>,
     }
 
     #[constructor]
