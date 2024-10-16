@@ -6,13 +6,15 @@ pub trait IFactory<TContractState> {
     fn current_account_class(self: @TContractState) -> ClassHash;
     fn precalculate_starknet_address(self: @TContractState, address: EthAddress) -> ContractAddress;
     fn deploy_account(self: @TContractState, address: EthAddress) -> ContractAddress;
+    fn upgrade_contract(self: @TContractState, new_class: ClassHash);
+    fn change_account_class(ref self: TContractState, new_class: ClassHash);
 }
 
 #[starknet::contract]
 pub mod Factory {
     use core::option::OptionTrait;
-    use starknet::{ContractAddress, ClassHash, EthAddress};
-    use starknet::syscalls::{deploy_syscall};
+    use starknet::{ContractAddress, ClassHash, EthAddress, get_caller_address};
+    use starknet::syscalls::{deploy_syscall, replace_class_syscall};
     use core::traits::{Into, TryInto};
     use openzeppelin::utils::deployments::{calculate_contract_address_from_deploy_syscall};
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
@@ -20,13 +22,15 @@ pub mod Factory {
     #[storage]
     struct Storage {
         account_class: ClassHash,
-        lens: ContractAddress
+        lens: ContractAddress,
+        dev: ContractAddress
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState, lens: ContractAddress, account_class: ClassHash) {
+    fn constructor(ref self: ContractState, lens: ContractAddress, account_class: ClassHash, dev: ContractAddress) {
         self.account_class.write(account_class);
         self.lens.write(lens);
+        self.dev.write(dev);
     }
 
     #[abi(embed_v0)]
@@ -78,6 +82,20 @@ pub mod Factory {
 
             // Todo: register lens if needed ?? Or we can use precalculate
             account
+        }
+
+        // REMOVE THIS FUNCTION AFTER DEVELOPMENT
+        fn upgrade_contract(self: @ContractState, new_class: ClassHash) {
+            assert(get_caller_address() == self.dev.read(), 'only dev');
+
+            replace_class_syscall(new_class).unwrap();
+        }
+
+        // REMOVE THIS FUNCTION AFTER DEVELOPMENT
+        fn change_account_class(ref self: ContractState, new_class: ClassHash) {
+            assert(get_caller_address() == self.dev.read(), 'only dev');
+
+            self.account_class.write(new_class);
         }
     }
 }
