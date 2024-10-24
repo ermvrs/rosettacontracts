@@ -27,9 +27,8 @@ pub mod Factory {
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState, lens: ContractAddress, account_class: ClassHash, dev: ContractAddress) {
-        self.account_class.write(account_class);
-        self.lens.write(lens);
+    fn constructor(ref self: ContractState, dev: ContractAddress) {
+        // todo write initial values to storage
         self.dev.write(dev);
     }
 

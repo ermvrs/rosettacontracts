@@ -1,5 +1,5 @@
 pub type EthPublicKey = starknet::secp256k1::Secp256k1Point;
-use starknet::EthAddress;
+use starknet::{EthAddress};
 #[starknet::interface]
 pub trait IRosettaAccount<TState> {
     fn __execute__(self: @TState, calls: Array<felt252>) -> Array<Span<felt252>>;
@@ -8,16 +8,12 @@ pub trait IRosettaAccount<TState> {
     fn supports_interface(self: @TState, interface_id: felt252) -> bool;
     fn __validate_declare__(self: @TState, class_hash: felt252) -> felt252;
     fn __validate_deploy__(
-        self: @TState, class_hash: felt252, contract_address_salt: felt252, public_key: EthPublicKey
+        self: @TState, class_hash: felt252, contract_address_salt: felt252, eth_public_key: EthPublicKey
     ) -> felt252;
-    fn get_public_key(self: @TState) -> EthPublicKey;
     fn get_ethereum_address(self: @TState) -> EthAddress;
-    fn set_public_key(ref self: TState, new_public_key: EthPublicKey, signature: Span<felt252>);
     // Camel case
     fn isValidSignature(self: @TState, hash: felt252, signature: Array<felt252>) -> felt252;
-    fn getPublicKey(self: @TState) -> EthPublicKey;
     fn getEthereumAddress(self: @TState) -> EthAddress;
-    fn setPublicKey(ref self: TState, newPublicKey: EthPublicKey, signature: Span<felt252>);
 }
 
 #[starknet::contract(account)]
@@ -28,7 +24,7 @@ pub mod RosettaAccount {
         EthAddress, get_contract_address, get_caller_address, get_tx_info
     };
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
-    use rosettacontracts::accounts::utils::{is_valid_eth_signature, Secp256k1PointStorePacking};
+    use rosettacontracts::accounts::utils::{is_valid_eth_signature, Secp256k1PointStorePacking, pubkey_to_eth_address};
 
     pub mod Errors {
         pub const INVALID_CALLER: felt252 = 'Rosetta: invalid caller';
@@ -45,8 +41,9 @@ pub mod RosettaAccount {
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState, eth_account: EthAddress) {
-        self.ethereum_address.write(eth_account);
+    fn constructor(ref self: ContractState, eth_public_key: EthPublicKey) {
+        self.ethereum_public_key.write(eth_public_key);
+        self.ethereum_address.write(pubkey_to_eth_address(eth_public_key));
     }
     // TODO: Raw transaction tx.signature da, __execute__ parametresindede bit locationlar mı olacak??
     #[abi(embed_v0)]
@@ -95,24 +92,15 @@ pub mod RosettaAccount {
             self: @ContractState,
             class_hash: felt252,
             contract_address_salt: felt252,
-            public_key: EthPublicKey
+            eth_public_key: EthPublicKey
         ) -> felt252 {
             // TODO: check if validations enough
             self.validate_transaction()
         }
 
-        fn get_public_key(self: @ContractState) -> EthPublicKey {
-            self.ethereum_public_key.read()
-        }
-
         fn get_ethereum_address(self: @ContractState) -> EthAddress {
             self.ethereum_address.read()
         }
-
-        // We dont need that function
-        fn set_public_key(
-            ref self: ContractState, new_public_key: EthPublicKey, signature: Span<felt252>
-        ) {}
 
         fn isValidSignature(
             self: @ContractState, hash: felt252, signature: Array<felt252>
@@ -120,39 +108,20 @@ pub mod RosettaAccount {
             self.is_valid_signature(hash, signature)
         }
 
-        fn getPublicKey(self: @ContractState) -> EthPublicKey {
-            self.get_public_key()
-        }
-
         fn getEthereumAddress(self: @ContractState) -> EthAddress {
             self.get_ethereum_address()
-        }
-
-        // We dont need that function
-        fn setPublicKey(
-            ref self: ContractState, newPublicKey: EthPublicKey, signature: Span<felt252>
-        ) {
-            self.set_public_key(newPublicKey, signature)
         }
     }
 
     #[generate_trait]
     impl InternalImpl of InternalTrait {
         fn initializer(ref self: ContractState, ethPubKey: EthPublicKey) {
-            // Write pubkey to storage
-            self._set_public_key(ethPubKey);
         }
 
         fn assert_only_self(self: @ContractState) {
             let caller = get_caller_address();
             let self = get_contract_address();
             assert(self == caller, Errors::UNAUTHORIZED);
-        }
-
-        // Overwrites ethereum public key. We may remove that function since we only need to
-        // write during initialization.
-        fn _set_public_key(ref self: ContractState, new_public_key: EthPublicKey) {
-            self.ethereum_public_key.write(new_public_key);
         }
 
         /// Validates the signature for the current transaction.
@@ -170,6 +139,8 @@ pub mod RosettaAccount {
         fn _is_valid_signature(
             self: @ContractState, hash: felt252, signature: Span<felt252>
         ) -> bool {
+            // TODO verify transaction with eth address not pub key
+            // Kakarot calldata ile transactionu bir daha olusturup verify etmeye calismis
             let public_key: EthPublicKey = self.ethereum_public_key.read();
             is_valid_eth_signature(hash, public_key, signature)
         }
