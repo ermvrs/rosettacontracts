@@ -65,3 +65,30 @@ fn compute_y_parity(v: u128, chain_id: u64) -> Option<bool> {
 
     return Option::None;
 }
+
+use crate::utils::helpers::{u256_to_bytes_array, split_word};
+// TODO complete word splitting
+pub fn deserialize_and_split_bytes(self: Span<felt252>) -> Array<u8> {
+    let mut bytes: Array<u8> = Default::default();
+
+    for item in self {
+        split_word((*item).into(), 16, ref bytes);
+
+    };
+
+    bytes
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::utils::serialization::{deserialize_and_split_bytes};
+
+    #[test]
+    fn test_chunks_deserialize() {
+        let arr = array![0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFF, 0xABC];
+
+        let deserialized_bytes = deserialize_and_split_bytes(arr.span());
+
+        assert_eq!(*deserialized_bytes.at(0), 0xFF);
+    }
+}

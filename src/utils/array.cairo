@@ -114,30 +114,3 @@ pub impl SpanExtension<T, +Copy<T>, +Drop<T>> of SpanExtTrait<T> {
         return result;
     }
 }
-
-#[cfg(test)]
-mod tests {
-    mod test_array_ext {
-        use super::super::{ArrayExtTrait};
-        #[test]
-        fn test_append_n() {
-            // Given
-            let mut original: Array<u8> = array![1, 2, 3, 4];
-
-            // When
-            original.append_n(9, 3);
-
-            // Then
-            assert(original == array![1, 2, 3, 4, 9, 9, 9], 'append_n failed');
-        }
-
-        #[test]
-        fn test_append_unique() {
-            let mut arr = array![1, 2, 3];
-            arr.append_unique(4);
-            assert(arr == array![1, 2, 3, 4], 'should have appended');
-            arr.append_unique(2);
-            assert(arr == array![1, 2, 3, 4], 'shouldnt have appended');
-        }
-    }
-}

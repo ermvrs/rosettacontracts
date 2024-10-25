@@ -1,1 +1,2 @@
-rosettacontracts_integrationtest::factory_tests::deploy_check_initials
+rosettacontracts::utils::serialization::tests::test_chunks_deserialize
+tests::factory_tests::deploy_check_initials
