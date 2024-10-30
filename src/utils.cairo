@@ -10,6 +10,7 @@ pub mod traits;
 pub mod eth_address;
 
 pub mod transaction {
+    pub mod eip1559;
     pub mod eip2930;
     pub mod common;
 }
