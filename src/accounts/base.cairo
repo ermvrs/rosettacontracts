@@ -25,6 +25,9 @@ pub mod RosettaAccount {
     };
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use rosettacontracts::accounts::utils::{is_valid_eth_signature, Secp256k1PointStorePacking, pubkey_to_eth_address};
+    use rosettacontracts::utils::serialization::{deserialize_bytes};
+    use rosettacontracts::utils::rlp::{RLPType, RLPTrait, RLPItem, RLPHelpersTrait};
+    use rosettacontracts::utils::transaction::eip1559::{Eip1559, Eip1559Trait};
 
     pub mod Errors {
         pub const INVALID_CALLER: felt252 = 'Rosetta: invalid caller';
@@ -142,6 +145,11 @@ pub mod RosettaAccount {
             // TODO verify transaction with eth address not pub key
             // Kakarot calldata ile transactionu bir daha olusturup verify etmeye calismis
             let public_key: EthPublicKey = self.ethereum_public_key.read();
+
+            let deserialized_signature = deserialize_bytes(signature).unwrap();
+            let mut rlp_decoded_transaction = RLPTrait::decode(deserialized_signature.span()).unwrap();
+            let eip1559_transaction = Eip1559Trait::decode_fields(ref rlp_decoded_transaction).unwrap();
+            
             is_valid_eth_signature(hash, public_key, signature)
         }
     }
