@@ -67,11 +67,16 @@ pub mod RosettaAccount {
             // So we verify that transaction is signed by correct address from generating
             // Transaction again.
             // There is no need to use Call struct here because all calldata will be passed as array of felts.
+
+            // 1) Check if array length is higher than minimum
+            // Order: ChainId, nonce, maxPriorityFeePerGas, maxFeePerGas, gas, to, value, data (Array)
+            assert(calls.length > 7, 'Calldata wrong'); // TODO: Are there any other tx types that has lower amount of properties?
             array![array!['todo'].span()]
         }
 
         fn __validate__(self: @ContractState, calls: Array<felt252>) -> felt252 {
             // TODO: check if validations enough
+            // Check if to address registered on lens
             self.validate_transaction()
         }
 
