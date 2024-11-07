@@ -62,8 +62,11 @@ pub mod RosettaAccount {
 
             // TODO: Exec call
 
-            // 1) Deserialize tx data from signature to get calldata and target contract.
-            // 2) Match the entrypoint and call contract with calldata parsed according this function bit size param
+            // We don't use Call type
+            // Instead we pass raw transaction properties in each different felt. And v,r,s on signature
+            // So we verify that transaction is signed by correct address from generating
+            // Transaction again.
+            // There is no need to use Call struct here because all calldata will be passed as array of felts.
             array![array!['todo'].span()]
         }
 
@@ -160,7 +163,7 @@ pub mod RosettaAccount {
         fn validate_transaction(self: @ContractState) -> felt252 {
             let tx_info = get_tx_info().unbox();
             let tx_hash = tx_info.transaction_hash;
-            let signature = tx_info.signature;
+            let signature = tx_info.signature; // Signature includes v,r,s
             assert(self._is_valid_signature(tx_hash, signature), Errors::INVALID_SIGNATURE);
             starknet::VALIDATED
         }
@@ -170,6 +173,8 @@ pub mod RosettaAccount {
         fn _is_valid_signature(
             self: @ContractState, hash: felt252, signature: Span<felt252>
         ) -> bool {
+            assert(signature.length == 3, 'Invalid Signature');
+            // Todo: signature is V,R,S
             let public_key: EthPublicKey = self.ethereum_public_key.read();
             is_valid_eth_signature(hash, public_key, signature)
         }
