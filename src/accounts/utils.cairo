@@ -1,10 +1,17 @@
+use starknet::secp256_trait::{Signature};
 use starknet::secp256_trait;
 use rosettacontracts::accounts::base::{EthPublicKey};
+use starknet::{EthAddress};
+use starknet::eth_signature::{verify_eth_signature, public_key_point_to_eth_address};
 
 #[derive(Copy, Drop, Serde)]
 pub struct EthSignature {
     pub r: u256,
     pub s: u256,
+}
+
+pub fn pubkey_to_eth_address(public_key: EthPublicKey) -> EthAddress {
+    public_key_point_to_eth_address(public_key)
 }
 
 pub fn is_valid_eth_signature(
@@ -15,6 +22,12 @@ pub fn is_valid_eth_signature(
         .expect('Signature: Invalid format.');
 
     secp256_trait::is_valid_signature(msg_hash.into(), signature.r, signature.s, public_key)
+}
+
+pub fn is_valid_eth_signature_with_eth_address(
+    msg_hash:u256, signature: Signature, eth_address: EthAddress
+) {
+    verify_eth_signature(msg_hash, signature, eth_address)
 }
 
 // SPDX-License-Identifier: MIT
