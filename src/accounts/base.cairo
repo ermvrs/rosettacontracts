@@ -36,6 +36,11 @@ pub mod RosettaAccount {
         pub const UNAUTHORIZED: felt252 = 'Rosetta: unauthorized';
     }
 
+    pub struct RosettanetCall {
+        transaction: Array<felt252>,
+        calldata_points: Array<felt252>
+    }
+
 
     #[storage]
     struct Storage {
@@ -55,7 +60,7 @@ pub mod RosettaAccount {
         // parameter
         // It is EOA execution so multiple calls are not possible
         // calls params can include raw signed tx or can include the abi parsing bit locations for calldata
-        fn __execute__(self: @ContractState, calls: Array<felt252>) -> Array<Span<felt252>> {
+        fn __execute__(self: @ContractState, calls: RosettanetCall) -> Array<Span<felt252>> {
             let sender = get_caller_address();
             assert(sender.is_zero(), Errors::INVALID_CALLER);
             // TODO: Check tx version
@@ -70,12 +75,13 @@ pub mod RosettaAccount {
 
             // 1) Check if array length is higher than minimum
             // Order: ChainId, nonce, maxPriorityFeePerGas, maxFeePerGas, gas, to, value, data (Array)
-            assert(calls.length > 7, 'Calldata wrong'); // TODO: Are there any other tx types that has lower amount of properties?
+            
             array![array!['todo'].span()]
         }
 
-        fn __validate__(self: @ContractState, calls: Array<felt252>) -> felt252 {
+        fn __validate__(self: @ContractState, calls: RosettanetCall) -> felt252 {
             // TODO: check if validations enough
+            assert(calls.transaction.length > 9, 'Calldata wrong'); // TODO: First version only supports EIP1559
             // Check if to address registered on lens
             self.validate_transaction()
         }
@@ -96,6 +102,7 @@ pub mod RosettaAccount {
 
         fn __validate_declare__(self: @ContractState, class_hash: felt252) -> felt252 {
             // TODO: check if validations enough
+            // TODO: Rosettanet accounts wont declare code
             self.validate_transaction()
         }
 
@@ -176,7 +183,7 @@ pub mod RosettaAccount {
                 compute_y_parity(v, chain_id).expect('Invalid Signature')
             };
 
-
+            // Remove below
             let deserialized_signature = deserialize_bytes(signature).unwrap();
             let mut rlp_decoded_transaction = RLPTrait::decode(deserialized_signature.span()).unwrap();
             let eip1559_transaction = Eip1559Trait::decode_fields(ref rlp_decoded_transaction).unwrap();
