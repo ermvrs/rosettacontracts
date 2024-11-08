@@ -25,7 +25,7 @@ pub mod RosettaAccount {
     };
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use rosettacontracts::accounts::utils::{is_valid_eth_signature, Secp256k1PointStorePacking, pubkey_to_eth_address};
-    use rosettacontracts::utils::serialization::{deserialize_bytes};
+    use rosettacontracts::utils::serialization::{deserialize_bytes,compute_y_parity};
     use rosettacontracts::utils::rlp::{RLPType, RLPTrait, RLPItem, RLPHelpersTrait};
     use rosettacontracts::utils::transaction::eip1559::{Eip1559, Eip1559Trait};
 
@@ -34,6 +34,11 @@ pub mod RosettaAccount {
         pub const INVALID_SIGNATURE: felt252 = 'Rosetta: invalid signature';
         pub const INVALID_TX_VERSION: felt252 = 'Rosetta: invalid tx version';
         pub const UNAUTHORIZED: felt252 = 'Rosetta: unauthorized';
+    }
+
+    pub struct RosettanetCall {
+        transaction: Array<felt252>,
+        calldata_points: Array<felt252>
     }
 
 
@@ -55,20 +60,29 @@ pub mod RosettaAccount {
         // parameter
         // It is EOA execution so multiple calls are not possible
         // calls params can include raw signed tx or can include the abi parsing bit locations for calldata
-        fn __execute__(self: @ContractState, calls: Array<felt252>) -> Array<Span<felt252>> {
+        fn __execute__(self: @ContractState, calls: RosettanetCall) -> Array<Span<felt252>> {
             let sender = get_caller_address();
             assert(sender.is_zero(), Errors::INVALID_CALLER);
             // TODO: Check tx version
 
             // TODO: Exec call
 
-            // 1) Deserialize tx data from signature to get calldata and target contract.
-            // 2) Match the entrypoint and call contract with calldata parsed according this function bit size param
+            // We don't use Call type
+            // Instead we pass raw transaction properties in each different felt. And v,r,s on signature
+            // So we verify that transaction is signed by correct address from generating
+            // Transaction again.
+            // There is no need to use Call struct here because all calldata will be passed as array of felts.
+
+            // 1) Check if array length is higher than minimum
+            // Order: ChainId, nonce, maxPriorityFeePerGas, maxFeePerGas, gas, to, value, data (Array)
+            
             array![array!['todo'].span()]
         }
 
-        fn __validate__(self: @ContractState, calls: Array<felt252>) -> felt252 {
+        fn __validate__(self: @ContractState, calls: RosettanetCall) -> felt252 {
             // TODO: check if validations enough
+            assert(calls.transaction.length > 9, 'Calldata wrong'); // TODO: First version only supports EIP1559
+            // Check if to address registered on lens
             self.validate_transaction()
         }
 
@@ -88,6 +102,7 @@ pub mod RosettaAccount {
 
         fn __validate_declare__(self: @ContractState, class_hash: felt252) -> felt252 {
             // TODO: check if validations enough
+            // TODO: Rosettanet accounts wont declare code
             self.validate_transaction()
         }
 
@@ -132,7 +147,7 @@ pub mod RosettaAccount {
         fn validate_transaction(self: @ContractState) -> felt252 {
             let tx_info = get_tx_info().unbox();
             let tx_hash = tx_info.transaction_hash;
-            let signature = tx_info.signature;
+            let signature = tx_info.signature; // Signature includes v,r,s
             assert(self._is_valid_signature(tx_hash, signature), Errors::INVALID_SIGNATURE);
             starknet::VALIDATED
         }
@@ -144,8 +159,31 @@ pub mod RosettaAccount {
         ) -> bool {
             // TODO verify transaction with eth address not pub key
             // Kakarot calldata ile transactionu bir daha olusturup verify etmeye calismis
+            assert(signature.length == 5, 'Invalid Signature');
+            // Todo: signature is V = 1 slot, R,S = 2 slots
             let public_key: EthPublicKey = self.ethereum_public_key.read();
 
+            let v: u128 = (*signature).at(0).try_into().unwrap();
+            let r: u256 =  u256 {
+                low: (*signature).at(1).try_into().unwrap(),
+                high: (*signature).at(2).try_into().unwrap(),
+            };
+            let s: u256 = u256 {
+                low: (*signature).at(3).try_into().unwrap(),
+                high: (*signature).at(4).try_into().unwrap()
+            };
+
+            let chain_id: u64 = 1; // TODO: What will be the chainid?
+
+            let odd_y_parity = if v == 0 {
+                false
+            } else if v == 1 {
+                true
+            } else {
+                compute_y_parity(v, chain_id).expect('Invalid Signature')
+            };
+
+            // Remove below
             let deserialized_signature = deserialize_bytes(signature).unwrap();
             let mut rlp_decoded_transaction = RLPTrait::decode(deserialized_signature.span()).unwrap();
             let eip1559_transaction = Eip1559Trait::decode_fields(ref rlp_decoded_transaction).unwrap();
