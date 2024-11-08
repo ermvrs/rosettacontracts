@@ -25,7 +25,7 @@ pub mod RosettaAccount {
     };
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use rosettacontracts::accounts::utils::{is_valid_eth_signature, Secp256k1PointStorePacking, pubkey_to_eth_address};
-    use rosettacontracts::utils::serialization::{deserialize_bytes};
+    use rosettacontracts::utils::serialization::{deserialize_bytes,compute_y_parity};
     use rosettacontracts::utils::rlp::{RLPType, RLPTrait, RLPItem, RLPHelpersTrait};
     use rosettacontracts::utils::transaction::eip1559::{Eip1559, Eip1559Trait};
 
@@ -152,9 +152,30 @@ pub mod RosettaAccount {
         ) -> bool {
             // TODO verify transaction with eth address not pub key
             // Kakarot calldata ile transactionu bir daha olusturup verify etmeye calismis
-            assert(signature.length == 3, 'Invalid Signature');
-            // Todo: signature is V,R,S
+            assert(signature.length == 5, 'Invalid Signature');
+            // Todo: signature is V = 1 slot, R,S = 2 slots
             let public_key: EthPublicKey = self.ethereum_public_key.read();
+
+            let v: u128 = (*signature).at(0).try_into().unwrap();
+            let r: u256 =  u256 {
+                low: (*signature).at(1).try_into().unwrap(),
+                high: (*signature).at(2).try_into().unwrap(),
+            };
+            let s: u256 = u256 {
+                low: (*signature).at(3).try_into().unwrap(),
+                high: (*signature).at(4).try_into().unwrap()
+            };
+
+            let chain_id: u64 = 1; // TODO: What will be the chainid?
+
+            let odd_y_parity = if v == 0 {
+                false
+            } else if v == 1 {
+                true
+            } else {
+                compute_y_parity(v, chain_id).expect('Invalid Signature')
+            };
+
 
             let deserialized_signature = deserialize_bytes(signature).unwrap();
             let mut rlp_decoded_transaction = RLPTrait::decode(deserialized_signature.span()).unwrap();
