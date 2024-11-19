@@ -160,16 +160,21 @@ pub mod RosettaAccount {
         ) -> bool {
             // TODO verify transaction with eth address not pub key
             // Kakarot calldata ile transactionu bir daha olusturup verify etmeye calismis
-            // assert(signature.length == 5, 'Invalid Signature');
-            // Todo: signature is V = 1 slot, R,S = 2 slots
+            assert(signature.len() == 5, 'Invalid Signature');
+            let r: u256 = u256 {
+                low: (*signature.at(0)).try_into().unwrap(),
+                high: (*signature.at(1)).try_into().unwrap()
+            };
+            let s: u256 = u256 {
+                low: (*signature.at(2)).try_into().unwrap(),
+                high: (*signature.at(3)).try_into().unwrap()
+            };
+            let y_parity: u8 = *signature.at(4).try_into().unwrap();
+
             let public_key: EthPublicKey = self.ethereum_public_key.read();
 
             let chain_id: u64 = 1; // TODO: What will be the chainid?
 
-            // Remove below
-            let deserialized_signature = deserialize_bytes(signature).unwrap();
-            let mut rlp_decoded_transaction = RLPTrait::decode(deserialized_signature.span()).unwrap();
-            let eip1559_transaction = Eip1559Trait::decode_fields(ref rlp_decoded_transaction).unwrap();
             
             is_valid_eth_signature(hash, public_key, signature)
         }
