@@ -1,1 +1,1 @@
-tests::factory_tests::deploy_check_initials
+rosettacontracts_integrationtest::factory_tests::deploy_check_initials

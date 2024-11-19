@@ -37,8 +37,9 @@ pub mod RosettaAccount {
     }
 
     pub struct RosettanetCall {
-        transaction: Array<felt252>,
-        calldata_points: Array<felt252>
+        calldata: Array<felt252>,
+        directives: Array<bool>, // We use this directives to figure out u256 splitting happened in element in same index For ex if 3rd element of this array is true, it means 3rd elem is low, 4th elem is high of u256
+        value: u256 // To be used future
     }
 
 
@@ -60,7 +61,7 @@ pub mod RosettaAccount {
         // parameter
         // It is EOA execution so multiple calls are not possible
         // calls params can include raw signed tx or can include the abi parsing bit locations for calldata
-        fn __execute__(self: @ContractState, calls: RosettanetCall) -> Array<Span<felt252>> {
+        fn __execute__(self: @ContractState, calls: Array<felt252>) -> Array<Span<felt252>> {
             let sender = get_caller_address();
             assert(sender.is_zero(), Errors::INVALID_CALLER);
             // TODO: Check tx version
@@ -79,9 +80,9 @@ pub mod RosettaAccount {
             array![array!['todo'].span()]
         }
 
-        fn __validate__(self: @ContractState, calls: RosettanetCall) -> felt252 {
+        fn __validate__(self: @ContractState, calls: Array<felt252>) -> felt252 {
             // TODO: check if validations enough
-            assert(calls.transaction.length > 9, 'Calldata wrong'); // TODO: First version only supports EIP1559
+            // assert(calls.transaction.length > 9, 'Calldata wrong'); // TODO: First version only supports EIP1559
             // Check if to address registered on lens
             self.validate_transaction()
         }
@@ -159,29 +160,11 @@ pub mod RosettaAccount {
         ) -> bool {
             // TODO verify transaction with eth address not pub key
             // Kakarot calldata ile transactionu bir daha olusturup verify etmeye calismis
-            assert(signature.length == 5, 'Invalid Signature');
+            // assert(signature.length == 5, 'Invalid Signature');
             // Todo: signature is V = 1 slot, R,S = 2 slots
             let public_key: EthPublicKey = self.ethereum_public_key.read();
 
-            let v: u128 = (*signature).at(0).try_into().unwrap();
-            let r: u256 =  u256 {
-                low: (*signature).at(1).try_into().unwrap(),
-                high: (*signature).at(2).try_into().unwrap(),
-            };
-            let s: u256 = u256 {
-                low: (*signature).at(3).try_into().unwrap(),
-                high: (*signature).at(4).try_into().unwrap()
-            };
-
             let chain_id: u64 = 1; // TODO: What will be the chainid?
-
-            let odd_y_parity = if v == 0 {
-                false
-            } else if v == 1 {
-                true
-            } else {
-                compute_y_parity(v, chain_id).expect('Invalid Signature')
-            };
 
             // Remove below
             let deserialized_signature = deserialize_bytes(signature).unwrap();

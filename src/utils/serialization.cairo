@@ -57,7 +57,7 @@ pub fn serialize_bytes(self: Span<u8>) -> Array<felt252> {
 /// # Returns
 ///
 /// * `Option<bool>` - The computed y-parity value if valid, or None if invalid.
-fn compute_y_parity(v: u128, chain_id: u64) -> Option<bool> {
+pub fn compute_y_parity(v: u128, chain_id: u64) -> Option<bool> {
     let y_parity = v - (chain_id.into() * 2 + 35);
     if (y_parity == 0 || y_parity == 1) {
         return Option::Some(y_parity == 1);
