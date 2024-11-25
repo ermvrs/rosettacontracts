@@ -3,7 +3,12 @@ use starknet::secp256_trait;
 use rosettacontracts::accounts::base::{EthPublicKey};
 use starknet::{EthAddress};
 use crate::utils::transaction::eip2930::{AccessListItem};
+use crate::utils::rlp::{RLPTrait, RLPItem, RLPHelpersTrait};
+use crate::utils::traits::SpanDefault;
+use crate::errors::{EthTransactionError, RLPError, RLPErrorTrait};
+use crate::utils::bytes::{U8SpanExTrait};
 use starknet::eth_signature::{verify_eth_signature, public_key_point_to_eth_address};
+use core::num::traits::SaturatingSub;
 
 #[derive(Copy, Drop, Serde)]
 pub struct EthSignature {
@@ -20,8 +25,9 @@ pub struct RosettanetTransaction {
     gas_limit: u64,
     to: EthAddress,
     value: u256,
-    input: Span<felt252>,
-    access_list: Span<AccessListItem>
+    input: Span<u8>,
+    access_list: Span<AccessListItem>,
+    hash: u256
 }
 
 #[derive(Copy, Drop, Serde)]
@@ -32,6 +38,7 @@ pub struct RosettanetSignature {
     pub y_parity: u32 // 0 or 1
 }
 
+// Merges u256s coming from calldata according to directives
 pub fn merge_u256s(calldata: Span<felt252>, directives: Span<bool>) -> Span<u256> {
     assert(calldata.len() == directives.len(), 'R-AU-1 Sanity check fails');
     let mut merged_array = ArrayTrait::<u256>::new();
@@ -55,7 +62,76 @@ pub fn merge_u256s(calldata: Span<felt252>, directives: Span<bool>) -> Span<u256
     merged_array.span()
 }
 
-pub fn verify_transaction(signature: RosettanetSignature) -> bool {
+#[inline(always)]
+pub fn compute_hash(encoded_tx_data: Span<u8>) -> u256 {
+    encoded_tx_data.compute_keccak256_hash()
+}
+
+pub fn decode_encoded_eip1559_transaction(ref encoded_tx: Span<u8>) -> Result<RosettanetTransaction, EthTransactionError> {
+    let original_data = encoded_tx;
+    let rlp_decoded_data = RLPTrait::decode(encoded_tx).map_err()?;
+    //if (rlp_decoded_data.len() != 1) {
+        // todo Error
+    //    EthTransactionError::RLPError(RLPError::Custom('not encoded as list'))
+    //}
+
+    let mut rlp_decoded_data = match *rlp_decoded_data.at(0) {
+        RLPItem::String => {
+            return Result::Err(
+                EthTransactionError::RLPError(RLPError::Custom('not encoded as list'))
+            );
+        },
+        RLPItem::List(v) => { v }
+    };
+
+    let boxed_fields = rlp_decoded_data
+            .multi_pop_front::<9>()
+            .ok_or(EthTransactionError::RLPError(RLPError::InputTooShort))?;
+    let [
+        chain_id_encoded,
+        nonce_encoded,
+        max_priority_fee_per_gas_encoded,
+        max_fee_per_gas_encoded,
+        gas_limit_encoded,
+        to_encoded,
+        value_encoded,
+        input_encoded,
+        access_list_encoded
+    ] =
+        (*boxed_fields)
+        .unbox();
+
+    let chain_id = chain_id_encoded.parse_u64_from_string().map_err()?;
+    let nonce = nonce_encoded.parse_u64_from_string().map_err()?;
+    let max_priority_fee_per_gas = max_priority_fee_per_gas_encoded
+        .parse_u128_from_string()
+        .map_err()?;
+    let max_fee_per_gas = max_fee_per_gas_encoded.parse_u128_from_string().map_err()?;
+    let gas_limit = gas_limit_encoded.parse_u64_from_string().map_err()?;
+    let to = to_encoded.try_parse_address_from_string().map_err()?.unwrap();
+    let value = value_encoded.parse_u256_from_string().map_err()?;
+    let input = input_encoded.parse_bytes_from_string().map_err()?;
+    let access_list = access_list_encoded.parse_access_list().map_err()?;
+
+    let hash = compute_hash(original_data);
+
+    let tx = RosettanetTransaction {
+        chain_id,
+        nonce,
+        max_priority_fee_per_gas,
+        max_fee_per_gas,
+        gas_limit,
+        to,
+        value,
+        input,
+        access_list,
+        hash
+    };
+
+    Result::Ok(tx)
+}
+
+pub fn verify_transaction(tx: RosettanetTransaction, signature: RosettanetSignature) -> bool {
     true
 }
 
@@ -173,5 +249,21 @@ mod tests {
 
         assert_eq!(*merged.at(0), u256 {low: 0xFF, high: 0xAB});
         assert_eq!(*merged.at(1), u256 {low: 0x123123, high: 0x0});
+    }
+
+    // Decode tests
+
+    use crate::accounts::utils::{decode_encoded_eip1559_transaction, RosettanetTransaction};
+    use crate::utils::test_data::{eip_1559_encoded_tx};
+
+    #[test]
+    fn test_decode_eip1559() {
+        let mut data = eip_1559_encoded_tx();
+
+        let decoded_tx: RosettanetTransaction = decode_encoded_eip1559_transaction(ref data).unwrap();
+
+        assert_eq!(decoded_tx.nonce, 0);
+        assert_eq!(decoded_tx.chain_id, 0x4b4b5254);
+        assert_eq!(decoded_tx.value, 0x016345785d8a0000);
     }
 }
