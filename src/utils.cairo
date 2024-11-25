@@ -8,6 +8,7 @@ pub mod math;
 pub mod integer;
 pub mod traits;
 pub mod eth_address;
+pub mod test_data;
 
 pub mod transaction {
     pub mod eip1559;

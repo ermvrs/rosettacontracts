@@ -66,18 +66,6 @@ pub fn compute_y_parity(v: u128, chain_id: u64) -> Option<bool> {
     return Option::None;
 }
 
-pub fn u256_split_into_u8s(val: u256) -> Span<u8> {
-    let mut splitted = ArrayTrait::<u8>::new();
-    let mut value = val;
-    while value > 0 {
-        let byte: u8 = value & 0xFF;
-        splitted.append(byte);
-        value = value / 0x10000000;
-    };
-
-    splitted.span()
-}
-
 
 #[cfg(test)]
 mod tests {
@@ -90,17 +78,5 @@ mod tests {
         let deserialized_bytes = deserialize_bytes(arr.span()).unwrap();
 
         assert_eq!(*deserialized_bytes.at(0), 0xFF);
-    }
-
-    #[test]
-    fn test_u256_split_once() {
-        let data: u256 = 0x12884723;
-
-        let splitted_data: Span<u8> = u256_split_into_u8s(data);
-
-        assert_eq!(*splitted_data.at(0), 0x12);
-        assert_eq!(*splitted_data.at(1), 0x88);
-        assert_eq!(*splitted_data.at(2), 0x47);
-        assert_eq!(*splitted_data.at(3), 0x23);
     }
 }

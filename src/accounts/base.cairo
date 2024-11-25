@@ -169,7 +169,7 @@ pub mod RosettaAccount {
                 low: (*signature.at(2)).try_into().unwrap(),
                 high: (*signature.at(3)).try_into().unwrap()
             };
-            let y_parity: u8 = *signature.at(4).try_into().unwrap();
+            let y_parity: u8 = (*signature.at(4)).try_into().unwrap();
 
             let public_key: EthPublicKey = self.ethereum_public_key.read();
 
