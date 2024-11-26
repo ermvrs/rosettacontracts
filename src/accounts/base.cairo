@@ -1,9 +1,21 @@
 pub type EthPublicKey = starknet::secp256k1::Secp256k1Point;
 use starknet::{EthAddress};
+
+#[derive(Drop, Serde)]
+pub struct RosettanetCall {
+    to: EthAddress, // This has to be this account address for multicalls
+    max_priority_fee_per_gas: u128,
+    max_fee_per_gas: u128,
+    gas_limit: u64,
+    value: u256, // To be used future
+    calldata: Array<felt252>,
+    directives: Array<bool>, // We use this directives to figure out u256 splitting happened in element in same index For ex if 3rd element of this array is true, it means 3rd elem is low, 4th elem is high of u256
+}
+
 #[starknet::interface]
 pub trait IRosettaAccount<TState> {
-    fn __execute__(self: @TState, calls: Array<felt252>) -> Array<Span<felt252>>;
-    fn __validate__(self: @TState, calls: Array<felt252>) -> felt252;
+    fn __execute__(self: @TState, call: RosettanetCall) -> Array<Span<felt252>>;
+    fn __validate__(self: @TState, call: RosettanetCall) -> felt252;
     fn is_valid_signature(self: @TState, hash: felt252, signature: Array<felt252>) -> felt252;
     fn supports_interface(self: @TState, interface_id: felt252) -> bool;
     fn __validate_declare__(self: @TState, class_hash: felt252) -> felt252;
@@ -18,7 +30,7 @@ pub trait IRosettaAccount<TState> {
 
 #[starknet::contract(account)]
 pub mod RosettaAccount {
-    use super::EthPublicKey;
+    use super::{EthPublicKey, RosettanetCall};
     use core::num::traits::Zero;
     use starknet::{
         EthAddress, get_contract_address, get_caller_address, get_tx_info
@@ -36,17 +48,11 @@ pub mod RosettaAccount {
         pub const UNAUTHORIZED: felt252 = 'Rosetta: unauthorized';
     }
 
-    pub struct RosettanetCall {
-        calldata: Array<felt252>,
-        directives: Array<bool>, // We use this directives to figure out u256 splitting happened in element in same index For ex if 3rd element of this array is true, it means 3rd elem is low, 4th elem is high of u256
-        value: u256 // To be used future
-    }
-
-
     #[storage]
     struct Storage {
         ethereum_address: EthAddress,
-        ethereum_public_key: EthPublicKey
+        ethereum_public_key: EthPublicKey,
+        nonce: u64
     }
 
     #[constructor]
@@ -61,7 +67,7 @@ pub mod RosettaAccount {
         // parameter
         // It is EOA execution so multiple calls are not possible
         // calls params can include raw signed tx or can include the abi parsing bit locations for calldata
-        fn __execute__(self: @ContractState, calls: Array<felt252>) -> Array<Span<felt252>> {
+        fn __execute__(self: @ContractState, call: RosettanetCall) -> Array<Span<felt252>> {
             let sender = get_caller_address();
             assert(sender.is_zero(), Errors::INVALID_CALLER);
             // TODO: Check tx version
@@ -80,7 +86,7 @@ pub mod RosettaAccount {
             array![array!['todo'].span()]
         }
 
-        fn __validate__(self: @ContractState, calls: Array<felt252>) -> felt252 {
+        fn __validate__(self: @ContractState, call: RosettanetCall) -> felt252 {
             // TODO: check if validations enough
             // assert(calls.transaction.length > 9, 'Calldata wrong'); // TODO: First version only supports EIP1559
             // Check if to address registered on lens

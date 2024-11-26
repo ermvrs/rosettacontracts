@@ -1,7 +1,7 @@
 use starknet::{EthAddress};
 use core::byte_array::{ByteArrayTrait};
 use crate::utils::transaction::eip2930::{AccessListItem, AccessListItemTrait};
-use crate::utils::bytes::{ByteArrayExTrait};
+use crate::utils::bytes::{ByteArrayExTrait,U8SpanExTrait};
 use alexandria_encoding::rlp::{RLPItem, RLPTrait};
 
 #[derive(Copy, Drop, Clone, PartialEq, Serde)]
@@ -13,7 +13,7 @@ pub struct Eip1559Transaction {
     gas_limit: u64,
     to: EthAddress,
     value: u256,
-    input: Span<u8>, // u256 or felt?
+    input: Span<u8>, // u256s to u8 spans
     access_list: Span<AccessListItem>,
 }
 
@@ -46,6 +46,11 @@ pub fn rlp_encode_eip1559(tx: Eip1559Transaction) -> Span<u8> {
 
     encoded_tx.append_span(RLPTrait::encode(array![rlp_inputs].span()).unwrap());
     encoded_tx.span()
+}
+
+#[inline(always)]
+pub fn calculate_tx_hash(encoded_tx: Span<u8>) -> u256 {
+    encoded_tx.compute_keccak256_hash()
 }
 
 pub fn deserialize_bytes(value: felt252, len: usize) -> Span<u8> {
