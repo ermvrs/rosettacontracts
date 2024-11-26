@@ -4,6 +4,7 @@ use starknet::{EthAddress};
 #[derive(Drop, Serde)]
 pub struct RosettanetCall {
     to: EthAddress, // This has to be this account address for multicalls
+    nonce: u64,
     max_priority_fee_per_gas: u128,
     max_fee_per_gas: u128,
     gas_limit: u64,
@@ -36,7 +37,8 @@ pub mod RosettaAccount {
         EthAddress, get_contract_address, get_caller_address, get_tx_info
     };
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
-    use rosettacontracts::accounts::utils::{is_valid_eth_signature, Secp256k1PointStorePacking, pubkey_to_eth_address};
+    use rosettacontracts::accounts::utils::{is_valid_eth_signature, parse_transaction, verify_transaction, RosettanetSignature};
+    use rosettacontracts::accounts::encoding::{rlp_encode_eip1559, calculate_tx_hash};
     use rosettacontracts::utils::serialization::{deserialize_bytes,compute_y_parity};
     use rosettacontracts::utils::rlp::{RLPType, RLPTrait, RLPItem, RLPHelpersTrait};
     use rosettacontracts::utils::transaction::eip1559::{Eip1559, Eip1559Trait};
@@ -51,14 +53,13 @@ pub mod RosettaAccount {
     #[storage]
     struct Storage {
         ethereum_address: EthAddress,
-        ethereum_public_key: EthPublicKey,
         nonce: u64
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState, eth_public_key: EthPublicKey) {
-        self.ethereum_public_key.write(eth_public_key);
-        self.ethereum_address.write(pubkey_to_eth_address(eth_public_key));
+    fn constructor(ref self: ContractState, eth_address: EthAddress) {
+        self.ethereum_address.write(eth_address);
+        // TODO: verify on deploy that address is correct
     }
     // TODO: Raw transaction tx.signature da, __execute__ parametresindede bit locationlar mı olacak??
     #[abi(embed_v0)]
@@ -90,7 +91,8 @@ pub mod RosettaAccount {
             // TODO: check if validations enough
             // assert(calls.transaction.length > 9, 'Calldata wrong'); // TODO: First version only supports EIP1559
             // Check if to address registered on lens
-            self.validate_transaction()
+            assert(call.nonce == self.nonce.read(), 'Nonce wrong');
+            self.validate_transaction(call)
         }
 
         fn is_valid_signature(
@@ -108,9 +110,7 @@ pub mod RosettaAccount {
         }
 
         fn __validate_declare__(self: @ContractState, class_hash: felt252) -> felt252 {
-            // TODO: check if validations enough
-            // TODO: Rosettanet accounts wont declare code
-            self.validate_transaction()
+            0
         }
 
         fn __validate_deploy__(
@@ -119,8 +119,8 @@ pub mod RosettaAccount {
             contract_address_salt: felt252,
             eth_public_key: EthPublicKey
         ) -> felt252 {
-            // TODO: check if validations enough
-            self.validate_transaction()
+            // TODO validate deploy
+            starknet::VALIDATED
         }
 
         fn get_ethereum_address(self: @ContractState) -> EthAddress {
@@ -151,18 +151,21 @@ pub mod RosettaAccount {
 
         /// Validates the signature for the current transaction.
         /// Returns the short string `VALID` if valid, otherwise it reverts.
-        fn validate_transaction(self: @ContractState) -> felt252 {
+        fn validate_transaction(self: @ContractState, call: RosettanetCall) -> felt252 {
             let tx_info = get_tx_info().unbox();
-            let tx_hash = tx_info.transaction_hash;
+
+            let parsed_txn = parse_transaction(call);
+            let expected_hash = calculate_tx_hash(rlp_encode_eip1559(parsed_txn));
+
             let signature = tx_info.signature; // Signature includes v,r,s
-            assert(self._is_valid_signature(tx_hash, signature), Errors::INVALID_SIGNATURE);
+            assert(self._is_valid_signature(expected_hash, signature), Errors::INVALID_SIGNATURE);
             starknet::VALIDATED
         }
 
         /// Returns whether the given signature is valid for the given hash
         /// using the account's current public key.
         fn _is_valid_signature(
-            self: @ContractState, hash: felt252, signature: Span<felt252>
+            self: @ContractState, hash: u256, signature: Span<felt252>
         ) -> bool {
             // TODO verify transaction with eth address not pub key
             // Kakarot calldata ile transactionu bir daha olusturup verify etmeye calismis
@@ -175,14 +178,17 @@ pub mod RosettaAccount {
                 low: (*signature.at(2)).try_into().unwrap(),
                 high: (*signature.at(3)).try_into().unwrap()
             };
-            let y_parity: u8 = (*signature.at(4)).try_into().unwrap();
+            let v: u32 = (*signature.at(4)).try_into().unwrap();
 
-            let public_key: EthPublicKey = self.ethereum_public_key.read();
+            let rosettanet_signature = RosettanetSignature {
+                v: v,
+                r: r,
+                s: s,
+            };
 
-            let chain_id: u64 = 1; // TODO: What will be the chainid?
+            let eth_address: EthAddress = self.ethereum_address.read();
 
-            
-            is_valid_eth_signature(hash, public_key, signature)
+            is_valid_eth_signature(hash, eth_address, rosettanet_signature)
         }
     }
 }
