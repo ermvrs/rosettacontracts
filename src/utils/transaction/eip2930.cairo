@@ -1,9 +1,8 @@
 use core::starknet::EthAddress;
-use crate::errors::{EthTransactionError, RLPError, RLPErrorTrait};
 use crate::utils::transaction::common::TxKind;
-use alexandria_encoding::rlp::{RLPItem, RLPTrait};
+use alexandria_encoding::rlp::{RLPItem};
 use crate::utils::traits::SpanDefault;
-use crate::accounts::encoding::{deserialize_bytes, deserialize_bytes_non_zeroes};
+use crate::accounts::encoding::{deserialize_bytes};
 
 
 #[derive(Copy, Drop, Serde, PartialEq, Debug)]
