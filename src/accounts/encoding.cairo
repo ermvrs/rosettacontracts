@@ -6,15 +6,15 @@ use alexandria_encoding::rlp::{RLPItem, RLPTrait};
 
 #[derive(Copy, Drop, Clone, PartialEq, Serde)]
 pub struct Eip1559Transaction {
-    chain_id: u64,
-    nonce: u64,
-    max_priority_fee_per_gas: u128,
-    max_fee_per_gas: u128,
-    gas_limit: u64,
-    to: EthAddress,
-    value: u256,
-    input: Span<u8>, // u256s to u8 spans
-    access_list: Span<AccessListItem>,
+    pub chain_id: u64,
+    pub nonce: u64,
+    pub max_priority_fee_per_gas: u128,
+    pub max_fee_per_gas: u128,
+    pub gas_limit: u64,
+    pub to: EthAddress,
+    pub value: u256,
+    pub input: Span<u8>, // u256s to u8 spans
+    pub access_list: Span<AccessListItem>,
 }
 
 pub fn rlp_encode_eip1559(tx: Eip1559Transaction) -> Span<u8> {
@@ -56,6 +56,21 @@ pub fn calculate_tx_hash(encoded_tx: Span<u8>) -> u256 {
 pub fn deserialize_bytes(value: felt252, len: usize) -> Span<u8> {
     let mut ba = Default::default();
     ba.append_word(value, len);
+    ba.into_bytes()
+}
+
+pub fn deserialize_u256_span(ref value: Span<u256>) -> Span<u8> {
+    let mut ba = Default::default();
+    loop {
+        match value.pop_front() {
+            Option::None => { break; },
+            Option::Some(val) => {
+                let mut inner_ba = Default::default();
+                inner_ba.append_word((*val).try_into().unwrap(), 32); // 32 or 16 ? U256 span is merged u256s according to directives
+                ByteArrayTrait::append(ref ba, @inner_ba);
+            }
+        };
+    };
     ba.into_bytes()
 }
 

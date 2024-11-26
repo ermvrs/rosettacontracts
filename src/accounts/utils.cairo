@@ -1,15 +1,11 @@
 use starknet::secp256_trait::{Signature, signature_from_vrs};
 use starknet::{EthAddress};
-use crate::accounts::encoding::{Eip1559Transaction, deserialize_bytes};
-use crate::utils::transaction::eip2930::{AccessListItem};
-use crate::utils::rlp::{RLPTrait, RLPItem, RLPHelpersTrait};
+use crate::accounts::encoding::{Eip1559Transaction, deserialize_u256_span};
 use crate::utils::traits::SpanDefault;
-use crate::errors::{EthTransactionError, RLPError, RLPErrorTrait};
 use crate::utils::bytes::{U8SpanExTrait};
-use crate::accounts::base::{RosettanetCall};
 use starknet::eth_signature::{verify_eth_signature};
 
-const CHAIN_ID: u64 = 2933; // TODO: Correct it
+pub const CHAIN_ID: u64 = 2933; // TODO: Correct it
 
 #[derive(Copy, Drop, Serde)]
 pub struct EthSignature {
@@ -18,36 +14,33 @@ pub struct EthSignature {
 }
 
 #[derive(Copy, Drop, Serde)]
-pub struct RosettanetTransaction {
-    chain_id: u64,
-    nonce: u64,
-    max_priority_fee_per_gas: u128,
-    max_fee_per_gas: u128,
-    gas_limit: u64,
-    to: EthAddress,
-    value: u256,
-    input: Span<u8>,
-    access_list: Span<AccessListItem>,
-    hash: u256
-}
-
-#[derive(Copy, Drop, Serde)]
 pub struct RosettanetSignature {
     pub v: u32, // 27 or 28
     pub r: u256,
     pub s: u256,
-    pub y_parity: bool // 0 or 1
+}
+
+#[derive(Copy, Drop, Clone, Serde)]
+pub struct RosettanetCall {
+    pub to: EthAddress, // This has to be this account address for multicalls
+    pub nonce: u64,
+    pub max_priority_fee_per_gas: u128,
+    pub max_fee_per_gas: u128,
+    pub gas_limit: u64,
+    pub value: u256, // To be used future
+    pub calldata: Span<felt252>,
+    pub directives: Span<bool>, // We use this directives to figure out u256 splitting happened in element in same index For ex if 3rd element of this array is true, it means 3rd elem is low, 4th elem is high of u256
 }
 
 pub fn parse_transaction(call: RosettanetCall) -> Eip1559Transaction {
     let calldata = call.calldata;
     let directives = call.directives;
 
-    let merged_calldata = merge_u256s(calldata.span(), directives.span());
-    let deserialized_calldata = deserialize_bytes(merged_calldata);
+    let mut merged_calldata = merge_u256s(calldata, directives); // Bunun içinde test yaz
+    let deserialized_calldata = deserialize_u256_span(ref merged_calldata); // TODO: check is correct Loop ile byte ayırmalı 
+    // TODO: u256 span decodesi içi test yaz
 
-    // TODO: fix visibility error
-    Eip1559Transaction {
+    let eip1559 = Eip1559Transaction {
         chain_id: CHAIN_ID,
         nonce: call.nonce,
         max_priority_fee_per_gas: call.max_priority_fee_per_gas,
@@ -57,7 +50,9 @@ pub fn parse_transaction(call: RosettanetCall) -> Eip1559Transaction {
         value: call.value,
         access_list: array![].span(),
         input: deserialized_calldata
-    }
+    };
+
+    eip1559
 }
 
 // Merges u256s coming from calldata according to directives
@@ -89,76 +84,12 @@ pub fn compute_hash(encoded_tx_data: Span<u8>) -> u256 {
     encoded_tx_data.compute_keccak256_hash()
 }
 
-pub fn decode_encoded_eip1559_transaction(ref encoded_tx: Span<u8>) -> Result<RosettanetTransaction, EthTransactionError> {
-    let original_data = encoded_tx;
-    let rlp_decoded_data = RLPTrait::decode(encoded_tx).map_err()?;
-    //if (rlp_decoded_data.len() != 1) {
-        // todo Error
-    //    EthTransactionError::RLPError(RLPError::Custom('not encoded as list'))
-    //}
-
-    let mut rlp_decoded_data = match *rlp_decoded_data.at(0) {
-        RLPItem::String => {
-            return Result::Err(
-                EthTransactionError::RLPError(RLPError::Custom('not encoded as list'))
-            );
-        },
-        RLPItem::List(v) => { v }
-    };
-
-    let boxed_fields = rlp_decoded_data
-            .multi_pop_front::<9>()
-            .ok_or(EthTransactionError::RLPError(RLPError::InputTooShort))?;
-    let [
-        chain_id_encoded,
-        nonce_encoded,
-        max_priority_fee_per_gas_encoded,
-        max_fee_per_gas_encoded,
-        gas_limit_encoded,
-        to_encoded,
-        value_encoded,
-        input_encoded,
-        access_list_encoded
-    ] =
-        (*boxed_fields)
-        .unbox();
-
-    let chain_id = chain_id_encoded.parse_u64_from_string().map_err()?;
-    let nonce = nonce_encoded.parse_u64_from_string().map_err()?;
-    let max_priority_fee_per_gas = max_priority_fee_per_gas_encoded
-        .parse_u128_from_string()
-        .map_err()?;
-    let max_fee_per_gas = max_fee_per_gas_encoded.parse_u128_from_string().map_err()?;
-    let gas_limit = gas_limit_encoded.parse_u64_from_string().map_err()?;
-    let to = to_encoded.try_parse_address_from_string().map_err()?.unwrap();
-    let value = value_encoded.parse_u256_from_string().map_err()?;
-    let input = input_encoded.parse_bytes_from_string().map_err()?;
-    let access_list = access_list_encoded.parse_access_list().map_err()?;
-
-    let hash = compute_hash(original_data);
-
-    let tx = RosettanetTransaction {
-        chain_id,
-        nonce,
-        max_priority_fee_per_gas,
-        max_fee_per_gas,
-        gas_limit,
-        to,
-        value,
-        input,
-        access_list,
-        hash
-    };
-
-    Result::Ok(tx)
-}
-
 
 pub fn is_valid_eth_signature(
     msg_hash: u256, eth_address: EthAddress, signature: RosettanetSignature
 ) -> bool {
     let secp256_signature: Signature = signature_from_vrs(signature.v, signature.r, signature.s);
-    let verified = verify_eth_signature(msg_hash, secp256_signature, eth_address).unwrap();
+    verify_eth_signature(msg_hash, secp256_signature, eth_address); // TODO: how to check and revert?
     true
 }
 

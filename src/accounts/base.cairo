@@ -1,17 +1,6 @@
-pub type EthPublicKey = starknet::secp256k1::Secp256k1Point;
 use starknet::{EthAddress};
+use rosettacontracts::accounts::utils::{RosettanetCall};
 
-#[derive(Drop, Serde)]
-pub struct RosettanetCall {
-    to: EthAddress, // This has to be this account address for multicalls
-    nonce: u64,
-    max_priority_fee_per_gas: u128,
-    max_fee_per_gas: u128,
-    gas_limit: u64,
-    value: u256, // To be used future
-    calldata: Array<felt252>,
-    directives: Array<bool>, // We use this directives to figure out u256 splitting happened in element in same index For ex if 3rd element of this array is true, it means 3rd elem is low, 4th elem is high of u256
-}
 
 #[starknet::interface]
 pub trait IRosettaAccount<TState> {
@@ -21,7 +10,7 @@ pub trait IRosettaAccount<TState> {
     fn supports_interface(self: @TState, interface_id: felt252) -> bool;
     fn __validate_declare__(self: @TState, class_hash: felt252) -> felt252;
     fn __validate_deploy__(
-        self: @TState, class_hash: felt252, contract_address_salt: felt252, eth_public_key: EthPublicKey
+        self: @TState, class_hash: felt252, contract_address_salt: felt252, eth_address: EthAddress
     ) -> felt252;
     fn get_ethereum_address(self: @TState) -> EthAddress;
     // Camel case
@@ -31,17 +20,13 @@ pub trait IRosettaAccount<TState> {
 
 #[starknet::contract(account)]
 pub mod RosettaAccount {
-    use super::{EthPublicKey, RosettanetCall};
     use core::num::traits::Zero;
     use starknet::{
         EthAddress, get_contract_address, get_caller_address, get_tx_info
     };
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
-    use rosettacontracts::accounts::utils::{is_valid_eth_signature, parse_transaction, verify_transaction, RosettanetSignature};
+    use rosettacontracts::accounts::utils::{is_valid_eth_signature, parse_transaction, RosettanetSignature, RosettanetCall};
     use rosettacontracts::accounts::encoding::{rlp_encode_eip1559, calculate_tx_hash};
-    use rosettacontracts::utils::serialization::{deserialize_bytes,compute_y_parity};
-    use rosettacontracts::utils::rlp::{RLPType, RLPTrait, RLPItem, RLPHelpersTrait};
-    use rosettacontracts::utils::transaction::eip1559::{Eip1559, Eip1559Trait};
 
     pub mod Errors {
         pub const INVALID_CALLER: felt252 = 'Rosetta: invalid caller';
@@ -98,7 +83,7 @@ pub mod RosettaAccount {
         fn is_valid_signature(
             self: @ContractState, hash: felt252, signature: Array<felt252>
         ) -> felt252 {
-            if self._is_valid_signature(hash, signature.span()) {
+            if self._is_valid_signature(hash.into(), signature.span()) {
                 starknet::VALIDATED
             } else {
                 0
@@ -117,7 +102,7 @@ pub mod RosettaAccount {
             self: @ContractState,
             class_hash: felt252,
             contract_address_salt: felt252,
-            eth_public_key: EthPublicKey
+            eth_address: EthAddress
         ) -> felt252 {
             // TODO validate deploy
             starknet::VALIDATED
@@ -140,9 +125,6 @@ pub mod RosettaAccount {
 
     #[generate_trait]
     impl InternalImpl of InternalTrait {
-        fn initializer(ref self: ContractState, ethPubKey: EthPublicKey) {
-        }
-
         fn assert_only_self(self: @ContractState) {
             let caller = get_caller_address();
             let self = get_contract_address();
