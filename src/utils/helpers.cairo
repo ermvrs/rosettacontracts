@@ -9,7 +9,7 @@ use core::pedersen::PedersenTrait;
 use core::starknet::{EthAddress, ContractAddress, ClassHash};
 use core::traits::TryInto;
 use crate::utils::constants::{CONTRACT_ADDRESS_PREFIX, MAX_ADDRESS};
-use crate::utils::constants::{POW_2, POW_256_1, POW_256_REV};
+use crate::utils::constants::{POW_2, POW_256_REV};
 use crate::utils::array::{ArrayExtTrait};
 use crate::utils::{U256TryIntoContractAddress, EthAddressIntoU256, BoolIntoNumeric};
 

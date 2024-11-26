@@ -8,7 +8,6 @@ use crate::utils::traits::SpanDefault;
 use crate::errors::{EthTransactionError, RLPError, RLPErrorTrait};
 use crate::utils::bytes::{U8SpanExTrait};
 use starknet::eth_signature::{verify_eth_signature, public_key_point_to_eth_address};
-use core::num::traits::SaturatingSub;
 
 #[derive(Copy, Drop, Serde)]
 pub struct EthSignature {
@@ -130,6 +129,7 @@ pub fn decode_encoded_eip1559_transaction(ref encoded_tx: Span<u8>) -> Result<Ro
 
     Result::Ok(tx)
 }
+
 
 pub fn verify_transaction(tx: RosettanetTransaction, signature: RosettanetSignature) -> bool {
     true
