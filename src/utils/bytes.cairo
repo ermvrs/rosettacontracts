@@ -2,7 +2,7 @@ use core::cmp::min;
 use core::keccak::{cairo_keccak};
 use core::num::traits::{Zero, One, Bounded, BitSize, SaturatingAdd};
 use core::traits::{BitAnd};
-use crate::utils::constants::{POW_2, POW_256_1, POW_256_REV};
+use crate::utils::constants::{POW_256_1};
 use crate::utils::math::{Bitshift};
 use crate::utils::integer::{BytesUsedTrait, ByteSize, U256Trait};
 
@@ -523,6 +523,23 @@ pub impl ByteArrayExt of ByteArrayExTrait {
         let mut output: Array<u8> = Default::default();
         for i in 0..self.len() {
             output.append(self[i]);
+        };
+        output.span()
+    }
+
+    fn into_bytes_without_initial_zeroes(self: ByteArray) -> Span<u8> {
+        let mut output: Array<u8> = Default::default();
+        let mut firstValue = false;
+        for i in 0..self.len() {
+            let val = self[i];
+            if(val == 0 && !firstValue) {
+                continue;
+            }
+            output.append(val);
+            if(!firstValue) {   
+                firstValue = true;  
+                continue;
+            };
         };
         output.span()
     }

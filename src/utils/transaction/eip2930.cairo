@@ -1,8 +1,9 @@
 use core::starknet::EthAddress;
 use crate::errors::{EthTransactionError, RLPError, RLPErrorTrait};
 use crate::utils::transaction::common::TxKind;
-use crate::utils::rlp::{RLPItem, RLPHelpersTrait};
+use alexandria_encoding::rlp::{RLPItem, RLPTrait};
 use crate::utils::traits::SpanDefault;
+use crate::accounts::encoding::{deserialize_bytes, deserialize_bytes_non_zeroes};
 
 
 #[derive(Copy, Drop, Serde, PartialEq, Debug)]
@@ -22,6 +23,20 @@ pub impl AccessListItemImpl of AccessListItemTrait {
         };
 
         storage_keys_arr.span()
+    }
+
+    fn to_rlp_items(self: @AccessListItem) -> RLPItem {
+        let AccessListItem { ethereum_address, mut storage_keys } = *self;
+
+        let mut storage_keys_arr = array![];
+        for storage_key in storage_keys {
+            storage_keys_arr.append(RLPItem::String(deserialize_bytes((*storage_key).try_into().unwrap(), 32)));
+        };
+
+        let addr = RLPItem::String(deserialize_bytes(ethereum_address.into(), 20));
+        let keys = RLPItem::List(storage_keys_arr.span());
+
+        RLPItem::List(array![addr, keys].span())
     }
 }
 
@@ -67,62 +82,4 @@ pub struct TxEip2930 {
     /// data: An unlimited size byte array specifying the
     /// input data of the message call;
     pub input: Span<u8>,
-}
-
-
-#[generate_trait]
-pub impl _impl of TxEip2930Trait {
-    /// Decodes the RLP-encoded fields into a TxEip2930 struct.
-    ///
-    /// # Arguments
-    ///
-    /// * `data` - A span of RLPItems containing the encoded transaction fields
-    ///
-    /// # Returns
-    ///
-    /// A Result containing either the decoded TxEip2930 struct or an EthTransactionError
-    fn decode_fields(ref data: Span<RLPItem>) -> Result<TxEip2930, EthTransactionError> {
-        let boxed_fields = data
-            .multi_pop_front::<8>()
-            .ok_or(EthTransactionError::RLPError(RLPError::InputTooShort))?;
-        let [
-            chain_id_encoded,
-            nonce_encoded,
-            gas_price_encoded,
-            gas_limit_encoded,
-            to_encoded,
-            value_encoded,
-            input_encoded,
-            access_list_encoded
-        ] =
-            (*boxed_fields)
-            .unbox();
-
-        let chain_id = chain_id_encoded.parse_u64_from_string().map_err()?;
-        let nonce = nonce_encoded.parse_u64_from_string().map_err()?;
-        let gas_price = gas_price_encoded.parse_u128_from_string().map_err()?;
-        let gas_limit = gas_limit_encoded.parse_u64_from_string().map_err()?;
-        let to = to_encoded.try_parse_address_from_string().map_err()?;
-        let value = value_encoded.parse_u256_from_string().map_err()?;
-        let input = input_encoded.parse_bytes_from_string().map_err()?;
-        let access_list = access_list_encoded.parse_access_list().map_err()?;
-
-        let txkind_to = match to {
-            Option::Some(to) => { TxKind::Call(to) },
-            Option::None => { TxKind::Create }
-        };
-
-        Result::Ok(
-            TxEip2930 {
-                chain_id: chain_id,
-                nonce,
-                gas_price,
-                gas_limit,
-                input,
-                access_list,
-                to: txkind_to,
-                value,
-            }
-        )
-    }
 }

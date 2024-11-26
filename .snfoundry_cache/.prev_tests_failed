@@ -1,1 +1,2 @@
+rosettacontracts::accounts::encoding::tests::encode_transaction
 rosettacontracts_integrationtest::factory_tests::deploy_check_initials
