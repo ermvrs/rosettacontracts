@@ -2,7 +2,7 @@ use starknet::secp256_trait::{Signature, signature_from_vrs};
 use starknet::{EthAddress};
 use crate::accounts::encoding::{Eip1559Transaction, deserialize_u256_span};
 use crate::utils::traits::SpanDefault;
-use crate::utils::bytes::{U8SpanExTrait};
+use crate::utils::bytes::{U8SpanExTrait, ByteArrayExTrait};
 use starknet::eth_signature::{verify_eth_signature};
 
 pub const CHAIN_ID: u64 = 2933; // TODO: Correct it
@@ -93,10 +93,59 @@ pub fn is_valid_eth_signature(
     true
 }
 
+pub fn calculate_eth_function_signature(func: ByteArray) -> Span<u8> {
+    let func_bytes: Span<u8> = func.into_bytes();
+    let mut ba = Default::default();
+    ba.append_word(func_bytes.compute_keccak256_hash().high.into(), 16);
+    let bytes = ba.into_bytes_without_initial_zeroes();
+    
+    array![*bytes.at(0), *bytes.at(1), *bytes.at(2), *bytes.at(3)].span()
+}
+
 
 #[cfg(test)]
 mod tests {
-    use crate::accounts::utils::{merge_u256s};
+    use crate::accounts::utils::{merge_u256s, calculate_eth_function_signature};
+
+    #[test]
+    fn test_eth_function_signature_transfer() {
+        let signature = calculate_eth_function_signature("transfer(address,uint256)");
+
+        assert_eq!(*signature.at(0), 0xa9);
+        assert_eq!(*signature.at(1), 0x05);
+        assert_eq!(*signature.at(2), 0x9c);
+        assert_eq!(*signature.at(3), 0xbb);
+    }
+
+    #[test]
+    fn test_eth_function_signature_transfer_from() {
+        let signature = calculate_eth_function_signature("transferFrom(address,address,uint256)");
+
+        assert_eq!(*signature.at(0), 0x23);
+        assert_eq!(*signature.at(1), 0xb8);
+        assert_eq!(*signature.at(2), 0x72);
+        assert_eq!(*signature.at(3), 0xdd);
+    }
+
+    #[test]
+    fn test_eth_function_signature_approve() {
+        let signature = calculate_eth_function_signature("approve(address,uint256)");
+
+        assert_eq!(*signature.at(0), 0x09);
+        assert_eq!(*signature.at(1), 0x5e);
+        assert_eq!(*signature.at(2), 0xa7);
+        assert_eq!(*signature.at(3), 0xb3);
+    }
+
+    #[test]
+    fn test_eth_function_signature_total_supply() {
+        let signature = calculate_eth_function_signature("totalSupply()");
+
+        assert_eq!(*signature.at(0), 0x18);
+        assert_eq!(*signature.at(1), 0x16);
+        assert_eq!(*signature.at(2), 0x0d);
+        assert_eq!(*signature.at(3), 0xdd);
+    }
 
     #[test]
     fn test_merge_one() {

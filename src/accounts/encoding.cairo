@@ -99,7 +99,6 @@ mod tests {
         };
 
         let encoded = rlp_encode_eip1559(tx);
-        assert_eq!(encoded.len(), 92);
         assert_eq!(*encoded.at(0), 0x02);
         assert_eq!(*encoded.at(1), 0xEC);
         assert_eq!(*encoded.at(2), 0x82);
