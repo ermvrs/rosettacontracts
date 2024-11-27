@@ -14,6 +14,7 @@ pub trait IRosettanet<TState> {
 pub mod Rosettanet {
     use core::num::traits::Zero;
     use starknet::storage::{Map};
+    use core::poseidon::{poseidon_hash_span};
     use starknet::syscalls::{deploy_syscall};
     use starknet::{ContractAddress, EthAddress, ClassHash};
     use openzeppelin::utils::deployments::{calculate_contract_address_from_deploy_syscall};
@@ -34,7 +35,8 @@ pub mod Rosettanet {
     #[abi(embed_v0)]
     impl Rosettanet of super::IRosettanet<ContractState> {
         fn register_contract(ref self: ContractState, address: ContractAddress) {
-            // TODO calculate keccak or any other hash and take last 160 bits to generate eth address
+            let eth_address = self.generate_eth_address(address);
+            self.update_registry(address, eth_address);
         }
 
         fn deploy_account(ref self: ContractState, eth_address: EthAddress) -> ContractAddress {
@@ -84,8 +86,12 @@ pub mod Rosettanet {
         }
 
         // Default function for registering existing starknet contract
-        fn generate_eth_address(self: @ContractState, sn_address: ContractAddress) {
+        fn generate_eth_address(self: @ContractState, sn_address: ContractAddress) -> EthAddress {
+            let sn_hash = poseidon_hash_span(array![sn_address.into()].span());
 
+            let (_, eth_address) = DivRem::div_rem(Into::<felt252, u256>::into(sn_hash), 0x10000000000000000000000000000000000000000_u256.try_into().unwrap());
+
+            eth_address.try_into().unwrap()
         }
     }
 }
