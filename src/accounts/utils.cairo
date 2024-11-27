@@ -30,6 +30,7 @@ pub struct RosettanetCall {
     pub value: u256, // To be used future
     pub calldata: Span<felt252>,
     pub directives: Span<bool>, // We use this directives to figure out u256 splitting happened in element in same index For ex if 3rd element of this array is true, it means 3rd elem is low, 4th elem is high of u256
+    pub target_function: Span<felt252> // Function name and types to used to calculate eth func signature
 }
 
 pub fn parse_transaction(call: RosettanetCall) -> Eip1559Transaction {

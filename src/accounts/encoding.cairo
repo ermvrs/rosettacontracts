@@ -53,6 +53,24 @@ pub fn calculate_tx_hash(encoded_tx: Span<u8>) -> u256 {
     encoded_tx.compute_keccak256_hash()
 }
 
+// Pass less than 252 bits here
+pub fn bytes_from_felts(ref data: Span<felt252>) -> Span<u8> {
+    let mut ba: core::byte_array::ByteArray = Default::default();
+    loop {
+        match data.pop_front() {
+            Option::None => { break; },
+            Option::Some(val) => {
+                let mut bar = Default::default();
+                bar.append_word(*val, 31);
+                let mut non_zeroes = bar.into_bytes_without_initial_zeroes();
+                ba.append(@ByteArrayExTrait::from_bytes(non_zeroes));
+            }
+        };
+    };
+
+    ba.into_bytes_without_initial_zeroes()
+}
+
 pub fn deserialize_bytes(value: felt252, len: usize) -> Span<u8> {
     let mut ba = Default::default();
     ba.append_word(value, len);
@@ -83,7 +101,47 @@ pub fn deserialize_bytes_non_zeroes(value: felt252, len: usize) -> Span<u8> {
 
 #[cfg(test)]
 mod tests {
-    use crate::accounts::encoding::{Eip1559Transaction, rlp_encode_eip1559, deserialize_bytes_non_zeroes};
+    use crate::accounts::encoding::{Eip1559Transaction, rlp_encode_eip1559, deserialize_bytes_non_zeroes, bytes_from_felts};
+
+    #[test]
+    fn test_byte_array_from_felts() {
+        let mut arr = array![0x7837, 0x1234].span();
+
+        let ba = bytes_from_felts(ref arr);
+
+        assert_eq!(*ba.at(0), 0x78);
+        assert_eq!(*ba.at(1), 0x37);
+        assert_eq!(*ba.at(2), 0x12);
+        assert_eq!(*ba.at(3), 0x34);
+    }
+
+    #[test]
+    fn test_byte_array_from_felts_long() {
+        // ASCII of transfer(address,uint256)
+        let mut arr = array![0x7472616E7366657228616464726573732C75696E7432353629].span();
+
+        let ba = bytes_from_felts(ref arr);
+
+        assert_eq!(*ba.at(0), 0x74);
+        assert_eq!(*ba.at(1), 0x72);
+        assert_eq!(*ba.at(2), 0x61);
+        assert_eq!(*ba.at(3), 0x6E);
+    }
+    
+
+    #[test]
+    fn test_byte_array_from_felts_long_two() {
+        // ASCII of transferFrom(address,address,uint256)
+        let mut arr = array![0x7472616E7366657246726F6D28616464726573732C616464726573732C, 0x75696E7432353629].span();
+
+        let ba = bytes_from_felts(ref arr);
+
+        assert_eq!(*ba.at(0), 0x74);
+        assert_eq!(*ba.at(1), 0x72);
+        assert_eq!(*ba.at(29), 0x75);
+        assert_eq!(*ba.at(30), 0x69);
+    }
+
     #[test]
     fn encode_transaction() {
         let tx = Eip1559Transaction {
