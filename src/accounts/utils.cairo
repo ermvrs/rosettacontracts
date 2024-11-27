@@ -94,10 +94,20 @@ pub fn is_valid_eth_signature(
     true
 }
 
-pub fn calculate_eth_function_signature(func: ByteArray) -> Span<u8> {
-    let func_bytes: Span<u8> = func.into_bytes();
+// Verifies target function from calldata
+pub fn verify_target_function(target_function: Array<felt252>, calldata: Span<felt252>) {
+    let function_signature = *calldata.at(0);
+    assert(function_signature.into() <= 0xFFFFFFFF_u256, 'Calldata first param high');
+    // TODO: Complete this function
+    // It has to check that target function and calldata first param matches by generating
+    // signature from target_function and checks
+    // After than calculate starknet selector by target functions only function name
+    // it can be calcualted with keccak of bytes from 0x28 ( value
+}
+
+pub fn calculate_eth_function_signature(func: Span<u8>) -> Span<u8> {
     let mut ba = Default::default();
-    ba.append_word(func_bytes.compute_keccak256_hash().high.into(), 16);
+    ba.append_word(func.compute_keccak256_hash().high.into(), 16);
     let bytes = ba.into_bytes_without_initial_zeroes();
     
     array![*bytes.at(0), *bytes.at(1), *bytes.at(2), *bytes.at(3)].span()
@@ -107,10 +117,12 @@ pub fn calculate_eth_function_signature(func: ByteArray) -> Span<u8> {
 #[cfg(test)]
 mod tests {
     use crate::accounts::utils::{merge_u256s, calculate_eth_function_signature};
+    use crate::utils::bytes::{ByteArrayExTrait};
 
     #[test]
     fn test_eth_function_signature_transfer() {
-        let signature = calculate_eth_function_signature("transfer(address,uint256)");
+        let bytes = "transfer(address,uint256)".into_bytes_without_initial_zeroes();
+        let signature = calculate_eth_function_signature(bytes);
 
         assert_eq!(*signature.at(0), 0xa9);
         assert_eq!(*signature.at(1), 0x05);
@@ -120,7 +132,8 @@ mod tests {
 
     #[test]
     fn test_eth_function_signature_transfer_from() {
-        let signature = calculate_eth_function_signature("transferFrom(address,address,uint256)");
+        let bytes = "transferFrom(address,address,uint256)".into_bytes_without_initial_zeroes();
+        let signature = calculate_eth_function_signature(bytes);
 
         assert_eq!(*signature.at(0), 0x23);
         assert_eq!(*signature.at(1), 0xb8);
@@ -130,7 +143,8 @@ mod tests {
 
     #[test]
     fn test_eth_function_signature_approve() {
-        let signature = calculate_eth_function_signature("approve(address,uint256)");
+        let bytes = "approve(address,uint256)".into_bytes_without_initial_zeroes();
+        let signature = calculate_eth_function_signature(bytes);
 
         assert_eq!(*signature.at(0), 0x09);
         assert_eq!(*signature.at(1), 0x5e);
@@ -140,7 +154,8 @@ mod tests {
 
     #[test]
     fn test_eth_function_signature_total_supply() {
-        let signature = calculate_eth_function_signature("totalSupply()");
+        let bytes = "totalSupply()".into_bytes_without_initial_zeroes();
+        let signature = calculate_eth_function_signature(bytes);
 
         assert_eq!(*signature.at(0), 0x18);
         assert_eq!(*signature.at(1), 0x16);
