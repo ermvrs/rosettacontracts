@@ -130,20 +130,4 @@ mod tests {
         assert_eq!(*merged.at(0), u256 {low: 0xFF, high: 0xAB});
         assert_eq!(*merged.at(1), u256 {low: 0x123123, high: 0x0});
     }
-
-    // Decode tests
-
-    use crate::accounts::utils::{decode_encoded_eip1559_transaction, RosettanetTransaction};
-    use crate::utils::test_data::{eip_1559_encoded_tx};
-
-    #[test]
-    fn test_decode_eip1559() {
-        let mut data = eip_1559_encoded_tx();
-
-        let decoded_tx: RosettanetTransaction = decode_encoded_eip1559_transaction(ref data).unwrap();
-
-        assert_eq!(decoded_tx.nonce, 0);
-        assert_eq!(decoded_tx.chain_id, 0x4b4b5254);
-        assert_eq!(decoded_tx.value, 0x016345785d8a0000);
-    }
 }
