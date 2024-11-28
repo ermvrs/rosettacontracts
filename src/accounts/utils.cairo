@@ -1,6 +1,6 @@
 use starknet::secp256_trait::{Signature, signature_from_vrs};
 use starknet::{EthAddress};
-use crate::accounts::encoding::{Eip1559Transaction, deserialize_u256_span};
+use crate::accounts::encoding::{Eip1559Transaction, deserialize_u256_span, deserialize_bytes_non_zeroes, bytes_from_felts};
 use crate::utils::traits::SpanDefault;
 use crate::utils::bytes::{U8SpanExTrait, ByteArrayExTrait};
 use starknet::eth_signature::{verify_eth_signature};
@@ -95,15 +95,48 @@ pub fn is_valid_eth_signature(
 }
 
 // Verifies target function from calldata
-pub fn verify_target_function(target_function: Array<felt252>, calldata: Span<felt252>) {
+// target_function is array of felts that holds ascii of function name and params
+pub fn verify_target_function(ref target_function: Span<felt252>, calldata: Span<felt252>) {
     let function_signature = *calldata.at(0);
     assert(function_signature.into() <= 0xFFFFFFFF_u256, 'Calldata first param high');
+
     // TODO: Complete this function
     // It has to check that target function and calldata first param matches by generating
     // signature from target_function and checks
     // After than calculate starknet selector by target functions only function name
     // it can be calcualted with keccak of bytes from 0x28 ( value
 }
+
+// Returns only function name from ethereum function selector
+// transfer(address,uint256) -> transfer
+fn parse_function_name(ref func: Span<u8>) -> Span<u8> {
+    let mut name = array![];
+
+    loop {
+        match func.pop_front() {
+            Option::None => { break; },
+            Option::Some(val) => {
+                if(*val == 0x28) {
+                    break;
+                }
+                name.append(*val);
+            }
+        };
+    };
+
+    name.span()
+}
+
+// Returns function signature 
+// Pass array of felts containing ascii of function name
+// Check parse_function_name tests for examples
+fn eth_function_signature_from_felts(func: Span<felt252>) -> Span<u8> {
+    let mut func_clone = func;
+    let bytes = bytes_from_felts(ref func_clone);
+
+    calculate_eth_function_signature(bytes)
+}
+
 
 pub fn calculate_eth_function_signature(func: Span<u8>) -> Span<u8> {
     let mut ba = Default::default();
@@ -116,8 +149,73 @@ pub fn calculate_eth_function_signature(func: Span<u8>) -> Span<u8> {
 
 #[cfg(test)]
 mod tests {
-    use crate::accounts::utils::{merge_u256s, calculate_eth_function_signature};
+    use crate::accounts::utils::{merge_u256s, calculate_eth_function_signature, parse_function_name, eth_function_signature_from_felts};
+    use crate::accounts::encoding::{bytes_from_felts};
     use crate::utils::bytes::{ByteArrayExTrait};
+
+    #[test]
+    fn test_eth_fn_signature() {
+        // transfer
+        let mut fn_name_arr = array![0x7472616E7366657228616464726573732C75696E7432353629].span();
+        let signature = eth_function_signature_from_felts(fn_name_arr);
+
+        assert_eq!(*signature.at(0), 0xa9);
+        assert_eq!(*signature.at(1), 0x05);
+        assert_eq!(*signature.at(2), 0x9c);
+        assert_eq!(*signature.at(3), 0xbb);
+    }
+
+    #[test]
+    fn test_eth_fn_signature_long() {
+        // transferFrom
+        let mut fn_name_arr = array![0x7472616E7366657246726F6D28616464726573732C616464726573732C, 0x75696E7432353629].span();
+        let signature = eth_function_signature_from_felts(fn_name_arr);
+
+        assert_eq!(*signature.at(0), 0x23);
+        assert_eq!(*signature.at(1), 0xb8);
+        assert_eq!(*signature.at(2), 0x72);
+        assert_eq!(*signature.at(3), 0xdd);
+    }
+
+    #[test]
+    fn test_parse_function_name() {
+        // transfer
+        let mut fn_name_arr = array![0x7472616E7366657228616464726573732C75696E7432353629].span();
+        let mut function_name = bytes_from_felts(ref fn_name_arr);
+
+        let val = parse_function_name(ref function_name);
+        assert_eq!(val.len(), 8);
+        assert_eq!(*val.at(0), 0x74);
+        assert_eq!(*val.at(1), 0x72);
+        assert_eq!(*val.at(2), 0x61);
+        assert_eq!(*val.at(3), 0x6E);
+        assert_eq!(*val.at(4), 0x73);
+        assert_eq!(*val.at(5), 0x66);
+        assert_eq!(*val.at(6), 0x65);
+        assert_eq!(*val.at(7), 0x72);
+    }
+
+    #[test]
+    fn test_parse_function_name_long() {
+        // transferFrom
+        let mut arr = array![0x7472616E7366657246726F6D28616464726573732C616464726573732C, 0x75696E7432353629].span();
+        let mut function_name = bytes_from_felts(ref arr);
+
+        let val = parse_function_name(ref function_name);
+        assert_eq!(val.len(), 12);
+        assert_eq!(*val.at(0), 0x74);
+        assert_eq!(*val.at(1), 0x72);
+        assert_eq!(*val.at(2), 0x61);
+        assert_eq!(*val.at(3), 0x6E);
+        assert_eq!(*val.at(4), 0x73);
+        assert_eq!(*val.at(5), 0x66);
+        assert_eq!(*val.at(6), 0x65);
+        assert_eq!(*val.at(7), 0x72);
+        assert_eq!(*val.at(8), 0x46);
+        assert_eq!(*val.at(9), 0x72);
+        assert_eq!(*val.at(10), 0x6F);
+        assert_eq!(*val.at(11), 0x6D);
+    }
 
     #[test]
     fn test_eth_function_signature_transfer() {

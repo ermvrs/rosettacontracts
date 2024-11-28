@@ -77,14 +77,43 @@ pub fn deserialize_bytes(value: felt252, len: usize) -> Span<u8> {
     ba.into_bytes()
 }
 
+pub fn deserialize_u256(value: u256) -> Span<u8> {
+    // Bu fonksiyonu tamamla
+    let mut ba: core::byte_array::ByteArray = Default::default();
+
+    if(value.high > 0_u128) {
+        let low_bytes = deserialize_bytes(value.low.into(), 16);
+        let high_bytes = deserialize_bytes_non_zeroes(value.high.into(), 16);
+        ba.append(@ByteArrayExTrait::from_bytes(low_bytes));
+        ba.append(@ByteArrayExTrait::from_bytes(high_bytes));
+    } else {
+        let low_bytes = deserialize_bytes_non_zeroes(value.low.into(), 16);
+        ba.append(@ByteArrayExTrait::from_bytes(low_bytes));
+    }
+    ba.into_bytes_without_initial_zeroes()
+}
+
 pub fn deserialize_u256_span(ref value: Span<u256>) -> Span<u8> {
+    // Write tests and fix
+    // Bu fonksiyon duzgun calismiyor
     let mut ba = Default::default();
     loop {
         match value.pop_front() {
             Option::None => { break; },
             Option::Some(val) => {
-                let mut inner_ba = Default::default();
-                inner_ba.append_word((*val).try_into().unwrap(), 32); // 32 or 16 ? U256 span is merged u256s according to directives
+                let mut inner_ba: core::byte_array::ByteArray = Default::default();
+                // high ve lowu ayri ayri al zerolari silip birlestir
+
+                if(*val.high > 0_u128) {
+                    let low_bytes = deserialize_bytes((*val).low.into(), 16);
+                    let high_bytes = deserialize_bytes_non_zeroes((*val).high.into(), 16);
+                    inner_ba.append(@ByteArrayExTrait::from_bytes(low_bytes));
+                    inner_ba.append(@ByteArrayExTrait::from_bytes(high_bytes));
+                } else {
+                    let low_bytes = deserialize_bytes_non_zeroes((*val).low.into(), 16);
+                    inner_ba.append(@ByteArrayExTrait::from_bytes(low_bytes));
+                }
+                
                 ByteArrayTrait::append(ref ba, @inner_ba);
             }
         };
