@@ -105,6 +105,7 @@ pub mod RosettaAccount {
             eth_address: EthAddress
         ) -> felt252 {
             // TODO validate deploy
+            assert(contract_address_salt == eth_address.into(), 'Salt and param mismatch');
             starknet::VALIDATED
         }
 

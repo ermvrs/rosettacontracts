@@ -1,6 +1,6 @@
 use starknet::secp256_trait::{Signature, signature_from_vrs};
 use starknet::{EthAddress};
-use crate::accounts::encoding::{Eip1559Transaction, deserialize_u256_span, deserialize_bytes_non_zeroes, bytes_from_felts};
+use crate::accounts::encoding::{Eip1559Transaction, deserialize_bytes, deserialize_u256_span, bytes_from_felts};
 use crate::utils::traits::SpanDefault;
 use crate::utils::bytes::{U8SpanExTrait, ByteArrayExTrait};
 use starknet::eth_signature::{verify_eth_signature};
@@ -94,17 +94,27 @@ pub fn is_valid_eth_signature(
     true
 }
 
-// Verifies target function from calldata
+// Validates target function is correct and returns sn selector
 // target_function is array of felts that holds ascii of function name and params
-pub fn verify_target_function(ref target_function: Span<felt252>, calldata: Span<felt252>) {
+pub fn validate_target_function(target_function: Span<felt252>, calldata: Span<felt252>) -> felt252 {
     let function_signature = *calldata.at(0);
     assert(function_signature.into() <= 0xFFFFFFFF_u256, 'Calldata first param high');
 
-    // TODO: Complete this function
-    // It has to check that target function and calldata first param matches by generating
-    // signature from target_function and checks
-    // After than calculate starknet selector by target functions only function name
-    // it can be calcualted with keccak of bytes from 0x28 ( value
+    let target_function_eth_signature = eth_function_signature_from_felts(target_function);
+    let function_signature_bytes = deserialize_bytes(function_signature, 4);
+
+    assert(target_function_eth_signature == function_signature_bytes, 'calldata target mismatch');
+    0 // Todo
+}
+
+// func: ascii function name selector transfer(address,uint256)
+// returns sn entrypoint
+fn calculate_sn_entrypoint(func: Span<u8>) -> felt252 {
+    let mut func_clone = func;
+    let func_name = parse_function_name(ref func_clone);
+
+    let keccak_hash: u256 = func_name.compute_keccak256_hash(); // full name
+    0 // TODO
 }
 
 // Returns only function name from ethereum function selector
