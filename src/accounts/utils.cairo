@@ -105,12 +105,16 @@ pub fn validate_target_function(target_function: Span<felt252>, calldata: Span<f
     let function_signature_bytes = deserialize_bytes(function_signature, 4);
 
     assert(target_function_eth_signature == function_signature_bytes, 'calldata target mismatch');
-    0 // Todo
+    let mut target_function_mut = target_function;
+    let target_function_bytes = bytes_from_felts(ref target_function_mut);
+
+    let sn_entrypoint: felt252 = calculate_sn_entrypoint(target_function_bytes);
+    sn_entrypoint
 }
 
 // func: ascii function name selector transfer(address,uint256)
 // returns sn entrypoint
-pub fn calculate_sn_entrypoint(func: Span<u8>) -> felt252 {
+fn calculate_sn_entrypoint(func: Span<u8>) -> felt252 {
     let mut func_clone = func;
     let func_name = parse_function_name(ref func_clone);
 
@@ -163,9 +167,28 @@ pub fn calculate_eth_function_signature(func: Span<u8>) -> Span<u8> {
 
 #[cfg(test)]
 mod tests {
-    use crate::accounts::utils::{merge_u256s, calculate_eth_function_signature, parse_function_name, eth_function_signature_from_felts, calculate_sn_entrypoint};
+    use crate::accounts::utils::{merge_u256s, calculate_eth_function_signature, parse_function_name, eth_function_signature_from_felts, calculate_sn_entrypoint, validate_target_function};
     use crate::accounts::encoding::{bytes_from_felts};
     use crate::utils::bytes::{ByteArrayExTrait};
+
+    #[test]
+    fn test_validate_target_function_correct() {
+        let calldata = array![0xa9059cbb].span(); // transfer(address,uint256)
+        let target_function = array![0x7472616E7366657228616464726573732C75696E7432353629].span();
+
+        let sn_entrypoint = validate_target_function(target_function, calldata);
+        assert_eq!(sn_entrypoint, 0x83afd3f4caedc6eebf44246fe54e38c95e3179a5ec9ea81740eca5b482d12e);
+    }
+
+    #[test]
+    #[should_panic(expected: 'calldata target mismatch')]
+    fn test_validate_target_function_wrong() {
+        let calldata = array![0xa9059cbb].span(); // transfer(address,uint256)
+        let target_function = array![0x7472616E7366657246726F6D28616464726573732C616464726573732C, 0x75696E7432353629].span(); // transferFrom
+
+        let sn_entrypoint = validate_target_function(target_function, calldata);
+        assert_eq!(sn_entrypoint, 0x83afd3f4caedc6eebf44246fe54e38c95e3179a5ec9ea81740eca5b482d12e);
+    }
 
     #[test]
     fn test_sn_entrypoint() {
