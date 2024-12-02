@@ -1,6 +1,7 @@
 use starknet::secp256_trait::{Signature, signature_from_vrs};
 use starknet::{EthAddress};
 use crate::accounts::encoding::{Eip1559Transaction, deserialize_bytes, deserialize_u256_span, bytes_from_felts};
+use crate::utils::constants::{POW_2_250};
 use crate::utils::traits::SpanDefault;
 use crate::utils::bytes::{U8SpanExTrait, ByteArrayExTrait};
 use starknet::eth_signature::{verify_eth_signature};
@@ -109,12 +110,15 @@ pub fn validate_target_function(target_function: Span<felt252>, calldata: Span<f
 
 // func: ascii function name selector transfer(address,uint256)
 // returns sn entrypoint
-fn calculate_sn_entrypoint(func: Span<u8>) -> felt252 {
+pub fn calculate_sn_entrypoint(func: Span<u8>) -> felt252 {
     let mut func_clone = func;
     let func_name = parse_function_name(ref func_clone);
 
     let keccak_hash: u256 = func_name.compute_keccak256_hash(); // full name
-    0 // TODO
+
+    let (_, sn_keccak) =  DivRem::div_rem(keccak_hash, POW_2_250.try_into().unwrap());
+
+    sn_keccak.try_into().unwrap()
 }
 
 // Returns only function name from ethereum function selector
@@ -159,9 +163,19 @@ pub fn calculate_eth_function_signature(func: Span<u8>) -> Span<u8> {
 
 #[cfg(test)]
 mod tests {
-    use crate::accounts::utils::{merge_u256s, calculate_eth_function_signature, parse_function_name, eth_function_signature_from_felts};
+    use crate::accounts::utils::{merge_u256s, calculate_eth_function_signature, parse_function_name, eth_function_signature_from_felts, calculate_sn_entrypoint};
     use crate::accounts::encoding::{bytes_from_felts};
     use crate::utils::bytes::{ByteArrayExTrait};
+
+    #[test]
+    fn test_sn_entrypoint() {
+        // transfer(address, uint256)
+        let mut fn_name_arr = array![0x7472616E7366657228616464726573732C75696E7432353629].span();
+        let mut function_name = bytes_from_felts(ref fn_name_arr);
+
+        let entry_point:felt252 = calculate_sn_entrypoint(function_name);
+        assert_eq!(entry_point, 0x83afd3f4caedc6eebf44246fe54e38c95e3179a5ec9ea81740eca5b482d12e);
+    }
 
     #[test]
     fn test_eth_fn_signature() {
