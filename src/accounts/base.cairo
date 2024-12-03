@@ -71,7 +71,9 @@ pub mod RosettaAccount {
             let mut calldata = call.calldata;
             let _ = calldata.pop_front(); // Remove first element, it is function selector
 
-            let result: Span<felt252> = call_contract_syscall(sn_target, entrypoint, calldata).unwrap();
+            let address_updated_calldata = self.update_addresses(calldata, call.directives); // This function security concerns me
+
+            let result: Span<felt252> = call_contract_syscall(sn_target, entrypoint, address_updated_calldata).unwrap();
             // self.nonce.write(self.nonce.read() + 1); // Problem here ???
             array![result]
         }
@@ -188,6 +190,27 @@ pub mod RosettaAccount {
             let eth_address: EthAddress = self.ethereum_address.read();
 
             is_valid_eth_signature(hash, eth_address, rosettanet_signature)
+        }
+
+        // TODO: write tests
+        fn update_addresses(self: @ContractState, calldata: Span<felt252>, directives: Span<u8>) -> Span<felt252> {
+            assert(calldata.len() == directives.len(), 'R-AB-1 sanity fails');
+            let mut updated_array = ArrayTrait::<felt252>::new();
+            let mut index = 0;
+
+            while index < calldata.len() {
+                let current_directive: u8 = *directives.at(index);
+                if(current_directive == 2_u8) {
+                    let eth_address: EthAddress = (*calldata.at(index)).try_into().unwrap();
+                    let sn_address = IRosettanetDispatcher{contract_address: self.registry.read()}.get_starknet_address(eth_address);
+                    updated_array.append(sn_address.into());
+                } else {
+                    updated_array.append(*calldata.at(index));
+                }
+                index +=1;
+            };
+
+            updated_array.span()
         }
     }
 }
