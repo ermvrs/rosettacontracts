@@ -49,9 +49,7 @@ pub mod RosettaAccount {
     fn constructor(ref self: ContractState, eth_address: EthAddress, registry: ContractAddress) {
         self.ethereum_address.write(eth_address);
         self.registry.write(registry);
-        // TODO: verify on deploy that address is correct
     }
-    // TODO: Raw transaction tx.signature da, __execute__ parametresindede bit locationlar mı olacak??
     #[abi(embed_v0)]
     impl AccountImpl of super::IRosettaAccount<ContractState> {
         // Instead of Array<Call> we use Array<felt252> since we pass different values to the
