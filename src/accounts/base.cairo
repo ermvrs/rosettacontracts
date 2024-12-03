@@ -1,4 +1,4 @@
-use starknet::{EthAddress};
+use starknet::{EthAddress, ContractAddress};
 use rosettacontracts::accounts::utils::{RosettanetCall};
 
 
@@ -10,7 +10,8 @@ pub trait IRosettaAccount<TState> {
     fn supports_interface(self: @TState, interface_id: felt252) -> bool;
     fn __validate_declare__(self: @TState, class_hash: felt252) -> felt252;
     fn __validate_deploy__(
-        self: @TState, class_hash: felt252, contract_address_salt: felt252, eth_address: EthAddress
+        self: @TState, class_hash: felt252, contract_address_salt: felt252, eth_address: EthAddress,
+        registry: ContractAddress
     ) -> felt252;
     fn get_ethereum_address(self: @TState) -> EthAddress;
     // Camel case
@@ -22,11 +23,13 @@ pub trait IRosettaAccount<TState> {
 pub mod RosettaAccount {
     use core::num::traits::Zero;
     use starknet::{
-        EthAddress, get_contract_address, get_caller_address, get_tx_info
+        ContractAddress, EthAddress, get_contract_address, get_caller_address, get_tx_info
     };
+    use starknet::syscalls::{call_contract_syscall};
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
-    use rosettacontracts::accounts::utils::{is_valid_eth_signature, parse_transaction, RosettanetSignature, RosettanetCall, validate_target_function};
-    use rosettacontracts::accounts::encoding::{rlp_encode_eip1559, calculate_tx_hash};
+    use rosettacontracts::accounts::utils::{is_valid_eth_signature, RosettanetSignature, RosettanetCall, validate_target_function, generate_tx_hash};
+    use crate::rosettanet::{IRosettanetDispatcher, IRosettanetDispatcherTrait};
+    use openzeppelin::utils::deployments::{calculate_contract_address_from_deploy_syscall};
 
     pub mod Errors {
         pub const INVALID_CALLER: felt252 = 'Rosetta: invalid caller';
@@ -38,12 +41,14 @@ pub mod RosettaAccount {
     #[storage]
     struct Storage {
         ethereum_address: EthAddress,
-        nonce: u64
+        nonce: u64,
+        registry: ContractAddress
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState, eth_address: EthAddress) {
+    fn constructor(ref self: ContractState, eth_address: EthAddress, registry: ContractAddress) {
         self.ethereum_address.write(eth_address);
+        self.registry.write(registry);
         // TODO: verify on deploy that address is correct
     }
     // TODO: Raw transaction tx.signature da, __execute__ parametresindede bit locationlar mı olacak??
@@ -56,20 +61,19 @@ pub mod RosettaAccount {
         fn __execute__(self: @ContractState, call: RosettanetCall) -> Array<Span<felt252>> {
             let sender = get_caller_address();
             assert(sender.is_zero(), Errors::INVALID_CALLER);
-            // TODO: Check tx version
 
-            // TODO: Exec call
+            let eth_target: EthAddress = call.to;
+            let sn_target: ContractAddress = IRosettanetDispatcher { contract_address: self.registry.read() }.get_starknet_address(eth_target);
+            assert(sn_target != starknet::contract_address_const::<0>(), 'target not registered');
 
-            // We don't use Call type
-            // Instead we pass raw transaction properties in each different felt. And v,r,s on signature
-            // So we verify that transaction is signed by correct address from generating
-            // Transaction again.
-            // There is no need to use Call struct here because all calldata will be passed as array of felts.
+            let entrypoint = validate_target_function(call.target_function, call.calldata);
+            // If its native transfer do not handle calldata
+            let mut calldata = call.calldata;
+            calldata.pop_front(); // Remove first element, it is function selector
 
-            // 1) Check if array length is higher than minimum
-            // Order: ChainId, nonce, maxPriorityFeePerGas, maxFeePerGas, gas, to, value, data (Array)
-            
-            array![array!['todo'].span()]
+            let result: Span<felt252> = call_contract_syscall(sn_target, entrypoint, calldata).unwrap();
+            // self.nonce.write(self.nonce.read() + 1); // Problem here ???
+            array![result]
         }
 
         fn __validate__(self: @ContractState, call: RosettanetCall) -> felt252 {
@@ -102,10 +106,19 @@ pub mod RosettaAccount {
             self: @ContractState,
             class_hash: felt252,
             contract_address_salt: felt252,
-            eth_address: EthAddress
+            eth_address: EthAddress,
+            registry: ContractAddress
         ) -> felt252 {
-            // TODO validate deploy
             assert(contract_address_salt == eth_address.into(), 'Salt and param mismatch');
+            assert(registry != starknet::contract_address_const::<0>(), 'registry zero');
+            let address = calculate_contract_address_from_deploy_syscall(
+                eth_address.into(),
+                class_hash.try_into().unwrap(),
+                array![eth_address.into(), registry.into()].span(),
+                0.try_into().unwrap()
+            );
+
+            assert(address == get_contract_address(), 'deployed address wrong');
             starknet::VALIDATED
         }
 
@@ -141,8 +154,7 @@ pub mod RosettaAccount {
             let _ = validate_target_function(call.target_function, call.calldata);
 
             // Validate transaction signature
-            let parsed_txn = parse_transaction(call); // TODO burda eksikler var
-            let expected_hash = calculate_tx_hash(rlp_encode_eip1559(parsed_txn));
+            let expected_hash = generate_tx_hash(call);
 
             let signature = tx_info.signature; // Signature includes v,r,s
             assert(self._is_valid_signature(expected_hash, signature), Errors::INVALID_SIGNATURE);
