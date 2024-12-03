@@ -16,7 +16,7 @@ pub mod Rosettanet {
     use starknet::storage::{Map};
     use core::poseidon::{poseidon_hash_span};
     use starknet::syscalls::{deploy_syscall};
-    use starknet::{ContractAddress, EthAddress, ClassHash};
+    use starknet::{ContractAddress, EthAddress, ClassHash, get_contract_address};
     use openzeppelin::utils::deployments::{calculate_contract_address_from_deploy_syscall};
 
     #[storage]
@@ -43,8 +43,8 @@ pub mod Rosettanet {
             let eth_address_felt: felt252 = eth_address.into();
 
             let (account, _) = deploy_syscall(
-                self.account_class.read(), eth_address_felt, array![eth_address_felt].span(), true
-            )
+                self.account_class.read(), eth_address_felt, array![eth_address_felt, get_contract_address().into()].span(), true
+            ) // TODO Update contstructor params
                 .unwrap();
 
             self.update_registry(account, eth_address);
@@ -65,9 +65,9 @@ pub mod Rosettanet {
             calculate_contract_address_from_deploy_syscall(
                 eth_address_felt,
                 self.account_class.read(),
-                array![eth_address_felt].span(),
+                array![eth_address_felt, get_contract_address().into()].span(),
                 0.try_into().unwrap()
-            )
+            )// TODO Update contstructor params
         }
 
         fn account_class(self: @ContractState) -> ClassHash {

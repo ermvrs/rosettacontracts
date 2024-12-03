@@ -1,6 +1,6 @@
 use starknet::secp256_trait::{Signature, signature_from_vrs};
 use starknet::{EthAddress};
-use crate::accounts::encoding::{Eip1559Transaction, deserialize_bytes, deserialize_u256_span, bytes_from_felts};
+use crate::accounts::encoding::{Eip1559Transaction, deserialize_bytes, deserialize_u256_span, bytes_from_felts, calculate_tx_hash, rlp_encode_eip1559};
 use crate::utils::constants::{POW_2_250};
 use crate::utils::traits::SpanDefault;
 use crate::utils::bytes::{U8SpanExTrait, ByteArrayExTrait};
@@ -32,6 +32,11 @@ pub struct RosettanetCall {
     pub calldata: Span<felt252>, // Calldata len must be +1 directive len
     pub directives: Span<bool>, // We use this directives to figure out u256 splitting happened in element in same index For ex if 3rd element of this array is true, it means 3rd elem is low, 4th elem is high of u256
     pub target_function: Span<felt252> // Function name and types to used to calculate eth func signature
+}
+
+pub fn generate_tx_hash(call: RosettanetCall) -> u256 {
+    let parsed_txn = parse_transaction(call);
+    calculate_tx_hash(rlp_encode_eip1559(parsed_txn))
 }
 
 pub fn parse_transaction(call: RosettanetCall) -> Eip1559Transaction {
@@ -206,7 +211,7 @@ mod tests {
         let calldata = array![0x23b872dd, 0x123123, 0x456456, 0x0, 0x666].span(); // transferFrom(0x123123,0x456456, u256 {0,0x666})
         let directives = array![false, false, true, false].span(); // Directive length must be -1 bcs first is selector
         let target_function = array![0x7472616E7366657246726F6D28616464726573732C616464726573732C, 0x75696E7432353629].span(); // transferFrom
-        
+
         let call = RosettanetCall {
             to: 1.try_into().unwrap(),
             nonce: 1,
