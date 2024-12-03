@@ -38,6 +38,7 @@ pub fn parse_transaction(call: RosettanetCall) -> Eip1559Transaction {
     let calldata = call.calldata;
     let directives = call.directives;
 
+    // TODO: deserialize yapmadan once calldatadaki function signature u cikart
     let mut merged_calldata = merge_u256s(calldata, directives); // Bunun içinde test yaz
     let deserialized_calldata = deserialize_u256_span(ref merged_calldata); // TODO: check is correct Loop ile byte ayırmalı 
     // TODO: u256 span decodesi içi test yaz

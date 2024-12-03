@@ -141,7 +141,7 @@ pub mod RosettaAccount {
             let _ = validate_target_function(call.target_function, call.calldata);
 
             // Validate transaction signature
-            let parsed_txn = parse_transaction(call);
+            let parsed_txn = parse_transaction(call); // TODO burda eksikler var
             let expected_hash = calculate_tx_hash(rlp_encode_eip1559(parsed_txn));
 
             let signature = tx_info.signature; // Signature includes v,r,s
