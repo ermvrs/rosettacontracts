@@ -24,7 +24,7 @@ pub fn rlp_encode_eip1559(tx: Eip1559Transaction) -> Span<u8> {
     let max_fee_per_gas = RLPItem::String(deserialize_bytes_non_zeroes(tx.max_fee_per_gas.into(), 16));
     let gas_limit = RLPItem::String(deserialize_bytes_non_zeroes(tx.gas_limit.into(), 8));
     let to = RLPItem::String(deserialize_bytes(tx.to.into(), 20));
-    let value = RLPItem::String(deserialize_bytes_non_zeroes(tx.value.try_into().unwrap(), 32));
+    let value = RLPItem::String(deserialize_bytes_non_zeroes(tx.value.try_into().unwrap(), 32)); // this may revert 32 length is higher
     let input = RLPItem::String(tx.input);
 
     let mut access_arr = array![];

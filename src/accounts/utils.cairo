@@ -29,33 +29,61 @@ pub struct RosettanetCall {
     pub max_fee_per_gas: u128,
     pub gas_limit: u64,
     pub value: u256, // To be used future
-    pub calldata: Span<felt252>,
+    pub calldata: Span<felt252>, // Calldata len must be +1 directive len
     pub directives: Span<bool>, // We use this directives to figure out u256 splitting happened in element in same index For ex if 3rd element of this array is true, it means 3rd elem is low, 4th elem is high of u256
     pub target_function: Span<felt252> // Function name and types to used to calculate eth func signature
 }
 
 pub fn parse_transaction(call: RosettanetCall) -> Eip1559Transaction {
-    let calldata = call.calldata;
+    let mut calldata = call.calldata;
     let directives = call.directives;
 
-    // TODO: deserialize yapmadan once calldatadaki function signature u cikart
-    let mut merged_calldata = merge_u256s(calldata, directives); // Bunun içinde test yaz
-    let deserialized_calldata = deserialize_u256_span(ref merged_calldata); // TODO: check is correct Loop ile byte ayırmalı 
-    // TODO: u256 span decodesi içi test yaz
-
-    let eip1559 = Eip1559Transaction {
-        chain_id: CHAIN_ID,
-        nonce: call.nonce,
-        max_priority_fee_per_gas: call.max_priority_fee_per_gas,
-        max_fee_per_gas: call.max_fee_per_gas,
-        gas_limit: call.gas_limit,
-        to: call.to,
-        value: call.value,
-        access_list: array![].span(),
-        input: deserialized_calldata
+    let function_signature: felt252 = match calldata.pop_front() {
+        Option::None => { 0 }, // We may remove that panic or change the logic, since native eth transfer has empty calldata
+        Option::Some(val) => { *val }
     };
 
-    eip1559
+    if(function_signature != 0) {
+        let function_signature_bytes: Span<u8> = deserialize_bytes(function_signature, 4); // Four bytes is eth signature
+        let mut merged_calldata = merge_u256s(calldata, directives); // Bunun içinde test yaz
+        let mut deserialized_calldata = deserialize_u256_span(ref merged_calldata); 
+    
+        // Merge function signature bytes and deserialized calldata
+    
+        let mut ba: core::byte_array::ByteArray = Default::default();
+        ba.append(@ByteArrayExTrait::from_bytes(function_signature_bytes));
+        ba.append(@ByteArrayExTrait::from_bytes(deserialized_calldata));
+    
+        let calldata_bytes: Span<u8> = ba.into_bytes();
+        let eip1559 = Eip1559Transaction {
+            chain_id: CHAIN_ID,
+            nonce: call.nonce,
+            max_priority_fee_per_gas: call.max_priority_fee_per_gas,
+            max_fee_per_gas: call.max_fee_per_gas,
+            gas_limit: call.gas_limit,
+            to: call.to,
+            value: call.value,
+            access_list: array![].span(), // Do we need these?
+            input: calldata_bytes
+        };
+    
+        eip1559
+    } else {
+        let eip1559 = Eip1559Transaction {
+            chain_id: CHAIN_ID,
+            nonce: call.nonce,
+            max_priority_fee_per_gas: call.max_priority_fee_per_gas,
+            max_fee_per_gas: call.max_fee_per_gas,
+            gas_limit: call.gas_limit,
+            to: call.to,
+            value: call.value,
+            access_list: array![].span(),
+            input: array![0x0].span() // Zero or empty?
+        };
+
+        eip1559
+    }
+
 }
 
 // Merges u256s coming from calldata according to directives
@@ -168,9 +196,40 @@ pub fn calculate_eth_function_signature(func: Span<u8>) -> Span<u8> {
 
 #[cfg(test)]
 mod tests {
-    use crate::accounts::utils::{merge_u256s, calculate_eth_function_signature, parse_function_name, eth_function_signature_from_felts, calculate_sn_entrypoint, validate_target_function};
+    use crate::accounts::utils::{merge_u256s, calculate_eth_function_signature, parse_function_name, eth_function_signature_from_felts, calculate_sn_entrypoint, validate_target_function, parse_transaction, RosettanetCall};
     use crate::accounts::encoding::{bytes_from_felts};
     use crate::utils::bytes::{ByteArrayExTrait};
+
+
+    #[test]
+    fn test_parse_transaction_usual() {
+        let calldata = array![0x23b872dd, 0x123123, 0x456456, 0x0, 0x666].span(); // transferFrom(0x123123,0x456456, u256 {0,0x666})
+        let directives = array![false, false, true, false].span(); // Directive length must be -1 bcs first is selector
+        let target_function = array![0x7472616E7366657246726F6D28616464726573732C616464726573732C, 0x75696E7432353629].span(); // transferFrom
+        
+        let call = RosettanetCall {
+            to: 1.try_into().unwrap(),
+            nonce: 1,
+            max_priority_fee_per_gas: 24000,
+            max_fee_per_gas: 12000,
+            gas_limit: 21000,
+            value: 0,
+            calldata: calldata,
+            directives: directives,
+            target_function: target_function
+        };
+
+        let parsed_txn = parse_transaction(call);
+
+        assert_eq!(parsed_txn.chain_id, 2933);
+        assert_eq!(parsed_txn.nonce, 1);
+        assert_eq!(parsed_txn.input.len(), 100);
+        assert_eq!(*parsed_txn.input.at(0), 0x23);
+        assert_eq!(*parsed_txn.input.at(1), 0xb8);
+        assert_eq!(*parsed_txn.input.at(2), 0x72);
+        assert_eq!(*parsed_txn.input.at(3), 0xdd);
+        assert_eq!(*parsed_txn.input.at(4), 0x0);
+    }
 
     #[test]
     fn test_validate_target_function_correct() {
