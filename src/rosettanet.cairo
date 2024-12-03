@@ -44,7 +44,7 @@ pub mod Rosettanet {
 
             let (account, _) = deploy_syscall(
                 self.account_class.read(), eth_address_felt, array![eth_address_felt, get_contract_address().into()].span(), true
-            ) // TODO Update contstructor params
+            )
                 .unwrap();
 
             self.update_registry(account, eth_address);
@@ -67,7 +67,7 @@ pub mod Rosettanet {
                 self.account_class.read(),
                 array![eth_address_felt, get_contract_address().into()].span(),
                 0.try_into().unwrap()
-            )// TODO Update contstructor params
+            )
         }
 
         fn account_class(self: @ContractState) -> ClassHash {
