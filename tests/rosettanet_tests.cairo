@@ -1,0 +1,75 @@
+use snforge_std::{declare, ContractClassTrait, DeclareResultTrait, start_cheat_caller_address, stop_cheat_caller_address};
+
+use rosettacontracts::rosettanet::{
+    IRosettanetDispatcher, IRosettanetDispatcherTrait
+};
+use starknet::{ContractAddress, ClassHash, EthAddress};
+
+fn developer() -> ContractAddress {
+    starknet::contract_address_const::<1>()
+}
+
+fn eth_account() -> EthAddress {
+    0x12345678.try_into().unwrap()
+}
+
+fn declare_accounts() -> ClassHash {
+    let class = declare("RosettaAccount").unwrap().contract_class();
+    *class.class_hash
+}
+
+fn deploy_rosettanet() -> IRosettanetDispatcher {
+    let contract = declare("Rosettanet").unwrap().contract_class();
+    let (contract_address, _) = contract.deploy(@array![developer().into()]).unwrap();
+    IRosettanetDispatcher { contract_address }
+}
+
+fn deploy_and_set_account() -> IRosettanetDispatcher {
+    let contract = declare("Rosettanet").unwrap().contract_class();
+    let (contract_address, _) = contract.deploy(@array![developer().into()]).unwrap();
+    let dispatcher = IRosettanetDispatcher { contract_address };
+    let account_class = declare_accounts();
+
+    start_cheat_caller_address(dispatcher.contract_address, developer());
+    dispatcher.set_account_class(account_class);
+    stop_cheat_caller_address(dispatcher.contract_address);
+
+    dispatcher
+}
+
+#[test]
+fn rosettanet_deploy_initial_dev() {
+    let rosettanet = deploy_rosettanet();
+
+    assert_eq!(rosettanet.developer(), starknet::contract_address_const::<1>());
+}
+
+#[test]
+#[should_panic(expected: 'only dev')]
+fn rosettanet_non_dev_set_class() {
+    let rosettanet = deploy_rosettanet();
+
+    rosettanet.set_account_class(1.try_into().unwrap());
+}
+
+#[test]
+fn rosettanet_set_class() {
+    let rosettanet = deploy_rosettanet();
+
+    start_cheat_caller_address(rosettanet.contract_address, developer());
+    rosettanet.set_account_class(1.try_into().unwrap());
+    stop_cheat_caller_address(rosettanet.contract_address);
+
+    assert_eq!(rosettanet.account_class(), 1.try_into().unwrap());
+}
+
+#[test]
+fn rosettanet_check_precalculate_address() {
+    let rosettanet = deploy_and_set_account();
+
+    let precalculated_address = rosettanet.precalculate_starknet_account(eth_account());
+
+    let deployed_account = rosettanet.deploy_account(eth_account());
+
+    assert_eq!(precalculated_address, deployed_account)
+}
