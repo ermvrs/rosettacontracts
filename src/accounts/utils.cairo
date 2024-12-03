@@ -30,7 +30,7 @@ pub struct RosettanetCall {
     pub gas_limit: u64,
     pub value: u256, // To be used future
     pub calldata: Span<felt252>, // Calldata len must be +1 directive len
-    pub directives: Span<bool>, // We use this directives to figure out u256 splitting happened in element in same index For ex if 3rd element of this array is true, it means 3rd elem is low, 4th elem is high of u256
+    pub directives: Span<u8>, // 0 -> do nothing, 1 -> u256, 2-> address
     pub target_function: Span<felt252> // Function name and types to used to calculate eth func signature
 }
 
@@ -92,14 +92,14 @@ pub fn parse_transaction(call: RosettanetCall) -> Eip1559Transaction {
 }
 
 // Merges u256s coming from calldata according to directives
-pub fn merge_u256s(calldata: Span<felt252>, directives: Span<bool>) -> Span<u256> {
+pub fn merge_u256s(calldata: Span<felt252>, directives: Span<u8>) -> Span<u256> {
     assert(calldata.len() == directives.len(), 'R-AU-1 Sanity check fails');
     let mut merged_array = ArrayTrait::<u256>::new();
     let mut index = 0;
 
     while index < calldata.len() {
         let current_directive = *directives.at(index);
-        if(current_directive) {
+        if(current_directive == 1) {
             let element = u256 {
                 low: (*calldata.at(index)).try_into().unwrap(), // We can assume it always fits u128 limit since u256s already splitted low highs
                 high: (*calldata.at(index + 1)).try_into().unwrap()
@@ -209,7 +209,7 @@ mod tests {
     #[test]
     fn test_parse_transaction_usual() {
         let calldata = array![0x23b872dd, 0x123123, 0x456456, 0x0, 0x666].span(); // transferFrom(0x123123,0x456456, u256 {0,0x666})
-        let directives = array![false, false, true, false].span(); // Directive length must be -1 bcs first is selector
+        let directives = array![0, 0, 1, 0].span(); // Directive length must be -1 bcs first is selector
         let target_function = array![0x7472616E7366657246726F6D28616464726573732C616464726573732C, 0x75696E7432353629].span(); // transferFrom
 
         let call = RosettanetCall {
@@ -376,7 +376,7 @@ mod tests {
     #[test]
     fn test_merge_one() {
         let data = array![0xFF, 0xAB].span();
-        let directive = array![true, false].span();
+        let directive = array![1, 0].span();
 
         let merged = merge_u256s(data, directive);
 
@@ -386,7 +386,7 @@ mod tests {
     #[test]
     fn test_merge_two() {
         let data = array![0xFF, 0xAB, 0x123123, 0x0].span();
-        let directive = array![true, false, true, false].span();
+        let directive = array![1, 0, 1, 0].span();
 
         let merged = merge_u256s(data, directive);
 
@@ -398,7 +398,7 @@ mod tests {
     #[should_panic(expected: 'R-AU-1 Sanity check fails')]
     fn test_merge_wrong_sanity() {
         let data = array![0xFF, 0xAB, 0x123123, 0x0].span();
-        let directive = array![true, false, true, false, true].span();
+        let directive = array![1, 0, 1, 0, 1].span();
 
         let merged = merge_u256s(data, directive);
 

@@ -69,7 +69,7 @@ pub mod RosettaAccount {
             let entrypoint = validate_target_function(call.target_function, call.calldata);
             // If its native transfer do not handle calldata
             let mut calldata = call.calldata;
-            calldata.pop_front(); // Remove first element, it is function selector
+            let _ = calldata.pop_front(); // Remove first element, it is function selector
 
             let result: Span<felt252> = call_contract_syscall(sn_target, entrypoint, calldata).unwrap();
             // self.nonce.write(self.nonce.read() + 1); // Problem here ???
