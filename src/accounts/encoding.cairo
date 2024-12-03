@@ -93,26 +93,19 @@ pub fn deserialize_u256(value: u256) -> Span<u8> {
     ba.into_bytes_without_initial_zeroes()
 }
 
+// Deserializes u256s into u8 bytes. It doesnt removes zeroes, it fits the u256s into 32 byte always.
 pub fn deserialize_u256_span(ref value: Span<u256>) -> Span<u8> {
-    // Write tests and fix
-    // Bu fonksiyon duzgun calismiyor
     let mut ba = Default::default();
     loop {
         match value.pop_front() {
             Option::None => { break; },
             Option::Some(val) => {
                 let mut inner_ba: core::byte_array::ByteArray = Default::default();
-                // high ve lowu ayri ayri al zerolari silip birlestir
-
-                if(*val.high > 0_u128) {
-                    let low_bytes = deserialize_bytes((*val).low.into(), 16);
-                    let high_bytes = deserialize_bytes_non_zeroes((*val).high.into(), 16);
-                    inner_ba.append(@ByteArrayExTrait::from_bytes(low_bytes));
-                    inner_ba.append(@ByteArrayExTrait::from_bytes(high_bytes));
-                } else {
-                    let low_bytes = deserialize_bytes_non_zeroes((*val).low.into(), 16);
-                    inner_ba.append(@ByteArrayExTrait::from_bytes(low_bytes));
-                }
+                // zerolari silmiyoruz cunku calldata icin kullanilacak
+                let low_bytes = deserialize_bytes((*val).low.into(), 16);
+                let high_bytes = deserialize_bytes((*val).high.into(), 16);
+                inner_ba.append(@ByteArrayExTrait::from_bytes(high_bytes));
+                inner_ba.append(@ByteArrayExTrait::from_bytes(low_bytes));
                 
                 ByteArrayTrait::append(ref ba, @inner_ba);
             }
@@ -130,7 +123,92 @@ pub fn deserialize_bytes_non_zeroes(value: felt252, len: usize) -> Span<u8> {
 
 #[cfg(test)]
 mod tests {
-    use crate::accounts::encoding::{Eip1559Transaction, rlp_encode_eip1559, deserialize_bytes_non_zeroes, bytes_from_felts};
+    use crate::accounts::encoding::{Eip1559Transaction, rlp_encode_eip1559, deserialize_bytes_non_zeroes, bytes_from_felts, deserialize_u256_span};
+    use core::num::traits::{Bounded};
+
+    #[test]
+    fn test_deserialize_u256_span() {
+        let mut value = array![u256{high :0, low: 1}].span();
+
+        let deserialized = deserialize_u256_span(ref value);
+        assert_eq!(deserialized.len(), 32);
+        assert_eq!(*deserialized.at(0), 0x00);
+        assert_eq!(*deserialized.at(31), 0x01);
+    }
+
+    #[test]
+    fn test_deserialize_u256_span_low_max() {
+        let mut value = array![u256{high :0, low: Bounded::<u128>::MAX}].span();
+
+        let deserialized = deserialize_u256_span(ref value);
+        assert_eq!(deserialized.len(), 32);
+        assert_eq!(*deserialized.at(0), 0x00);
+        assert_eq!(*deserialized.at(16), 0xFF);
+        assert_eq!(*deserialized.at(22), 0xFF);
+        assert_eq!(*deserialized.at(31), 0xFF);
+    }
+
+    #[test]
+    fn test_deserialize_u256_span_high_max() {
+        let mut value = array![u256{high :Bounded::<u128>::MAX, low: 0}].span();
+
+        let deserialized = deserialize_u256_span(ref value);
+        assert_eq!(deserialized.len(), 32);
+        assert_eq!(*deserialized.at(0), 0xFF);
+        assert_eq!(*deserialized.at(8), 0xFF);
+        assert_eq!(*deserialized.at(15), 0xFF);
+        assert_eq!(*deserialized.at(16), 0x00);
+        assert_eq!(*deserialized.at(22), 0x00);
+        assert_eq!(*deserialized.at(31), 0x00);
+    }
+
+    #[test]
+    fn test_deserialize_u256_span_max() {
+        let mut value = array![u256{high :Bounded::<u128>::MAX, low: Bounded::<u128>::MAX}].span();
+
+        let deserialized = deserialize_u256_span(ref value);
+        assert_eq!(deserialized.len(), 32);
+        assert_eq!(*deserialized.at(0), 0xFF);
+        assert_eq!(*deserialized.at(8), 0xFF);
+        assert_eq!(*deserialized.at(15), 0xFF);
+        assert_eq!(*deserialized.at(16), 0xFF);
+        assert_eq!(*deserialized.at(22), 0xFF);
+        assert_eq!(*deserialized.at(31), 0xFF);
+    }
+
+    #[test]
+    fn test_deserialize_u256_span_zero() {
+        let mut value = array![u256{high :0, low: 0}].span();
+
+        let deserialized = deserialize_u256_span(ref value);
+        assert_eq!(deserialized.len(), 32);
+        assert_eq!(*deserialized.at(0), 0x00);
+        assert_eq!(*deserialized.at(31), 0x00);
+    }
+
+    #[test]
+    fn test_deserialize_u256_span_multi_zero() {
+        let mut value = array![u256{high :0, low: 0}, u256{high :0, low: 0}].span();
+
+        let deserialized = deserialize_u256_span(ref value);
+        assert_eq!(deserialized.len(), 64);
+        assert_eq!(*deserialized.at(0), 0x00);
+        assert_eq!(*deserialized.at(31), 0x00);
+        assert_eq!(*deserialized.at(32), 0x00);
+        assert_eq!(*deserialized.at(63), 0x00);
+    }
+
+    #[test]
+    fn test_deserialize_u256_span_multi_max() {
+        let mut value = array![u256{high :Bounded::<u128>::MAX, low: Bounded::<u128>::MAX}, u256{high :Bounded::<u128>::MAX, low: Bounded::<u128>::MAX}].span();
+
+        let deserialized = deserialize_u256_span(ref value);
+        assert_eq!(deserialized.len(), 64);
+        assert_eq!(*deserialized.at(0), 0xFF);
+        assert_eq!(*deserialized.at(31), 0xFF);
+        assert_eq!(*deserialized.at(32), 0xFF);
+        assert_eq!(*deserialized.at(63), 0xFF);
+    }
 
     #[test]
     fn test_byte_array_from_felts() {

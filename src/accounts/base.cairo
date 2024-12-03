@@ -25,7 +25,7 @@ pub mod RosettaAccount {
         EthAddress, get_contract_address, get_caller_address, get_tx_info
     };
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
-    use rosettacontracts::accounts::utils::{is_valid_eth_signature, parse_transaction, RosettanetSignature, RosettanetCall};
+    use rosettacontracts::accounts::utils::{is_valid_eth_signature, parse_transaction, RosettanetSignature, RosettanetCall, validate_target_function};
     use rosettacontracts::accounts::encoding::{rlp_encode_eip1559, calculate_tx_hash};
 
     pub mod Errors {
@@ -137,6 +137,10 @@ pub mod RosettaAccount {
         fn validate_transaction(self: @ContractState, call: RosettanetCall) -> felt252 {
             let tx_info = get_tx_info().unbox();
 
+            // Validate target_function and calldata matches
+            let _ = validate_target_function(call.target_function, call.calldata);
+
+            // Validate transaction signature
             let parsed_txn = parse_transaction(call);
             let expected_hash = calculate_tx_hash(rlp_encode_eip1559(parsed_txn));
 
