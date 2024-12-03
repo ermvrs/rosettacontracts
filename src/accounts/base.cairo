@@ -56,7 +56,7 @@ pub mod RosettaAccount {
     impl AccountImpl of super::IRosettaAccount<ContractState> {
         // Instead of Array<Call> we use Array<felt252> since we pass different values to the
         // parameter
-        // It is EOA execution so multiple calls are not possible
+        // It is EOA execution so multiple calls are not possible right now. We will add Multicalls in a different way in beta
         // calls params can include raw signed tx or can include the abi parsing bit locations for calldata
         fn __execute__(self: @ContractState, call: RosettanetCall) -> Array<Span<felt252>> {
             let sender = get_caller_address();
