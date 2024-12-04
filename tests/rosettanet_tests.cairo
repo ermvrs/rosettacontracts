@@ -64,12 +64,25 @@ fn rosettanet_set_class() {
 }
 
 #[test]
-fn rosettanet_check_precalculate_address() {
+fn rosettanet_check_precalculated_address() {
     let rosettanet = deploy_and_set_account();
 
     let precalculated_address = rosettanet.precalculate_starknet_account(eth_account());
 
     let deployed_account = rosettanet.deploy_account(eth_account());
 
-    assert_eq!(precalculated_address, deployed_account)
+    assert_eq!(precalculated_address, deployed_account);
+}
+
+#[test]
+#[should_panic]
+fn rosettanet_redeploy_same_account() {
+    let rosettanet = deploy_and_set_account();
+
+    let precalculated_address = rosettanet.precalculate_starknet_account(eth_account());
+
+    let deployed_account = rosettanet.deploy_account(eth_account());
+
+    assert_eq!(precalculated_address, deployed_account);
+    rosettanet.deploy_account(eth_account());
 }
