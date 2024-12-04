@@ -4,11 +4,13 @@ pub trait IRosettanet<TState> {
     // Write methods
     fn register_contract(ref self: TState, address: ContractAddress); // Registers existing starknet contract to registry
     fn deploy_account(ref self: TState, eth_address: EthAddress) -> ContractAddress; // Deploys starknet account and returns address
+    fn set_account_class(ref self: TState, class: ClassHash); // Sets account class, this function will be removed after stable account
     // Read methods
     fn get_starknet_address(self: @TState, eth_address: EthAddress) -> ContractAddress;
     fn get_ethereum_address(self: @TState, sn_address: ContractAddress) -> EthAddress;
     fn precalculate_starknet_account(self: @TState, eth_address: EthAddress) -> ContractAddress;
     fn account_class(self: @TState) -> ClassHash;
+    fn developer(self: @TState) -> ContractAddress;
 }
 #[starknet::contract]
 pub mod Rosettanet {
@@ -16,7 +18,7 @@ pub mod Rosettanet {
     use starknet::storage::{Map};
     use core::poseidon::{poseidon_hash_span};
     use starknet::syscalls::{deploy_syscall};
-    use starknet::{ContractAddress, EthAddress, ClassHash, get_contract_address};
+    use starknet::{ContractAddress, EthAddress, ClassHash, get_contract_address, get_caller_address};
     use openzeppelin::utils::deployments::{calculate_contract_address_from_deploy_syscall};
 
     #[storage]
@@ -51,6 +53,13 @@ pub mod Rosettanet {
             
             account
         }
+
+        fn set_account_class(ref self: ContractState, class: ClassHash) {
+            assert(get_caller_address() == self.dev.read(), 'only dev');
+
+            self.account_class.write(class);
+        }
+
         // View methods
         fn get_starknet_address(self: @ContractState, eth_address: EthAddress) -> ContractAddress {
             self.eth_to_sn.read(eth_address)
@@ -72,6 +81,10 @@ pub mod Rosettanet {
 
         fn account_class(self: @ContractState) -> ClassHash {
             self.account_class.read()
+        }
+
+        fn developer(self: @ContractState) -> ContractAddress {
+            self.dev.read()
         }
     }
 
