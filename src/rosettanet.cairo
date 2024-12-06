@@ -5,6 +5,7 @@ pub trait IRosettanet<TState> {
     fn register_contract(ref self: TState, address: ContractAddress); // Registers existing starknet contract to registry
     fn deploy_account(ref self: TState, eth_address: EthAddress) -> ContractAddress; // Deploys starknet account and returns address
     fn set_account_class(ref self: TState, class: ClassHash); // Sets account class, this function will be removed after stable account
+    fn upgrade(ref self: TState, class: ClassHash); // Upgrades contract
     // Read methods
     fn get_starknet_address(self: @TState, eth_address: EthAddress) -> ContractAddress;
     fn get_ethereum_address(self: @TState, sn_address: ContractAddress) -> EthAddress;
@@ -17,7 +18,7 @@ pub mod Rosettanet {
     use core::num::traits::Zero;
     use starknet::storage::{Map};
     use core::poseidon::{poseidon_hash_span};
-    use starknet::syscalls::{deploy_syscall};
+    use starknet::syscalls::{deploy_syscall, replace_class_syscall};
     use starknet::{ContractAddress, EthAddress, ClassHash, get_contract_address, get_caller_address};
     use openzeppelin::utils::deployments::{calculate_contract_address_from_deploy_syscall};
 
@@ -58,6 +59,12 @@ pub mod Rosettanet {
             assert(get_caller_address() == self.dev.read(), 'only dev');
 
             self.account_class.write(class);
+        }
+
+        fn upgrade(ref self: ContractState, class: ClassHash) {
+            assert(get_caller_address() == self.dev.read(), 'only dev');
+
+            replace_class_syscall(class).unwrap();
         }
 
         // View methods
