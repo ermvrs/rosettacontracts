@@ -22,6 +22,41 @@ pub mod Rosettanet {
     use starknet::{ContractAddress, EthAddress, ClassHash, get_contract_address, get_caller_address};
     use openzeppelin::utils::deployments::{calculate_contract_address_from_deploy_syscall};
 
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    pub enum Event {
+        AddressRegistered: AddressRegistered,
+        AccountDeployed: AccountDeployed,
+        AccountClassChanged: AccountClassChanged,
+        Upgraded: Upgraded
+    }
+
+    #[derive(Drop, starknet::Event)]
+    pub struct AddressRegistered {
+        #[key]
+        pub sn_address: ContractAddress,
+        pub eth_address: EthAddress,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    pub struct AccountDeployed {
+        #[key]
+        pub account: ContractAddress,
+        pub eth_address: EthAddress,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    pub struct AccountClassChanged {
+        pub changer: ContractAddress,
+        pub new_class: ClassHash,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    pub struct Upgraded {
+        pub upgrader: ContractAddress,
+        pub new_class: ClassHash,
+    }
+
     #[storage]
     struct Storage {
         sn_to_eth: Map<ContractAddress, EthAddress>,
@@ -40,6 +75,8 @@ pub mod Rosettanet {
         fn register_contract(ref self: ContractState, address: ContractAddress) {
             let eth_address = self.generate_eth_address(address);
             self.update_registry(address, eth_address);
+            
+            self.emit(AddressRegistered {sn_address: address, eth_address: eth_address});
         }
 
         fn deploy_account(ref self: ContractState, eth_address: EthAddress) -> ContractAddress {
@@ -51,6 +88,8 @@ pub mod Rosettanet {
                 .unwrap();
 
             self.update_registry(account, eth_address);
+
+            self.emit(AccountDeployed{ account: account, eth_address: eth_address });
             
             account
         }
@@ -59,12 +98,16 @@ pub mod Rosettanet {
             assert(get_caller_address() == self.dev.read(), 'only dev');
 
             self.account_class.write(class);
+
+            self.emit(AccountClassChanged {changer: get_caller_address(), new_class: class});
         }
 
         fn upgrade(ref self: ContractState, class: ClassHash) {
             assert(get_caller_address() == self.dev.read(), 'only dev');
 
             replace_class_syscall(class).unwrap();
+
+            self.emit(Upgraded {upgrader: get_caller_address(), new_class: class});
         }
 
         // View methods
