@@ -164,6 +164,9 @@ pub mod RosettaAccount {
             // Validate transaction signature
             let expected_hash = generate_tx_hash(call);
 
+            let value_on_signature = self.get_transaction_value();
+            assert(call.value == value_on_signature, 'value sig-tx mismatch');
+
             let signature = tx_info.signature; // Signature includes v,r,s
             assert(self._is_valid_signature(expected_hash, signature), Errors::INVALID_SIGNATURE);
             starknet::VALIDATED
@@ -174,9 +177,8 @@ pub mod RosettaAccount {
         fn _is_valid_signature(
             self: @ContractState, hash: u256, signature: Span<felt252>
         ) -> bool {
-            // TODO verify transaction with eth address not pub key
-            // Kakarot calldata ile transactionu bir daha olusturup verify etmeye calismis
-            assert(signature.len() == 5, 'Invalid Signature length');
+            // first 5 element signature, last 2 elements are value
+            assert(signature.len() == 7, 'Invalid Signature length');
             let r: u256 = u256 {
                 low: (*signature.at(0)).try_into().unwrap(),
                 high: (*signature.at(1)).try_into().unwrap()
@@ -196,6 +198,18 @@ pub mod RosettaAccount {
             let eth_address: EthAddress = self.ethereum_address.read();
 
             is_valid_eth_signature(hash, eth_address, rosettanet_signature)
+        }
+
+        // We also store transaction value inside signature, TX will be reverted if value mismatch
+        // between signature and actual calldata
+        fn get_transaction_value(self: @ContractState) -> u256 {
+            let tx_info = get_tx_info().unbox();
+            let signature = tx_info.signature;
+            assert(signature.len() == 7, 'signature len wrong');
+            u256 {
+                low: (*signature.at(5)).try_into().unwrap(),
+                high: (*signature.at(6)).try_into().unwrap()
+            }
         }
 
         // TODO: write tests
@@ -226,7 +240,7 @@ pub mod RosettaAccount {
             assert(sn_address != starknet::contract_address_const::<0>(), 'receiver not registered');
 
             let calldata: Span<felt252> = array![sn_address.into(), value.low.into(), value.high.into()].span();
-
+            // tx has to be reverted if not enough balance
             call_contract_syscall(STRK_ADDRESS.try_into().unwrap(), TRANSFER_ENTRYPOINT, calldata).unwrap()
         }
     }
