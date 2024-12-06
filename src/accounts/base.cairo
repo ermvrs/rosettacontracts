@@ -68,13 +68,24 @@ pub mod RosettaAccount {
             let sn_target: ContractAddress = IRosettanetDispatcher { contract_address: self.registry.read() }.get_starknet_address(eth_target);
             assert(sn_target != starknet::contract_address_const::<0>(), 'target not registered');
 
+            // If value transfer, send STRK before calling contract
+            if(call.value > 0) {
+                // Re-check value
+                let value_on_signature = self.get_transaction_value();
+                assert(call.value == value_on_signature, ' value sig-tx mismatch');
+                self.process_native_transfer(value_on_signature, call.to); // sends strk
+            }
+
+            if(call.calldata.len() == 0) {
+                // do nothing
+                return array![array![].span()];
+            }
+
             let entrypoint = validate_target_function(call.target_function, call.calldata);
-            // If its native transfer do not handle calldata
             let mut calldata = call.calldata;
             let _ = calldata.pop_front(); // Remove first element, it is function selector
 
             let address_updated_calldata = self.update_addresses(calldata, call.directives); // This function security concerns me
-
             let result: Span<felt252> = call_contract_syscall(sn_target, entrypoint, address_updated_calldata).unwrap();
             // self.nonce.write(self.nonce.read() + 1); // Problem here ???
             array![result]
@@ -159,7 +170,9 @@ pub mod RosettaAccount {
             let tx_info = get_tx_info().unbox();
 
             // Validate target_function and calldata matches
-            let _ = validate_target_function(call.target_function, call.calldata);
+            if(call.calldata.len() > 0) {
+                let _ = validate_target_function(call.target_function, call.calldata);
+            }
 
             // Validate transaction signature
             let expected_hash = generate_tx_hash(call);
