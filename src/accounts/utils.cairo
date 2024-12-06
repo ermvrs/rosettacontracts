@@ -6,7 +6,7 @@ use crate::utils::traits::SpanDefault;
 use crate::utils::bytes::{U8SpanExTrait, ByteArrayExTrait};
 use starknet::eth_signature::{verify_eth_signature};
 
-pub const CHAIN_ID: u64 = 2933; // TODO: Correct it
+pub const CHAIN_ID: u64 = 11155111; // TODO: Correct it
 
 #[derive(Copy, Drop, Serde)]
 pub struct RosettanetSignature {
@@ -220,7 +220,7 @@ mod tests {
 
         let parsed_txn = parse_transaction(call);
 
-        assert_eq!(parsed_txn.chain_id, 2933);
+        assert_eq!(parsed_txn.chain_id, 11155111);
         assert_eq!(parsed_txn.nonce, 1);
         assert_eq!(parsed_txn.input.len(), 100);
         assert_eq!(*parsed_txn.input.at(0), 0x23);

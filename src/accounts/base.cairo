@@ -45,7 +45,6 @@ pub mod RosettaAccount {
     #[storage]
     struct Storage {
         ethereum_address: EthAddress,
-        nonce: u64,
         registry: ContractAddress
     }
 
@@ -95,7 +94,6 @@ pub mod RosettaAccount {
             // TODO: check if validations enough
             // assert(calls.transaction.length > 9, 'Calldata wrong'); // TODO: First version only supports EIP1559
             // Check if to address registered on lens
-            assert(call.nonce == self.nonce.read(), 'Nonce wrong');
             self.validate_transaction(call)
         }
 

@@ -24,7 +24,7 @@ pub fn rlp_encode_eip1559(tx: Eip1559Transaction) -> Span<u8> {
     let max_fee_per_gas = RLPItem::String(deserialize_bytes_non_zeroes(tx.max_fee_per_gas.into(), 16));
     let gas_limit = RLPItem::String(deserialize_bytes_non_zeroes(tx.gas_limit.into(), 8));
     let to = RLPItem::String(deserialize_bytes(tx.to.into(), 20));
-    let value = RLPItem::String(deserialize_bytes_non_zeroes(tx.value.try_into().unwrap(), 32)); // this may revert 32 length is higher
+    let value = RLPItem::String(deserialize_u256(tx.value));
     let input = RLPItem::String(tx.input);
 
     let mut access_arr = array![];
@@ -123,8 +123,15 @@ pub fn deserialize_bytes_non_zeroes(value: felt252, len: usize) -> Span<u8> {
 
 #[cfg(test)]
 mod tests {
-    use crate::accounts::encoding::{Eip1559Transaction, rlp_encode_eip1559, deserialize_bytes_non_zeroes, bytes_from_felts, deserialize_u256_span};
+    use crate::accounts::encoding::{Eip1559Transaction, rlp_encode_eip1559, deserialize_bytes_non_zeroes, bytes_from_felts, deserialize_u256, deserialize_u256_span};
     use core::num::traits::{Bounded};
+
+    #[test]
+    fn test_deserialize_u256() {
+        let deserialized = deserialize_u256(1);
+        assert_eq!(deserialized.len(), 1);
+        assert_eq!(*deserialized.at(0), 0x01);
+    }
 
     #[test]
     fn test_deserialize_u256_span() {
@@ -250,7 +257,7 @@ mod tests {
     }
 
     #[test]
-    fn encode_transaction() {
+    fn rlp_encode_transaction() {
         let tx = Eip1559Transaction {
             chain_id: 2933,
             nonce: 1,
@@ -269,6 +276,34 @@ mod tests {
         assert_eq!(*encoded.at(2), 0x82);
         assert_eq!(*encoded.at(3), 0x0B);
         assert_eq!(*encoded.at(4), 0x75);
+    }
+
+    #[test]
+    fn rlp_encode_transaction_value() {
+        // rlp encoded 
+        // 02f86d83aa36a72e830f4240850299f0c05482520894b756b1bc042fa70d85ee84eab646a3b438a285ee0180c001a0d0c17dcc3124b4c0692b6d5caf6176834eda4c67ff6fe1ed0b9068a087294128a07b86a6b8b3e674da99fb642a54912cc84eb1e4008a34b159996a33a6996fe949
+        let tx = Eip1559Transaction {
+            chain_id: 11155111,
+            nonce: 46,
+            max_priority_fee_per_gas: 1000000,
+            max_fee_per_gas: 11172626516,
+            gas_limit: 21000,
+            to: 0xB756B1BC042Fa70D85Ee84eab646a3b438A285Ee.try_into().unwrap(),
+            value: 1,
+            input: array![].span(), 
+            access_list: array![].span()
+        };
+
+        let mut encoded = rlp_encode_eip1559(tx);
+        //assert_eq!(encoded.len(), 112);
+        loop {
+            match encoded.pop_front() {
+                Option::None => {break;},
+                Option::Some(val) => {
+                    println!("val: {}", *val);
+                }
+            }
+        };
     }
 
     #[test]
