@@ -39,6 +39,9 @@ pub mod RosettaAccount {
         pub const UNAUTHORIZED: felt252 = 'Rosetta: unauthorized';
     }
 
+    const STRK_ADDRESS: felt252 = 0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d;
+    const TRANSFER_ENTRYPOINT: felt252 = 0x83afd3f4caedc6eebf44246fe54e38c95e3179a5ec9ea81740eca5b482d12e;
+
     #[storage]
     struct Storage {
         ethereum_address: EthAddress,
@@ -214,6 +217,17 @@ pub mod RosettaAccount {
             };
 
             updated_array.span()
+        }
+
+        // Sends native currency to the receiver address
+        fn process_native_transfer(self: @ContractState, value: u256, receiver: EthAddress) -> Span<felt252> {
+            assert(value > 0, 'value zero');
+            let sn_address = IRosettanetDispatcher{contract_address: self.registry.read()}.get_starknet_address(receiver);
+            assert(sn_address != starknet::contract_address_const::<0>(), 'receiver not registered');
+
+            let calldata: Span<felt252> = array![sn_address.into(), value.low.into(), value.high.into()].span();
+
+            call_contract_syscall(STRK_ADDRESS.try_into().unwrap(), TRANSFER_ENTRYPOINT, calldata).unwrap()
         }
     }
 }
