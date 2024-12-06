@@ -72,6 +72,9 @@ pub mod Rosettanet {
 
     #[abi(embed_v0)]
     impl Rosettanet of super::IRosettanet<ContractState> {
+        /// Registers starknet contract address to the registry with generating ethereum equivalent
+        /// # Arguments
+        /// * `address` - Starknet Contract Address that going to be registered
         fn register_contract(ref self: ContractState, address: ContractAddress) {
             let eth_address = self.generate_eth_address(address);
             self.update_registry(address, eth_address);
@@ -79,6 +82,9 @@ pub mod Rosettanet {
             self.emit(AddressRegistered {sn_address: address, eth_address: eth_address});
         }
 
+        /// Deploys Rosettanet account for Ethereum Address
+        /// # Arguments
+        /// * `eth_address` - Ethereum Address for newly deployed account
         fn deploy_account(ref self: ContractState, eth_address: EthAddress) -> ContractAddress {
             let eth_address_felt: felt252 = eth_address.into();
 
@@ -94,6 +100,9 @@ pub mod Rosettanet {
             account
         }
 
+        /// Updates account class
+        /// # Arguments
+        /// * `class` - New Rosettanet account class hash
         fn set_account_class(ref self: ContractState, class: ClassHash) {
             assert(get_caller_address() == self.dev.read(), 'only dev');
 
@@ -102,6 +111,9 @@ pub mod Rosettanet {
             self.emit(AccountClassChanged {changer: get_caller_address(), new_class: class});
         }
 
+        /// Updates this contracts class
+        /// # Arguments
+        /// * `class` - New class hash
         fn upgrade(ref self: ContractState, class: ClassHash) {
             assert(get_caller_address() == self.dev.read(), 'only dev');
 
@@ -110,15 +122,25 @@ pub mod Rosettanet {
             self.emit(Upgraded {upgrader: get_caller_address(), new_class: class});
         }
 
-        // View methods
+        /// Returns registered starknet contract address for specified ethereum address
+        /// returns zero if not registered
+        /// # Arguments
+        /// * `eth_address` - Ethereum address
         fn get_starknet_address(self: @ContractState, eth_address: EthAddress) -> ContractAddress {
             self.eth_to_sn.read(eth_address)
         }
 
+        /// Returns registered starknet contract address for specified ethereum address
+        /// returns zero if not registered
+        /// # Arguments
+        /// * `sn_address` - Starknet contract address
         fn get_ethereum_address(self: @ContractState, sn_address: ContractAddress) -> EthAddress {
             self.sn_to_eth.read(sn_address)
         }
 
+        /// Returns precalculated starknet address for accounts
+        /// # Arguments
+        /// * `eth_address` - Ethereum address that going to be used to precalculate starknet contract address
         fn precalculate_starknet_account(self: @ContractState, eth_address: EthAddress) -> ContractAddress {
             let eth_address_felt: felt252 = eth_address.into();
             calculate_contract_address_from_deploy_syscall(
@@ -129,10 +151,12 @@ pub mod Rosettanet {
             )
         }
 
+        /// Returns current account class hash
         fn account_class(self: @ContractState) -> ClassHash {
             self.account_class.read()
         }
 
+        /// Returns developer address
         fn developer(self: @ContractState) -> ContractAddress {
             self.dev.read()
         }
@@ -140,6 +164,10 @@ pub mod Rosettanet {
 
     #[generate_trait]
     impl InternalImpl of InternalTrait {
+        /// Registers sn_address and eth_address to the registry. Reverts if any of them already registered
+        /// # Arguments
+        /// * `sn_address` - Starknet contract address that going to be registered with eth_address
+        /// * `eth_address` - Ethereum address that going to be registered with sn_address
         fn update_registry(ref self: ContractState, sn_address: ContractAddress, eth_address: EthAddress) {
             assert(self.sn_to_eth.read(sn_address).is_zero(), 'Contract already registered');
             assert(self.eth_to_sn.read(eth_address).is_zero(), 'EthAddress already registered');
@@ -148,7 +176,9 @@ pub mod Rosettanet {
             self.eth_to_sn.write(eth_address, sn_address);
         }
 
-        // Default function for registering existing starknet contract
+        /// Generates Ethereum address from starknet contract address
+        /// # Arguments
+        /// * `sn_address` - Starknet contract address that will be used to generate eth address
         fn generate_eth_address(self: @ContractState, sn_address: ContractAddress) -> EthAddress {
             let sn_hash = poseidon_hash_span(array![sn_address.into()].span());
 
