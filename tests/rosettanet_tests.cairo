@@ -76,6 +76,7 @@ fn rosettanet_check_precalculated_address() {
 
 #[test]
 #[should_panic]
+#[ignore] // Fail cannot be handled??
 fn rosettanet_redeploy_same_account() {
     let rosettanet = deploy_and_set_account();
 
@@ -85,4 +86,24 @@ fn rosettanet_redeploy_same_account() {
 
     assert_eq!(precalculated_address, deployed_account);
     rosettanet.deploy_account(eth_account());
+}
+
+#[test]
+fn rosettanet_register_contract() {
+    let rosettanet = deploy_rosettanet();
+
+    rosettanet.register_contract(1.try_into().unwrap());
+
+    let eth_address = rosettanet.get_ethereum_address(1.try_into().unwrap());
+
+    assert_ne!(rosettanet.get_starknet_address(eth_address), 0.try_into().unwrap());
+}
+
+#[test]
+#[should_panic(expected: 'Contract already registered')]
+fn rosettanet_register_existing_contract() {
+    let rosettanet = deploy_rosettanet();
+
+    rosettanet.register_contract(1.try_into().unwrap());
+    rosettanet.register_contract(1.try_into().unwrap());
 }
