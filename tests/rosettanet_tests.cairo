@@ -3,15 +3,9 @@ use snforge_std::{declare, ContractClassTrait, DeclareResultTrait, start_cheat_c
 use rosettacontracts::rosettanet::{
     IRosettanetDispatcher, IRosettanetDispatcherTrait
 };
-use starknet::{ContractAddress, ClassHash, EthAddress};
+use starknet::{ClassHash};
 
-fn developer() -> ContractAddress {
-    starknet::contract_address_const::<1>()
-}
-
-fn eth_account() -> EthAddress {
-    0x12345678.try_into().unwrap()
-}
+use rosettacontracts::test_data::{developer, eth_account};
 
 fn declare_accounts() -> ClassHash {
     let class = declare("RosettaAccount").unwrap().contract_class();

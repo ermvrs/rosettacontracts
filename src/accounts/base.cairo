@@ -6,7 +6,7 @@ use rosettacontracts::accounts::utils::{RosettanetCall};
 pub trait IRosettaAccount<TState> {
     fn __execute__(self: @TState, call: RosettanetCall) -> Array<Span<felt252>>;
     fn __validate__(self: @TState, call: RosettanetCall) -> felt252;
-    fn is_valid_signature(self: @TState, hash: felt252, signature: Array<felt252>) -> felt252;
+    fn is_valid_signature(self: @TState, hash: u256, signature: Array<felt252>) -> felt252;
     fn supports_interface(self: @TState, interface_id: felt252) -> bool;
     fn __validate_declare__(self: @TState, class_hash: felt252) -> felt252;
     fn __validate_deploy__(
@@ -14,8 +14,9 @@ pub trait IRosettaAccount<TState> {
         registry: ContractAddress
     ) -> felt252;
     fn get_ethereum_address(self: @TState) -> EthAddress;
+    fn rosettanet(self: @TState) -> ContractAddress;
     // Camel case
-    fn isValidSignature(self: @TState, hash: felt252, signature: Array<felt252>) -> felt252;
+    fn isValidSignature(self: @TState, hash: u256, signature: Array<felt252>) -> felt252;
     fn getEthereumAddress(self: @TState) -> EthAddress;
 }
 
@@ -85,9 +86,9 @@ pub mod RosettaAccount {
         }
 
         fn is_valid_signature(
-            self: @ContractState, hash: felt252, signature: Array<felt252>
+            self: @ContractState, hash: u256, signature: Array<felt252>
         ) -> felt252 {
-            if self._is_valid_signature(hash.into(), signature.span()) {
+            if self._is_valid_signature(hash, signature.span()) {
                 starknet::VALIDATED
             } else {
                 0
@@ -126,8 +127,12 @@ pub mod RosettaAccount {
             self.ethereum_address.read()
         }
 
+        fn rosettanet(self: @ContractState) -> ContractAddress {
+            self.registry.read()
+        }
+
         fn isValidSignature(
-            self: @ContractState, hash: felt252, signature: Array<felt252>
+            self: @ContractState, hash: u256, signature: Array<felt252>
         ) -> felt252 {
             self.is_valid_signature(hash, signature)
         }
@@ -168,7 +173,7 @@ pub mod RosettaAccount {
         ) -> bool {
             // TODO verify transaction with eth address not pub key
             // Kakarot calldata ile transactionu bir daha olusturup verify etmeye calismis
-            assert(signature.len() == 5, 'Invalid Signature');
+            assert(signature.len() == 5, 'Invalid Signature length');
             let r: u256 = u256 {
                 low: (*signature.at(0)).try_into().unwrap(),
                 high: (*signature.at(1)).try_into().unwrap()

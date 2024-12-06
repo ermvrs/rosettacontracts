@@ -9,12 +9,6 @@ use starknet::eth_signature::{verify_eth_signature};
 pub const CHAIN_ID: u64 = 2933; // TODO: Correct it
 
 #[derive(Copy, Drop, Serde)]
-pub struct EthSignature {
-    pub r: u256,
-    pub s: u256,
-}
-
-#[derive(Copy, Drop, Serde)]
 pub struct RosettanetSignature {
     pub v: u32, // 27 or 28
     pub r: u256,
