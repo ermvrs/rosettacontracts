@@ -77,7 +77,7 @@ pub fn parse_transaction(call: RosettanetCall) -> Eip1559Transaction {
             to: call.to,
             value: call.value,
             access_list: array![].span(),
-            input: array![0x0].span() // Zero or empty?
+            input: array![].span() // empty
         };
 
         eip1559
