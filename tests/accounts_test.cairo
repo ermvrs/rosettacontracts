@@ -92,11 +92,11 @@ fn test_signature_wrong_address() {
 }
 
 #[test]
-fn test_transaction_validation() {
+fn test_transaction_validation_value_transfer_only() {
     // Testing with empty access list eip1559 transaction
     // Access list support will be added further
-    let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e2.try_into().unwrap();
-    let mut tx = RosettanetCall {
+    let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
+    let tx = RosettanetCall {
         to: 0xB756B1BC042Fa70D85Ee84eab646a3b438A285Ee.try_into().unwrap(),
         nonce: 59,
         max_priority_fee_per_gas: 158129478,
@@ -115,11 +115,24 @@ fn test_transaction_validation() {
     assert_eq!(generated_tx_hash, unsigned_tx_hash);
 
     let (rosettanet, account) = deploy_account_from_rosettanet(eth_address);
-    assert_eq!(account.is_valid_signature(unsigned_tx_hash, signature),starknet::VALIDATED);
+    assert_eq!(account.get_ethereum_address(), eth_address);
 
-    //start_cheat_signature_global(signature.span());
-    //let validation = account.__validate__(tx);
-    // stop_cheat_signature_global();
+    start_cheat_nonce_global(tx.nonce.into());
+    start_cheat_signature_global(signature.span());
+    let validation = account.__validate__(tx);
+    stop_cheat_signature_global();
+    stop_cheat_nonce_global();
 
-    //assert_eq!(validation, starknet::VALIDATED);
+    assert_eq!(validation, starknet::VALIDATED);
+}
+
+#[test]
+fn test_transaction_validation_calldata() {
+    // TODO: test with calldata, example transfer of usdc
+}
+
+#[test]
+fn test_transaction_validation_calldata_and_value_transfer() {
+    // TODO: call target after sending strk
+    // No execution just validate
 }
