@@ -56,6 +56,18 @@ fn test_signature_validation() {
 }
 
 #[test]
+fn test_signature_validation_eip1559() {
+    // EIP1559 tx hash
+    let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
+    let unsigned_tx_hash: u256 = 0xfea45e666ba85f417463f9c7bd9c0ab532c3a9bf29bb09c73fed760364f6c405;
+    let signature = array![0x1d9fb6b7ce01fda249f0f0a3ac00d3a2,0x15bd08d62685c22d30a57d611a643c76, 0x290a42b030be68a236a837dff15a77c3, 0x57f669dd35be2b984cd4ab48c0a0c588,0x1c,0x1,0x0];
+
+    let (rosettanet, account) = deploy_account_from_rosettanet(eth_address);
+
+    assert_eq!(account.is_valid_signature(unsigned_tx_hash, signature), starknet::VALIDATED);
+}
+
+#[test]
 #[should_panic(expected: 'Invalid signature')]
 fn test_wrong_signature() {
     let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
@@ -86,9 +98,9 @@ fn test_transaction_validation() {
     let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e2.try_into().unwrap();
     let tx = RosettanetCall {
         to: 0xB756B1BC042Fa70D85Ee84eab646a3b438A285Ee.try_into().unwrap(),
-        nonce: 46,
-        max_priority_fee_per_gas: 1000000,
-        max_fee_per_gas: 11172626516,
+        nonce: 59,
+        max_priority_fee_per_gas: 158129478,
+        max_fee_per_gas: 50742206232,
         gas_limit: 21000,
         value: 1,
         calldata: array![].span(),
@@ -96,14 +108,12 @@ fn test_transaction_validation() {
         target_function: array![].span()
     };
 
-    let signature = array![0x4eda4c67ff6fe1ed0b9068a087294128,0xd0c17dcc3124b4c0692b6d5caf617683,0x4eb1e4008a34b159996a33a6996fe949,0x7b86a6b8b3e674da99fb642a54912cc8,0x1c,0x1,0x0].span();
+    let signature = array![0x1d9fb6b7ce01fda249f0f0a3ac00d3a2,0x15bd08d62685c22d30a57d611a643c76, 0x290a42b030be68a236a837dff15a77c3, 0x57f669dd35be2b984cd4ab48c0a0c588,0x1c,0x1,0x0].span();
     
     let (rosettanet, account) = deploy_account_from_rosettanet(eth_address);
-    start_cheat_nonce_global(0x2e);
     start_cheat_signature_global(signature);
     let validation = account.__validate__(tx);
     stop_cheat_signature_global();
-    stop_cheat_nonce_global();
 
     assert_eq!(validation, starknet::VALIDATED);
 }

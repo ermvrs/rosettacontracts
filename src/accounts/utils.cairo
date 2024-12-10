@@ -195,10 +195,51 @@ pub fn calculate_eth_function_signature(func: Span<u8>) -> Span<u8> {
 
 #[cfg(test)]
 mod tests {
-    use crate::accounts::utils::{merge_u256s, calculate_eth_function_signature, parse_function_name, eth_function_signature_from_felts, calculate_sn_entrypoint, validate_target_function, parse_transaction, RosettanetCall};
+    use crate::accounts::utils::{merge_u256s, calculate_eth_function_signature, parse_function_name, eth_function_signature_from_felts, calculate_sn_entrypoint, validate_target_function, parse_transaction, generate_tx_hash, RosettanetCall};
     use crate::accounts::encoding::{bytes_from_felts};
     use crate::utils::bytes::{ByteArrayExTrait};
 
+    #[test]
+    fn test_generate_tx_hash() {
+        let tx = RosettanetCall {
+            to: 0xB756B1BC042Fa70D85Ee84eab646a3b438A285Ee.try_into().unwrap(),
+            nonce: 59,
+            max_priority_fee_per_gas: 158129478,
+            max_fee_per_gas: 50742206232,
+            gas_limit: 21000,
+            value: 1,
+            calldata: array![].span(),
+            directives: array![].span(),
+            target_function: array![].span()
+        };
+
+        let tx_hash = generate_tx_hash(tx);
+        assert_eq!(tx_hash, u256{ low: 0x32c3a9bf29bb09c73fed760364f6c405, high: 0xfea45e666ba85f417463f9c7bd9c0ab5});
+    }
+
+    #[test]
+    fn test_parse_transaction_empty_calldata() {
+        let calldata = array![].span(); // transferFrom(0x123123,0x456456, u256 {0,0x666})
+        let directives = array![].span(); // Directive length must be -1 bcs first is selector
+        let target_function = array![].span(); // transferFrom
+
+        let call = RosettanetCall {
+            to: 1.try_into().unwrap(),
+            nonce: 1,
+            max_priority_fee_per_gas: 24000,
+            max_fee_per_gas: 12000,
+            gas_limit: 21000,
+            value: 0,
+            calldata: calldata,
+            directives: directives,
+            target_function: target_function
+        };
+
+        let parsed_txn = parse_transaction(call);
+        assert_eq!(parsed_txn.chain_id, 11155111);
+        assert_eq!(parsed_txn.nonce, 1);
+        assert_eq!(parsed_txn.input.len(), 0);
+    }
 
     #[test]
     fn test_parse_transaction_usual() {
