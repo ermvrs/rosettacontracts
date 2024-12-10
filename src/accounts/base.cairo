@@ -205,7 +205,6 @@ pub mod RosettaAccount {
                 r: r,
                 s: s,
             };
-
             let eth_address: EthAddress = self.ethereum_address.read();
 
             is_valid_eth_signature(hash, eth_address, rosettanet_signature)

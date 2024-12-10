@@ -10,9 +10,9 @@ pub const CHAIN_ID: u64 = 11155111; // TODO: Correct it
 
 #[derive(Copy, Drop, Serde)]
 pub struct RosettanetSignature {
-    pub v: u32, // 27 or 28
     pub r: u256,
     pub s: u256,
+    pub v: u32, // 27 or 28
 }
 
 #[derive(Copy, Drop, Clone, Serde)]
