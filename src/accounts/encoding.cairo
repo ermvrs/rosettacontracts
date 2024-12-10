@@ -127,6 +127,54 @@ mod tests {
     use core::num::traits::{Bounded};
 
     #[test]
+    fn rlp_encode_transaction() {
+        let tx = Eip1559Transaction {
+            chain_id: 2933,
+            nonce: 1,
+            max_priority_fee_per_gas: 1000000000,
+            max_fee_per_gas: 1000000000,
+            gas_limit: 21000,
+            to: 0x11655f4Ee2A5B66F9DCbe758e9FcdCd3eBF95eE5.try_into().unwrap(),
+            value: 0x0,
+            input: array![0xAB, 0xCA, 0xBC].span(), 
+            access_list: array![].span()
+        };
+
+        let encoded = rlp_encode_eip1559(tx);
+        assert_eq!(*encoded.at(0), 0x02);
+        assert_eq!(*encoded.at(1), 0xEC);
+        assert_eq!(*encoded.at(2), 0x82);
+        assert_eq!(*encoded.at(3), 0x0B);
+        assert_eq!(*encoded.at(4), 0x75);
+    }
+
+    #[test]
+    fn rlp_encode_transaction_value() {
+        // rlp encoded 
+        // 0x02eb83aa36a73784096cdd46850a1baf4a0e82520894b756b1bc042fa70d85ee84eab646a3b438a285ee0180c0
+        let tx = Eip1559Transaction {
+            chain_id: 11155111,
+            nonce: 55,
+            max_priority_fee_per_gas: 158129478,
+            max_fee_per_gas: 43414145550,
+            gas_limit: 21000,
+            to: 0xB756B1BC042Fa70D85Ee84eab646a3b438A285Ee.try_into().unwrap(),
+            value: 1,
+            input: array![].span(), 
+            access_list: array![].span()
+        };
+
+        let mut encoded = rlp_encode_eip1559(tx);
+        assert_eq!(encoded.len(), 45);
+        assert_eq!(*encoded.at(0), 0x02);
+        assert_eq!(*encoded.at(9), 0x6c);
+        assert_eq!(*encoded.at(18), 0x82);
+        assert_eq!(*encoded.at(20), 0x08);
+        assert_eq!(*encoded.at(29), 0x0d);
+        assert_eq!(*encoded.at(44), 0xc0);
+    }
+
+    #[test]
     fn test_deserialize_u256() {
         let deserialized = deserialize_u256(1);
         assert_eq!(deserialized.len(), 1);
@@ -254,56 +302,6 @@ mod tests {
         assert_eq!(*ba.at(1), 0x72);
         assert_eq!(*ba.at(29), 0x75);
         assert_eq!(*ba.at(30), 0x69);
-    }
-
-    #[test]
-    fn rlp_encode_transaction() {
-        let tx = Eip1559Transaction {
-            chain_id: 2933,
-            nonce: 1,
-            max_priority_fee_per_gas: 1000000000,
-            max_fee_per_gas: 1000000000,
-            gas_limit: 21000,
-            to: 0x11655f4Ee2A5B66F9DCbe758e9FcdCd3eBF95eE5.try_into().unwrap(),
-            value: 0x0,
-            input: array![0xAB, 0xCA, 0xBC].span(), 
-            access_list: array![].span()
-        };
-
-        let encoded = rlp_encode_eip1559(tx);
-        assert_eq!(*encoded.at(0), 0x02);
-        assert_eq!(*encoded.at(1), 0xEC);
-        assert_eq!(*encoded.at(2), 0x82);
-        assert_eq!(*encoded.at(3), 0x0B);
-        assert_eq!(*encoded.at(4), 0x75);
-    }
-
-    #[test]
-    fn rlp_encode_transaction_value() {
-        // rlp encoded 
-        // 02f86d83aa36a72e830f4240850299f0c05482520894b756b1bc042fa70d85ee84eab646a3b438a285ee0180c001a0d0c17dcc3124b4c0692b6d5caf6176834eda4c67ff6fe1ed0b9068a087294128a07b86a6b8b3e674da99fb642a54912cc84eb1e4008a34b159996a33a6996fe949
-        let tx = Eip1559Transaction {
-            chain_id: 11155111,
-            nonce: 46,
-            max_priority_fee_per_gas: 1000000,
-            max_fee_per_gas: 11172626516,
-            gas_limit: 21000,
-            to: 0xB756B1BC042Fa70D85Ee84eab646a3b438A285Ee.try_into().unwrap(),
-            value: 1,
-            input: array![].span(), 
-            access_list: array![].span()
-        };
-
-        let mut encoded = rlp_encode_eip1559(tx);
-        //assert_eq!(encoded.len(), 112);
-        loop {
-            match encoded.pop_front() {
-                Option::None => {break;},
-                Option::Some(val) => {
-                    println!("val: {}", *val);
-                }
-            }
-        };
     }
 
     #[test]
