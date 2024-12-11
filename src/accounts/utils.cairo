@@ -4,6 +4,7 @@ use crate::accounts::encoding::{Eip1559Transaction, deserialize_bytes, deseriali
 use crate::utils::constants::{POW_2_250};
 use crate::utils::traits::SpanDefault;
 use crate::utils::bytes::{U8SpanExTrait, ByteArrayExTrait};
+use crate::utils::transaction::eip2930::{AccessListItem};
 use starknet::eth_signature::{verify_eth_signature};
 
 pub const CHAIN_ID: u64 = 11155111; // TODO: Correct it
@@ -24,6 +25,7 @@ pub struct RosettanetCall {
     pub gas_limit: u64,
     pub value: u256, // To be used future
     pub calldata: Span<felt252>, // Calldata len must be +1 directive len
+    pub access_list: Span<AccessListItem>,
     pub directives: Span<u8>, // 0 -> do nothing, 1 -> u256, 2-> address
     pub target_function: Span<felt252> // Function name and types to used to calculate eth func signature
 }
@@ -62,7 +64,7 @@ pub fn parse_transaction(call: RosettanetCall) -> Eip1559Transaction {
             gas_limit: call.gas_limit,
             to: call.to,
             value: call.value,
-            access_list: array![].span(), // Do we need these?
+            access_list: call.access_list,
             input: calldata_bytes
         };
     
@@ -209,6 +211,7 @@ mod tests {
             gas_limit: 21000,
             value: 1,
             calldata: array![].span(),
+            access_list: array![].span(),
             directives: array![].span(),
             target_function: array![].span()
         };
@@ -231,6 +234,7 @@ mod tests {
             gas_limit: 21000,
             value: 0,
             calldata: calldata,
+            access_list: array![].span(),
             directives: directives,
             target_function: target_function
         };
@@ -255,6 +259,7 @@ mod tests {
             gas_limit: 21000,
             value: 0,
             calldata: calldata,
+            access_list: array![].span(),
             directives: directives,
             target_function: target_function
         };

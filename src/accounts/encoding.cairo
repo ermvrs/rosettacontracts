@@ -77,6 +77,15 @@ pub fn deserialize_bytes(value: felt252, len: usize) -> Span<u8> {
     ba.into_bytes()
 }
 
+pub fn deserialize_u256_with_zeroes(value:u256) -> Span<u8> {
+    let mut ba: core::byte_array::ByteArray = Default::default();
+    let low_bytes = deserialize_bytes(value.low.into(), 16);
+    let high_bytes = deserialize_bytes(value.high.into(), 16);
+    ba.append(@ByteArrayExTrait::from_bytes(low_bytes));
+    ba.append(@ByteArrayExTrait::from_bytes(high_bytes));
+    ba.into_bytes()
+}
+
 pub fn deserialize_u256(value: u256) -> Span<u8> {
     // Bu fonksiyonu tamamla
     let mut ba: core::byte_array::ByteArray = Default::default();
@@ -124,6 +133,7 @@ pub fn deserialize_bytes_non_zeroes(value: felt252, len: usize) -> Span<u8> {
 #[cfg(test)]
 mod tests {
     use crate::accounts::encoding::{Eip1559Transaction, rlp_encode_eip1559, deserialize_bytes_non_zeroes, bytes_from_felts, deserialize_u256, deserialize_u256_span};
+    use crate::utils::transaction::eip2930::{AccessListItem};
     use core::num::traits::{Bounded};
 
     #[test]
@@ -146,6 +156,28 @@ mod tests {
         assert_eq!(*encoded.at(2), 0x82);
         assert_eq!(*encoded.at(3), 0x0B);
         assert_eq!(*encoded.at(4), 0x75);
+    }
+    
+    #[test]
+    fn rlp_encode_access_list() {
+        let access_list_item = AccessListItem {
+            ethereum_address: 0x5703ff58bB0CA34F870a8bC18dDd541f29375978.try_into().unwrap(), 
+            storage_keys: array![0_u256, 1_u256].span()
+        };
+        let tx = Eip1559Transaction {
+            chain_id: 11155111,
+            nonce: 87,
+            max_priority_fee_per_gas: 1638611,
+            max_fee_per_gas: 16357352599,
+            gas_limit: 21000,
+            to: 0xC7f5D5D3725f36CF36477B84010EB8DdE42D3636.try_into().unwrap(),
+            value: 0x0,
+            input: array![0xf4,0xac,0xc7,0xb5].span(), 
+            access_list: array![access_list_item].span(),
+        };
+
+        let encoded = rlp_encode_eip1559(tx);
+        assert_eq!(encoded.len(), 142);
     }
 
     #[test]
