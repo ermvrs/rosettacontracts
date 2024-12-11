@@ -8,4 +8,7 @@ pub mod accounts {
 
 pub mod utils;
 pub mod errors;
-pub mod test_data;
+
+pub mod mocks {
+    pub mod erc20;
+}
