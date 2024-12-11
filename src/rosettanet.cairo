@@ -71,6 +71,9 @@ pub mod Rosettanet {
     fn constructor(ref self: ContractState, developer: ContractAddress, strk: ContractAddress) {
         self.dev.write(developer);
         self.strk.write(strk);
+
+        let strk_eth_address = self.generate_eth_address(strk);
+        self.update_registry(strk, strk_eth_address);
     }
 
     #[abi(embed_v0)]
