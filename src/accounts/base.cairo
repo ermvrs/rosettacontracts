@@ -15,9 +15,11 @@ pub trait IRosettaAccount<TState> {
     ) -> felt252;
     fn get_ethereum_address(self: @TState) -> EthAddress;
     fn rosettanet(self: @TState) -> ContractAddress;
+    fn native_currency(self: @TState) -> ContractAddress;
     // Camel case
     fn isValidSignature(self: @TState, hash: u256, signature: Array<felt252>) -> felt252;
     fn getEthereumAddress(self: @TState) -> EthAddress;
+    fn nativeCurrency(self: @TState) -> ContractAddress;
 }
 
 #[starknet::contract(account)]
@@ -39,19 +41,20 @@ pub mod RosettaAccount {
         pub const UNAUTHORIZED: felt252 = 'Rosetta: unauthorized';
     }
 
-    pub const STRK_ADDRESS: felt252 = 0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d;
     pub const TRANSFER_ENTRYPOINT: felt252 = 0x83afd3f4caedc6eebf44246fe54e38c95e3179a5ec9ea81740eca5b482d12e;
 
     #[storage]
     struct Storage {
         ethereum_address: EthAddress,
-        registry: ContractAddress
+        registry: ContractAddress,
+        strk_address: ContractAddress
     }
 
     #[constructor]
     fn constructor(ref self: ContractState, eth_address: EthAddress, registry: ContractAddress) {
         self.ethereum_address.write(eth_address);
         self.registry.write(registry);
+        self.strk_address.write(IRosettanetDispatcher { contract_address: registry }.native_currency());
     }
     #[abi(embed_v0)]
     impl AccountImpl of super::IRosettaAccount<ContractState> {
@@ -66,16 +69,15 @@ pub mod RosettaAccount {
             let eth_target: EthAddress = call.to;
             let sn_target: ContractAddress = IRosettanetDispatcher { contract_address: self.registry.read() }.get_starknet_address(eth_target);
             assert(sn_target != starknet::contract_address_const::<0>(), 'target not registered');
-
+            
             // If value transfer, send STRK before calling contract
             if(call.value > 0) {
                 // Re-check value
                 let value_on_signature = self.get_transaction_value();
-                assert(call.value == value_on_signature, ' value sig-tx mismatch');
-                println!("{:}", value_on_signature);
+                assert(call.value == value_on_signature, 'value sig-tx mismatch');
                 self.process_native_transfer(value_on_signature, call.to); // sends strk
             }
-            println!("{:}", call.calldata.len());
+            
             if(call.calldata.len() == 0) {
                 // do nothing
                 return array![array![].span()];
@@ -85,6 +87,8 @@ pub mod RosettaAccount {
             let mut calldata = call.calldata;
             let _ = calldata.pop_front(); // Remove first element, it is function selector
 
+            assert(calldata.len() == call.directives.len(), 'calldata directive len wrong');
+            
             let address_updated_calldata = self.update_addresses(calldata, call.directives); // This function security concerns me
             let result: Span<felt252> = call_contract_syscall(sn_target, entrypoint, address_updated_calldata).unwrap();
             // self.nonce.write(self.nonce.read() + 1); // Problem here ???
@@ -144,6 +148,10 @@ pub mod RosettaAccount {
             self.registry.read()
         }
 
+        fn native_currency(self: @ContractState) -> ContractAddress {
+            self.strk_address.read()
+        }
+
         fn isValidSignature(
             self: @ContractState, hash: u256, signature: Array<felt252>
         ) -> felt252 {
@@ -152,6 +160,10 @@ pub mod RosettaAccount {
 
         fn getEthereumAddress(self: @ContractState) -> EthAddress {
             self.get_ethereum_address()
+        }
+
+        fn nativeCurrency(self: @ContractState) -> ContractAddress{
+            self.native_currency()
         }
     }
 
@@ -218,8 +230,8 @@ pub mod RosettaAccount {
             let signature = tx_info.signature;
             assert(signature.len() == 7, 'signature len wrong');
             u256 {
-                low: (*signature.at(5)).try_into().unwrap(),
-                high: (*signature.at(6)).try_into().unwrap()
+                low: (*signature.at(5)).try_into().expect('sig val low fail'),
+                high: (*signature.at(6)).try_into().expect('sig val high fail')
             }
         }
 
@@ -252,7 +264,7 @@ pub mod RosettaAccount {
 
             let calldata: Span<felt252> = array![sn_address.into(), value.low.into(), value.high.into()].span();
             // tx has to be reverted if not enough balance
-            call_contract_syscall(STRK_ADDRESS.try_into().unwrap(), TRANSFER_ENTRYPOINT, calldata).expect('native transfer faisl')
+            call_contract_syscall(self.strk_address.read(), TRANSFER_ENTRYPOINT, calldata).expect('native transfer fails')
         }
     }
 }

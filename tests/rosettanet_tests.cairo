@@ -1,35 +1,10 @@
-use snforge_std::{declare, ContractClassTrait, DeclareResultTrait, start_cheat_caller_address, stop_cheat_caller_address};
+use snforge_std::{start_cheat_caller_address, stop_cheat_caller_address};
 
-use rosettacontracts::rosettanet::{
-    IRosettanetDispatcher, IRosettanetDispatcherTrait
-};
-use starknet::{ClassHash};
+use rosettacontracts::rosettanet::{IRosettanetDispatcherTrait};
 
-use rosettacontracts_integrationtest::test_utils::{developer, eth_account};
+use rosettacontracts_integrationtest::test_utils::{developer, eth_account, deploy_rosettanet, deploy_and_set_account};
 
-fn declare_accounts() -> ClassHash {
-    let class = declare("RosettaAccount").unwrap().contract_class();
-    *class.class_hash
-}
 
-fn deploy_rosettanet() -> IRosettanetDispatcher {
-    let contract = declare("Rosettanet").unwrap().contract_class();
-    let (contract_address, _) = contract.deploy(@array![developer().into()]).unwrap();
-    IRosettanetDispatcher { contract_address }
-}
-
-fn deploy_and_set_account() -> IRosettanetDispatcher {
-    let contract = declare("Rosettanet").unwrap().contract_class();
-    let (contract_address, _) = contract.deploy(@array![developer().into()]).unwrap();
-    let dispatcher = IRosettanetDispatcher { contract_address };
-    let account_class = declare_accounts();
-
-    start_cheat_caller_address(dispatcher.contract_address, developer());
-    dispatcher.set_account_class(account_class);
-    stop_cheat_caller_address(dispatcher.contract_address);
-
-    dispatcher
-}
 
 #[test]
 fn rosettanet_deploy_initial_dev() {

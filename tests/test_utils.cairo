@@ -1,15 +1,10 @@
-use snforge_std::{declare, ContractClassTrait, DeclareResultTrait, start_cheat_caller_address, stop_cheat_caller_address, replace_bytecode};
+use snforge_std::{declare, ContractClassTrait, DeclareResultTrait, start_cheat_caller_address, stop_cheat_caller_address};
 use starknet::{ClassHash, ContractAddress, EthAddress};
 use rosettacontracts::rosettanet::{
     IRosettanetDispatcher, IRosettanetDispatcherTrait
 };
 use rosettacontracts::accounts::base::{IRosettaAccountDispatcher};
-use rosettacontracts::accounts::base::RosettaAccount::{STRK_ADDRESS};
 use rosettacontracts::mocks::erc20::{IMockERC20Dispatcher, IMockERC20DispatcherTrait};
-
-pub fn strk_dispatcher() -> IMockERC20Dispatcher {
-    IMockERC20Dispatcher { contract_address: STRK_ADDRESS.try_into().unwrap() }
-}
 
 pub fn declare_erc20() -> ClassHash {
     let class = declare("MockERC20").unwrap().contract_class();
@@ -19,6 +14,20 @@ pub fn declare_erc20() -> ClassHash {
 pub fn declare_account() -> ClassHash {
     let class = declare("RosettaAccount").unwrap().contract_class();
     *class.class_hash
+}
+
+pub fn deploy_and_set_account() -> IRosettanetDispatcher {
+    let contract = declare("Rosettanet").unwrap().contract_class();
+    let native_currency = deploy_erc20();
+    let (contract_address, _) = contract.deploy(@array![developer().into(), native_currency.contract_address.into()]).unwrap();
+    let dispatcher = IRosettanetDispatcher { contract_address };
+    let account_class = declare_account();
+
+    start_cheat_caller_address(dispatcher.contract_address, developer());
+    dispatcher.set_account_class(account_class);
+    stop_cheat_caller_address(dispatcher.contract_address);
+
+    dispatcher
 }
 
 pub fn developer() -> ContractAddress { 
@@ -37,7 +46,8 @@ pub fn deploy_erc20() -> IMockERC20Dispatcher {
 
 pub fn deploy_rosettanet() -> IRosettanetDispatcher {
     let contract = declare("Rosettanet").unwrap().contract_class();
-    let (contract_address, _) = contract.deploy(@array![developer().into()]).unwrap();
+    let native_currency = deploy_erc20();
+    let (contract_address, _) = contract.deploy(@array![developer().into(), native_currency.contract_address.into()]).unwrap();
     IRosettanetDispatcher { contract_address }
 }
 
@@ -62,18 +72,16 @@ pub fn deploy_account_from_existing_rosettanet(eth_address: EthAddress, rosettan
     IRosettaAccountDispatcher { contract_address: account }
 }
 
-pub fn deploy_funded_account_from_rosettanet(eth_address: EthAddress) -> (IRosettanetDispatcher, IRosettaAccountDispatcher) {
+pub fn deploy_funded_account_from_rosettanet(eth_address: EthAddress) -> (IRosettanetDispatcher, IRosettaAccountDispatcher, IMockERC20Dispatcher) {
     let (rosettanet, account) = deploy_account_from_rosettanet(eth_address);
 
-    let strk_class = declare_erc20();
+    let native_currency_address = rosettanet.native_currency();
 
-    replace_bytecode(STRK_ADDRESS.try_into().unwrap(), strk_class).unwrap();
-
-    let strk = strk_dispatcher();
+    let strk = IMockERC20Dispatcher { contract_address: native_currency_address};
 
     strk.mint(account.contract_address, 1000000);
 
     assert_eq!(strk.balance_of(account.contract_address), 1000000);
 
-    (rosettanet, account)
+    (rosettanet, account, strk)
 }

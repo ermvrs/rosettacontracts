@@ -11,6 +11,7 @@ pub trait IRosettanet<TState> {
     fn get_ethereum_address(self: @TState, sn_address: ContractAddress) -> EthAddress;
     fn precalculate_starknet_account(self: @TState, eth_address: EthAddress) -> ContractAddress;
     fn account_class(self: @TState) -> ClassHash;
+    fn native_currency(self: @TState) -> ContractAddress;
     fn developer(self: @TState) -> ContractAddress;
 }
 #[starknet::contract]
@@ -63,11 +64,13 @@ pub mod Rosettanet {
         eth_to_sn: Map<EthAddress, ContractAddress>,
         account_class: ClassHash,
         dev: ContractAddress,
+        strk: ContractAddress
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState, developer: ContractAddress) {
+    fn constructor(ref self: ContractState, developer: ContractAddress, strk: ContractAddress) {
         self.dev.write(developer);
+        self.strk.write(strk);
     }
 
     #[abi(embed_v0)]
@@ -154,6 +157,11 @@ pub mod Rosettanet {
         /// Returns current account class hash
         fn account_class(self: @ContractState) -> ClassHash {
             self.account_class.read()
+        }
+
+        /// Returns native currency address on current network
+        fn native_currency(self: @ContractState) -> ContractAddress {
+            self.strk.read()
         }
 
         /// Returns developer address

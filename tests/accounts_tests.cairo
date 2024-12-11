@@ -1,9 +1,10 @@
-use snforge_std::{start_cheat_signature_global, stop_cheat_signature_global, start_cheat_nonce_global, stop_cheat_nonce_global};
+use snforge_std::{start_cheat_signature_global, stop_cheat_signature_global, start_cheat_nonce_global, stop_cheat_nonce_global, start_cheat_caller_address, stop_cheat_caller_address};
 
 use rosettacontracts::accounts::utils::{RosettanetCall, generate_tx_hash};
 use rosettacontracts::accounts::base::{IRosettaAccountDispatcherTrait};
+use rosettacontracts::mocks::erc20::{IMockERC20DispatcherTrait};
 use starknet::{EthAddress};
-use rosettacontracts_integrationtest::test_utils::{eth_account, deploy_account_from_rosettanet, deploy_funded_account_from_rosettanet};
+use rosettacontracts_integrationtest::test_utils::{eth_account, deploy_account_from_rosettanet, deploy_funded_account_from_rosettanet, deploy_account_from_existing_rosettanet};
 
 // TODO: test deploying account from its own
 #[test]
@@ -112,7 +113,7 @@ fn test_transaction_validation_calldata_and_value_transfer() {
 
 #[test]
 #[should_panic(expected: 'target not registered')]
-fn test_execute_value_transfer_non_registered() {
+fn test_execute_value_transfer_to_non_registered() {
     let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
     let tx = RosettanetCall {
         to: 0xB756B1BC042Fa70D85Ee84eab646a3b438A285Ee.try_into().unwrap(),
@@ -128,13 +129,120 @@ fn test_execute_value_transfer_non_registered() {
 
     let signature = array![0x1d9fb6b7ce01fda249f0f0a3ac00d3a2,0x15bd08d62685c22d30a57d611a643c76, 0x290a42b030be68a236a837dff15a77c3, 0x57f669dd35be2b984cd4ab48c0a0c588,0x1c,0x1,0x0];
 
-    let (_, account) = deploy_funded_account_from_rosettanet(eth_address);
+    let (_, account, _) = deploy_funded_account_from_rosettanet(eth_address);
 
     start_cheat_nonce_global(tx.nonce.into());
     start_cheat_signature_global(signature.span());
+    start_cheat_caller_address(account.contract_address, starknet::contract_address_const::<0>());
     let execution = account.__execute__(tx);
+    stop_cheat_caller_address(account.contract_address);
     stop_cheat_signature_global();
     stop_cheat_nonce_global();
 
     assert_eq!(execution, array![array![].span()]);
 }
+
+#[test]
+#[should_panic(expected: 'value sig-tx mismatch')]
+fn test_execute_value_transfer_wrong_value_on_sig() {
+    let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
+    let receiver_address: EthAddress = 0xB756B1BC042Fa70D85Ee84eab646a3b438A285Ee.try_into().unwrap();
+    let tx = RosettanetCall {
+        to: receiver_address,
+        nonce: 59,
+        max_priority_fee_per_gas: 158129478,
+        max_fee_per_gas: 50742206232,
+        gas_limit: 21000,
+        value: 1,
+        calldata: array![].span(),
+        directives: array![].span(),
+        target_function: array![].span()
+    };
+
+    let signature = array![0x1d9fb6b7ce01fda249f0f0a3ac00d3a2,0x15bd08d62685c22d30a57d611a643c76, 0x290a42b030be68a236a837dff15a77c3, 0x57f669dd35be2b984cd4ab48c0a0c588,0x1c,0x1FFF,0x1FFF];
+
+    let (rosettanet, account, _) = deploy_funded_account_from_rosettanet(eth_address);
+
+    let receiver = deploy_account_from_existing_rosettanet(receiver_address, rosettanet.contract_address);
+
+    start_cheat_nonce_global(tx.nonce.into());
+    start_cheat_signature_global(signature.span());
+    start_cheat_caller_address(account.contract_address, starknet::contract_address_const::<0>());
+    let execution = account.__execute__(tx);
+    stop_cheat_caller_address(account.contract_address);
+    stop_cheat_signature_global();
+    stop_cheat_nonce_global();
+
+    assert_eq!(execution, array![array![].span()]);
+}
+
+#[test]
+#[should_panic(expected: 'ERC20: insufficient balance')]
+fn test_execute_value_transfer_not_enough_balance() {
+    let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
+    let receiver_address: EthAddress = 0xB756B1BC042Fa70D85Ee84eab646a3b438A285Ee.try_into().unwrap();
+    let tx = RosettanetCall {
+        to: receiver_address,
+        nonce: 59,
+        max_priority_fee_per_gas: 158129478,
+        max_fee_per_gas: 50742206232,
+        gas_limit: 21000,
+        value: 1,
+        calldata: array![].span(),
+        directives: array![].span(),
+        target_function: array![].span()
+    };
+
+    let signature = array![0x1d9fb6b7ce01fda249f0f0a3ac00d3a2,0x15bd08d62685c22d30a57d611a643c76, 0x290a42b030be68a236a837dff15a77c3, 0x57f669dd35be2b984cd4ab48c0a0c588,0x1c,0x1,0x0];
+
+    let (rosettanet, account) = deploy_account_from_rosettanet(eth_address);
+
+    let receiver = deploy_account_from_existing_rosettanet(receiver_address, rosettanet.contract_address);
+
+    start_cheat_nonce_global(tx.nonce.into());
+    start_cheat_signature_global(signature.span());
+    start_cheat_caller_address(account.contract_address, starknet::contract_address_const::<0>());
+    let execution = account.__execute__(tx);
+    stop_cheat_caller_address(account.contract_address);
+    stop_cheat_signature_global();
+    stop_cheat_nonce_global();
+
+    assert_eq!(execution, array![array![].span()]);
+}
+
+#[test]
+fn test_execute_value_transfer() {
+    let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
+    let receiver_address: EthAddress = 0xB756B1BC042Fa70D85Ee84eab646a3b438A285Ee.try_into().unwrap();
+    let tx = RosettanetCall {
+        to: receiver_address,
+        nonce: 59,
+        max_priority_fee_per_gas: 158129478,
+        max_fee_per_gas: 50742206232,
+        gas_limit: 21000,
+        value: 1,
+        calldata: array![].span(),
+        directives: array![].span(),
+        target_function: array![].span()
+    };
+
+    let signature = array![0x1d9fb6b7ce01fda249f0f0a3ac00d3a2,0x15bd08d62685c22d30a57d611a643c76, 0x290a42b030be68a236a837dff15a77c3, 0x57f669dd35be2b984cd4ab48c0a0c588,0x1c,0x1,0x0];
+
+    let (rosettanet, account, strk) = deploy_funded_account_from_rosettanet(eth_address);
+
+    let receiver = deploy_account_from_existing_rosettanet(receiver_address, rosettanet.contract_address);
+    assert_eq!(strk.balance_of(receiver.contract_address), 0);
+
+    start_cheat_nonce_global(tx.nonce.into());
+    start_cheat_signature_global(signature.span());
+    start_cheat_caller_address(account.contract_address, starknet::contract_address_const::<0>());
+    let execution = account.__execute__(tx);
+    stop_cheat_caller_address(account.contract_address);
+    stop_cheat_signature_global();
+    stop_cheat_nonce_global();
+
+    assert_eq!(strk.balance_of(receiver.contract_address), 1);
+    assert_eq!(execution, array![array![].span()]);
+}
+
+// TODO: tests with calldata
