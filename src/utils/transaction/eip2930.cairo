@@ -2,7 +2,7 @@ use core::starknet::EthAddress;
 use crate::utils::transaction::common::TxKind;
 use alexandria_encoding::rlp::{RLPItem};
 use crate::utils::traits::SpanDefault;
-use crate::accounts::encoding::{deserialize_bytes};
+use crate::accounts::encoding::{deserialize_bytes, deserialize_u256_with_zeroes};
 
 
 #[derive(Copy, Drop, Serde, PartialEq, Debug)]
@@ -28,8 +28,8 @@ pub impl AccessListItemImpl of AccessListItemTrait {
         let AccessListItem { ethereum_address, mut storage_keys } = *self;
 
         let mut storage_keys_arr = array![];
-        for storage_key in storage_keys { // deserialize u256 kullan TODO
-            storage_keys_arr.append(RLPItem::String(deserialize_bytes((*storage_key).try_into().unwrap(), 32))); // TODO deserialize 32 bytes olmaz 16 low high al
+        for storage_key in storage_keys {
+            storage_keys_arr.append(RLPItem::String(deserialize_u256_with_zeroes(*storage_key))); 
         };
 
         let addr = RLPItem::String(deserialize_bytes(ethereum_address.into(), 20));

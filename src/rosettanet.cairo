@@ -5,6 +5,7 @@ pub trait IRosettanet<TState> {
     fn register_contract(ref self: TState, address: ContractAddress); // Registers existing starknet contract to registry
     fn deploy_account(ref self: TState, eth_address: EthAddress) -> ContractAddress; // Deploys starknet account and returns address
     fn set_account_class(ref self: TState, class: ClassHash); // Sets account class, this function will be removed after stable account
+    fn register_matched_addresses(ref self: TState, sn_address: ContractAddress, eth_address: EthAddress); // Will be used during alpha
     fn upgrade(ref self: TState, class: ClassHash); // Upgrades contract
     // Read methods
     fn get_starknet_address(self: @TState, eth_address: EthAddress) -> ContractAddress;
@@ -115,6 +116,18 @@ pub mod Rosettanet {
             self.account_class.write(class);
 
             self.emit(AccountClassChanged {changer: get_caller_address(), new_class: class});
+        }
+
+        /// Updates registry without generating eth address
+        /// # Arguments
+        /// * `sn_address` - Starknet address
+        /// * `eth_address` - Ethereum address
+        fn register_matched_addresses(ref self: ContractState, sn_address: ContractAddress, eth_address: EthAddress) {
+            assert(get_caller_address() == self.dev.read(), 'only dev');
+
+            self.update_registry(sn_address, eth_address);
+
+            self.emit(AddressRegistered {sn_address: sn_address, eth_address: eth_address});
         }
 
         /// Updates this contracts class

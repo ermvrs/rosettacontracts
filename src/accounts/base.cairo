@@ -246,6 +246,7 @@ pub mod RosettaAccount {
                 if(current_directive == 2_u8) {
                     let eth_address: EthAddress = (*calldata.at(index)).try_into().unwrap();
                     let sn_address = IRosettanetDispatcher{contract_address: self.registry.read()}.get_starknet_address(eth_address);
+                    assert(sn_address != starknet::contract_address_const::<0>(), 'calldata address not registered');
                     updated_array.append(sn_address.into());
                 } else {
                     updated_array.append(*calldata.at(index));
