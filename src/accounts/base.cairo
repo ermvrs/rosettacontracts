@@ -39,8 +39,8 @@ pub mod RosettaAccount {
         pub const UNAUTHORIZED: felt252 = 'Rosetta: unauthorized';
     }
 
-    const STRK_ADDRESS: felt252 = 0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d;
-    const TRANSFER_ENTRYPOINT: felt252 = 0x83afd3f4caedc6eebf44246fe54e38c95e3179a5ec9ea81740eca5b482d12e;
+    pub const STRK_ADDRESS: felt252 = 0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d;
+    pub const TRANSFER_ENTRYPOINT: felt252 = 0x83afd3f4caedc6eebf44246fe54e38c95e3179a5ec9ea81740eca5b482d12e;
 
     #[storage]
     struct Storage {
@@ -72,9 +72,10 @@ pub mod RosettaAccount {
                 // Re-check value
                 let value_on_signature = self.get_transaction_value();
                 assert(call.value == value_on_signature, ' value sig-tx mismatch');
+                println!("{:}", value_on_signature);
                 self.process_native_transfer(value_on_signature, call.to); // sends strk
             }
-
+            println!("{:}", call.calldata.len());
             if(call.calldata.len() == 0) {
                 // do nothing
                 return array![array![].span()];
@@ -251,7 +252,7 @@ pub mod RosettaAccount {
 
             let calldata: Span<felt252> = array![sn_address.into(), value.low.into(), value.high.into()].span();
             // tx has to be reverted if not enough balance
-            call_contract_syscall(STRK_ADDRESS.try_into().unwrap(), TRANSFER_ENTRYPOINT, calldata).unwrap()
+            call_contract_syscall(STRK_ADDRESS.try_into().unwrap(), TRANSFER_ENTRYPOINT, calldata).expect('native transfer faisl')
         }
     }
 }

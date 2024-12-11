@@ -5,7 +5,7 @@ use rosettacontracts::rosettanet::{
 };
 use starknet::{ClassHash};
 
-use rosettacontracts::test_data::{developer, eth_account};
+use rosettacontracts_integrationtest::test_utils::{developer, eth_account};
 
 fn declare_accounts() -> ClassHash {
     let class = declare("RosettaAccount").unwrap().contract_class();
