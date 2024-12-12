@@ -177,6 +177,7 @@ fn test_transaction_validation_calldata_and_value_transfer() {
 }
 
 #[test]
+#[should_panic(expected: 'Access list not supported')]
 fn test_validation_with_access_list() {
     let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
     let target: EthAddress = 0xC7f5D5D3725f36CF36477B84010EB8DdE42D3636.try_into().unwrap();
@@ -475,8 +476,15 @@ fn test_execute_erc20_transfer_with_value() {
 }
 
 #[test]
+#[should_panic(expected: 'Access list not supported')]
+#[ignore] // Since validation done in __validate__ this is not failing. Execution doesnt care about access list context
 fn test_execute_with_access_list() {
+    let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
     let target: EthAddress = 0xC7f5D5D3725f36CF36477B84010EB8DdE42D3636.try_into().unwrap();
+    let access_list_item = AccessListItem {
+        ethereum_address: 0x5703ff58bB0CA34F870a8bC18dDd541f29375978.try_into().unwrap(), 
+        storage_keys: array![0_u256, 1_u256].span()
+    };
     let tx = RosettanetCall {
         to: target, // we dont need to deploy account, we only check validation here
         nonce: 87,
@@ -485,8 +493,20 @@ fn test_execute_with_access_list() {
         gas_limit: 210000,
         value: 0,
         calldata: array![0xf4acc7b5].span(), // sends 1000000 tokens
-        access_list: array![].span(),// COMPLETE ACCESS LIST ITEM
+        access_list: array![access_list_item].span(),// this must be always empty
         directives: array![].span(),
-        target_function: array![0x7472616E7366657228616464726573732C75696E7432353629].span() // transfer(address,uint256)
+        target_function: array![0x63616C6C43616C63756C61746F722829].span() // callCalculator()
     };
+
+    let signature = array![0xc7ac6350bd17348d16f37c3e16e32f38, 0x4f3595825b9a4f9b3bc433a373aba603, 0x309f20124684d93997be0ebaecec49c0, 0x6a79d47f800e637b21026ba1591cee5b, 0x1b, 0x0,0x0];
+    let (rosettanet, account, _) = deploy_funded_account_from_rosettanet(eth_address);
+    deploy_account_from_existing_rosettanet(target, rosettanet.contract_address);
+
+    start_cheat_nonce_global(tx.nonce.into());
+    start_cheat_signature_global(signature.span());
+    start_cheat_caller_address(account.contract_address, starknet::contract_address_const::<0>());
+    account.__execute__(tx);
+    stop_cheat_caller_address(account.contract_address);
+    stop_cheat_signature_global();
+    stop_cheat_nonce_global();
 }

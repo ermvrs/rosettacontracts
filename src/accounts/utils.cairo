@@ -39,6 +39,8 @@ pub fn parse_transaction(call: RosettanetCall) -> Eip1559Transaction {
     let mut calldata = call.calldata;
     let directives = call.directives;
 
+    assert(call.access_list.len() == 0, 'Access list not supported');
+
     let function_signature: felt252 = match calldata.pop_front() {
         Option::None => { 0 }, // We may remove that panic or change the logic, since native eth transfer has empty calldata
         Option::Some(val) => { *val }
