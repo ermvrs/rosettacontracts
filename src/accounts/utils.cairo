@@ -25,7 +25,7 @@ pub struct RosettanetCall {
     pub gas_limit: u64,
     pub value: u256, // To be used future
     pub calldata: Span<felt252>, // Calldata len must be +1 directive len
-    pub access_list: Span<AccessListItem>,
+    pub access_list: Span<AccessListItem>, // TODO: remove this. it always be empty array
     pub directives: Span<u8>, // 0 -> do nothing, 1 -> u256, 2-> address
     pub target_function: Span<felt252> // Function name and types to used to calculate eth func signature
 }
