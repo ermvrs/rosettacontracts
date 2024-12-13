@@ -49,15 +49,13 @@ pub mod RosettaAccount {
     #[storage]
     struct Storage {
         ethereum_address: EthAddress,
-        registry: ContractAddress,
-        strk_address: ContractAddress
+        registry: ContractAddress
     }
 
     #[constructor]
     fn constructor(ref self: ContractState, eth_address: EthAddress, registry: ContractAddress) {
         self.ethereum_address.write(eth_address);
         self.registry.write(registry);
-        self.strk_address.write(IRosettanetDispatcher { contract_address: registry }.native_currency());
     }
     #[abi(embed_v0)]
     impl AccountImpl of super::IRosettaAccount<ContractState> {
@@ -162,7 +160,7 @@ pub mod RosettaAccount {
         }
 
         fn native_currency(self: @ContractState) -> ContractAddress {
-            self.strk_address.read()
+            IRosettanetDispatcher { contract_address: self.registry.read() }.native_currency()
         }
 
         fn isValidSignature(
@@ -278,7 +276,7 @@ pub mod RosettaAccount {
 
             let calldata: Span<felt252> = array![sn_address.into(), value.low.into(), value.high.into()].span();
             // tx has to be reverted if not enough balance
-            call_contract_syscall(self.strk_address.read(), TRANSFER_ENTRYPOINT, calldata).expect('native transfer fails')
+            call_contract_syscall(self.native_currency(), TRANSFER_ENTRYPOINT, calldata).expect('native transfer fails')
         }
 
         fn execute_multicall(self: @ContractState, calls: Span<RosettanetMulticall>) -> Array<Span<felt252>> {

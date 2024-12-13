@@ -4,6 +4,7 @@ pub trait IRosettanet<TState> {
     // Write methods
     fn register_contract(ref self: TState, address: ContractAddress); // Registers existing starknet contract to registry
     fn deploy_account(ref self: TState, eth_address: EthAddress) -> ContractAddress; // Deploys starknet account and returns address
+    fn register_deployed_account(ref self: TState, eth_address: EthAddress); // Registers account deployed not from this contract
     fn set_account_class(ref self: TState, class: ClassHash); // Sets account class, this function will be removed after stable account
     fn register_matched_addresses(ref self: TState, sn_address: ContractAddress, eth_address: EthAddress); // Will be used during alpha
     fn upgrade(ref self: TState, class: ClassHash); // Upgrades contract
@@ -23,6 +24,7 @@ pub mod Rosettanet {
     use starknet::syscalls::{deploy_syscall, replace_class_syscall};
     use starknet::{ContractAddress, EthAddress, ClassHash, get_contract_address, get_caller_address};
     use openzeppelin::utils::deployments::{calculate_contract_address_from_deploy_syscall};
+    use rosettacontracts::accounts::base::{IRosettaAccountDispatcher, IRosettaAccountDispatcherTrait};
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -30,7 +32,8 @@ pub mod Rosettanet {
         AddressRegistered: AddressRegistered,
         AccountDeployed: AccountDeployed,
         AccountClassChanged: AccountClassChanged,
-        Upgraded: Upgraded
+        Upgraded: Upgraded,
+        PredeployedAccountRegistered: PredeployedAccountRegistered
     }
 
     #[derive(Drop, starknet::Event)]
@@ -42,6 +45,13 @@ pub mod Rosettanet {
 
     #[derive(Drop, starknet::Event)]
     pub struct AccountDeployed {
+        #[key]
+        pub account: ContractAddress,
+        pub eth_address: EthAddress,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    pub struct PredeployedAccountRegistered {
         #[key]
         pub account: ContractAddress,
         pub eth_address: EthAddress,
@@ -105,6 +115,18 @@ pub mod Rosettanet {
             self.emit(AccountDeployed{ account: account, eth_address: eth_address });
             
             account
+        }
+
+        /// Registers pre deployed rosetta account to the registry
+        /// # Arguments
+        /// * `eth_address` - Ethereum Address for already deployed account
+        fn register_deployed_account(ref self: ContractState, eth_address: EthAddress) {
+            let precalculated_address: ContractAddress = self.precalculate_starknet_account(eth_address);
+            assert(IRosettaAccountDispatcher { contract_address: precalculated_address}.rosettanet() == get_contract_address(), 'wrong deployment');
+            // TODO: Add tests for this function
+            self.update_registry(precalculated_address, eth_address);
+
+            self.emit(PredeployedAccountRegistered {account: precalculated_address, eth_address });
         }
 
         /// Updates account class
