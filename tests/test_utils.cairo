@@ -7,6 +7,7 @@ use rosettacontracts::rosettanet::{
 };
 use rosettacontracts::accounts::base::{IRosettaAccountDispatcher};
 use rosettacontracts::mocks::erc20::{IMockERC20Dispatcher, IMockERC20DispatcherTrait};
+use rosettacontracts::mocks::weth::{IMockWETHDispatcher, IMockWETHDispatcherTrait};
 
 fn compute_hash_on_elements(data: Span<felt252>) -> felt252 {
     let mut state = PedersenTrait::new(0);
@@ -55,6 +56,12 @@ pub fn deploy_erc20() -> IMockERC20Dispatcher {
     IMockERC20Dispatcher { contract_address }
 }
 
+pub fn deploy_weth() -> IMockWETHDispatcher {
+    let class = declare("MockWETH").unwrap().contract_class();
+    let (contract_address, _) = class.deploy(@array![]).unwrap();
+    IMockWETHDispatcher { contract_address }
+}
+
 pub fn deploy_rosettanet() -> IRosettanetDispatcher {
     let contract = declare("Rosettanet").unwrap().contract_class();
     let native_currency = deploy_erc20();
@@ -93,6 +100,20 @@ pub fn deploy_funded_account_from_rosettanet(eth_address: EthAddress) -> (IRoset
     strk.mint(account.contract_address, 1000000);
 
     assert_eq!(strk.balance_of(account.contract_address), 1000000);
+
+    (rosettanet, account, strk)
+}
+
+pub fn deploy_specificly_funded_account_from_rosettanet(eth_address: EthAddress, amount: u256) -> (IRosettanetDispatcher, IRosettaAccountDispatcher, IMockERC20Dispatcher) {
+    let (rosettanet, account) = deploy_account_from_rosettanet(eth_address);
+
+    let native_currency_address = rosettanet.native_currency();
+
+    let strk = IMockERC20Dispatcher { contract_address: native_currency_address};
+
+    strk.mint(account.contract_address, amount);
+
+    assert_eq!(strk.balance_of(account.contract_address), amount);
 
     (rosettanet, account, strk)
 }

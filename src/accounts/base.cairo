@@ -25,12 +25,13 @@ pub trait IRosettaAccount<TState> {
 #[starknet::contract(account)]
 pub mod RosettaAccount {
     use core::num::traits::Zero;
+    use core::panic_with_felt252;
     use starknet::{
         ContractAddress, EthAddress, get_contract_address, get_caller_address, get_tx_info
     };
     use starknet::syscalls::{call_contract_syscall};
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
-    use rosettacontracts::accounts::utils::{is_valid_eth_signature, RosettanetSignature, RosettanetCall, validate_target_function, generate_tx_hash};
+    use rosettacontracts::accounts::utils::{is_valid_eth_signature, RosettanetSignature, RosettanetCall, RosettanetMulticall, prepare_multicall_context, validate_target_function, generate_tx_hash};
     use crate::rosettanet::{IRosettanetDispatcher, IRosettanetDispatcherTrait};
     use openzeppelin::utils::deployments::{calculate_contract_address_from_deploy_syscall};
 
@@ -39,9 +40,11 @@ pub mod RosettaAccount {
         pub const INVALID_SIGNATURE: felt252 = 'Rosetta: invalid signature';
         pub const INVALID_TX_VERSION: felt252 = 'Rosetta: invalid tx version';
         pub const UNAUTHORIZED: felt252 = 'Rosetta: unauthorized';
+        pub const UNIMPLEMENTED_FEATURE: felt252 = 'Rosetta: unimplemented feature';
     }
 
     pub const TRANSFER_ENTRYPOINT: felt252 = 0x83afd3f4caedc6eebf44246fe54e38c95e3179a5ec9ea81740eca5b482d12e;
+    pub const MULTICALL_SELECTOR: felt252 = 0xFFFFFFFF; // multicall eth selector
 
     #[storage]
     struct Storage {
@@ -69,6 +72,16 @@ pub mod RosettaAccount {
             let eth_target: EthAddress = call.to;
             let sn_target: ContractAddress = IRosettanetDispatcher { contract_address: self.registry.read() }.get_starknet_address(eth_target);
             assert(sn_target != starknet::contract_address_const::<0>(), 'target not registered');
+
+            // executes multicall
+            if(call.to == self.ethereum_address.read()) {
+                // This is multicall
+                assert(*call.calldata.at(0) == MULTICALL_SELECTOR, 'wrong multicall selector');
+                assert(call.value == 0, 'multicall value not zero'); 
+                panic_with_felt252(Errors::UNIMPLEMENTED_FEATURE);
+                let context = prepare_multicall_context(call.calldata); // First calldata element removed inside this function
+                return self.execute_multicall(context);
+            }
             
             // If value transfer, send STRK before calling contract
             if(call.value > 0) {
@@ -266,6 +279,11 @@ pub mod RosettaAccount {
             let calldata: Span<felt252> = array![sn_address.into(), value.low.into(), value.high.into()].span();
             // tx has to be reverted if not enough balance
             call_contract_syscall(self.strk_address.read(), TRANSFER_ENTRYPOINT, calldata).expect('native transfer fails')
+        }
+
+        fn execute_multicall(self: @ContractState, calls: Span<RosettanetMulticall>) -> Array<Span<felt252>> {
+
+            array![array![].span()]
         }
     }
 }

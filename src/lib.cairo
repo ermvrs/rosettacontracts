@@ -11,4 +11,5 @@ pub mod errors;
 
 pub mod mocks {
     pub mod erc20;
+    pub mod weth;
 }

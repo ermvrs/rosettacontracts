@@ -30,6 +30,24 @@ pub struct RosettanetCall {
     pub target_function: Span<felt252> // Function name and types to used to calculate eth func signature
 }
 
+#[derive(Copy, Drop, Clone, Serde)]
+pub struct RosettanetMulticall {
+    to: EthAddress,
+    value: u256,
+    calldata: Span<felt252>, // We dont need to verify target function here
+    directives: Span<u8>
+}
+
+// TODO: add tests
+pub fn prepare_multicall_context(calldata: Span<felt252>) -> Span<RosettanetMulticall> {
+    let mut calldata = calldata;
+    let _ = calldata.pop_front(); // First element removed, its selector.
+
+    let calls: Span<RosettanetMulticall> = Serde::deserialize(ref calldata).unwrap();
+
+    calls
+}
+
 pub fn generate_tx_hash(call: RosettanetCall) -> u256 {
     let parsed_txn = parse_transaction(call);
     calculate_tx_hash(rlp_encode_eip1559(parsed_txn))
