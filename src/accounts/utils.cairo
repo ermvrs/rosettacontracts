@@ -217,9 +217,40 @@ pub fn calculate_eth_function_signature(func: Span<u8>) -> Span<u8> {
 
 #[cfg(test)]
 mod tests {
-    use crate::accounts::utils::{merge_u256s, calculate_eth_function_signature, parse_function_name, eth_function_signature_from_felts, calculate_sn_entrypoint, validate_target_function, parse_transaction, generate_tx_hash, RosettanetCall};
+    use crate::accounts::utils::{merge_u256s, prepare_multicall_context, calculate_eth_function_signature, parse_function_name, eth_function_signature_from_felts, calculate_sn_entrypoint, 
+        validate_target_function, parse_transaction, generate_tx_hash, RosettanetCall, RosettanetMulticall};
     use crate::accounts::encoding::{bytes_from_felts};
     use crate::utils::bytes::{ByteArrayExTrait};
+    use starknet::EthAddress;
+
+    #[test]
+    fn test_prepare_multicall_context() {
+        let target_1: EthAddress = 0x123.try_into().unwrap();
+        let target_2: EthAddress = 0x444.try_into().unwrap();
+        let value_1: u256 = 0;
+        let value_2: u256 = 5344;
+        let calldata_1: Span<felt252> = array![0xabcabcab, 0x123, 0x456].span();
+        let calldata_2: Span<felt252> = array![0xabcabcef, 0x888, 0x999].span();
+        let directives_1: Span<felt252> = array![0x0,0x0].span();
+        let directives_2: Span<felt252> = array![0x1,0x0].span();
+        let mut calldata: Array<felt252> = array![0x02, target_1.into(), value_1.low.into(), value_1.high.into()];
+        calldata.append(calldata_1.len().into());
+        calldata.append_span(calldata_1);
+        calldata.append(directives_1.len().into());
+        calldata.append_span(directives_1.into());
+
+        calldata.append(target_2.into());
+        calldata.append(value_2.low.into());
+        calldata.append(value_2.high.into());
+        calldata.append(calldata_2.len().into());
+        calldata.append_span(calldata_2);
+        calldata.append(directives_2.len().into());
+        calldata.append_span(directives_2.into());
+
+        let deserialized: Span<RosettanetMulticall> = prepare_multicall_context(calldata.span());
+
+        assert_eq!(deserialized.len(), 2);
+    }
 
     #[test]
     fn test_generate_tx_hash() {
