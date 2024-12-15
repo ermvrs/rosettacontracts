@@ -27,7 +27,7 @@ pub mod RosettaAccount {
     use core::num::traits::Zero;
     use core::panic_with_felt252;
     use starknet::{
-        ContractAddress, EthAddress, get_contract_address, get_caller_address, get_tx_info
+        ContractAddress, EthAddress, ClassHash, get_contract_address, get_caller_address, get_tx_info
     };
     use starknet::syscalls::{call_contract_syscall, replace_class_syscall};
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
@@ -82,7 +82,7 @@ pub mod RosettaAccount {
                     let context = prepare_multicall_context(call.calldata); // First calldata element removed inside this function
                     return self.execute_multicall(context);
                 } else if(selector == UPGRADE_SELECTOR) {
-                    let latest_hash: ClassHash = IRosettanetDispatcher { contract_address: self.registry.read() }.account_class();
+                    let latest_hash: ClassHash = IRosettanetDispatcher { contract_address: self.registry.read() }.latest_class();
                     replace_class_syscall(latest_hash).unwrap();
                     return array![array![latest_hash.into()].span()];
                 } else {
