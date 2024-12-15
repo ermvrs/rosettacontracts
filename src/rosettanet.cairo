@@ -74,7 +74,9 @@ pub mod Rosettanet {
         sn_to_eth: Map<ContractAddress, EthAddress>,
         eth_to_sn: Map<EthAddress, ContractAddress>,
         latest_class: ClassHash,
-        initial_class: ClassHash,
+        // Accounts will always deployed with initial class, so we can always precalculate the addresses. 
+        // They may need to upgrade to the latest hash after deployment.
+        initial_class: ClassHash, 
         dev: ContractAddress,
         strk: ContractAddress
     }
