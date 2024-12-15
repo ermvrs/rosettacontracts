@@ -29,7 +29,7 @@ pub mod RosettaAccount {
     use starknet::{
         ContractAddress, EthAddress, get_contract_address, get_caller_address, get_tx_info
     };
-    use starknet::syscalls::{call_contract_syscall};
+    use starknet::syscalls::{call_contract_syscall, replace_class_syscall};
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use rosettacontracts::accounts::utils::{is_valid_eth_signature, RosettanetSignature, RosettanetCall, RosettanetMulticall, prepare_multicall_context, validate_target_function, generate_tx_hash};
     use crate::rosettanet::{IRosettanetDispatcher, IRosettanetDispatcherTrait};
@@ -45,6 +45,7 @@ pub mod RosettaAccount {
 
     pub const TRANSFER_ENTRYPOINT: felt252 = 0x83afd3f4caedc6eebf44246fe54e38c95e3179a5ec9ea81740eca5b482d12e;
     pub const MULTICALL_SELECTOR: felt252 = 0xFFFFFFFF; // multicall eth selector
+    pub const UPGRADE_SELECTOR: felt252 = 0xFFFFFFFE; // upgrades contract
 
     #[storage]
     struct Storage {
@@ -71,14 +72,22 @@ pub mod RosettaAccount {
             let sn_target: ContractAddress = IRosettanetDispatcher { contract_address: self.registry.read() }.get_starknet_address(eth_target);
             assert(sn_target != starknet::contract_address_const::<0>(), 'target not registered');
 
-            // executes multicall
+            // Multicall or upgrade call
             if(call.to == self.ethereum_address.read()) {
                 // This is multicall
-                assert(*call.calldata.at(0) == MULTICALL_SELECTOR, 'wrong multicall selector');
-                assert(call.value == 0, 'multicall value not zero'); 
-                panic_with_felt252(Errors::UNIMPLEMENTED_FEATURE);
-                let context = prepare_multicall_context(call.calldata); // First calldata element removed inside this function
-                return self.execute_multicall(context);
+                let selector = *call.calldata.at(0);
+                if(selector == MULTICALL_SELECTOR) {
+                    assert(call.value == 0, 'multicall value not zero'); 
+                    panic_with_felt252(Errors::UNIMPLEMENTED_FEATURE);
+                    let context = prepare_multicall_context(call.calldata); // First calldata element removed inside this function
+                    return self.execute_multicall(context);
+                } else if(selector == UPGRADE_SELECTOR) {
+                    let latest_hash: ClassHash = IRosettanetDispatcher { contract_address: self.registry.read() }.account_class();
+                    replace_class_syscall(latest_hash).unwrap();
+                    return array![array![latest_hash.into()].span()];
+                } else {
+                    panic_with_felt252(Errors::UNIMPLEMENTED_FEATURE);
+                }
             }
             
             // If value transfer, send STRK before calling contract
