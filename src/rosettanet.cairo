@@ -12,7 +12,7 @@ pub trait IRosettanet<TState> {
     fn get_starknet_address(self: @TState, eth_address: EthAddress) -> ContractAddress;
     fn get_ethereum_address(self: @TState, sn_address: ContractAddress) -> EthAddress;
     fn precalculate_starknet_account(self: @TState, eth_address: EthAddress) -> ContractAddress;
-    fn account_class(self: @TState) -> ClassHash;
+    fn latest_class(self: @TState) -> ClassHash;
     fn native_currency(self: @TState) -> ContractAddress;
     fn developer(self: @TState) -> ContractAddress;
 }
@@ -73,13 +73,18 @@ pub mod Rosettanet {
     struct Storage {
         sn_to_eth: Map<ContractAddress, EthAddress>,
         eth_to_sn: Map<EthAddress, ContractAddress>,
-        account_class: ClassHash,
+        latest_class: ClassHash,
+        // Accounts will always deployed with initial class, so we can always precalculate the addresses. 
+        // They may need to upgrade to the latest hash after deployment.
+        initial_class: ClassHash, 
         dev: ContractAddress,
         strk: ContractAddress
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState, developer: ContractAddress, strk: ContractAddress) {
+    fn constructor(ref self: ContractState, account_class: ClassHash, developer: ContractAddress, strk: ContractAddress) {
+        self.initial_class.write(account_class);
+        self.latest_class.write(account_class);
         self.dev.write(developer);
         self.strk.write(strk);
 
@@ -106,7 +111,7 @@ pub mod Rosettanet {
             let eth_address_felt: felt252 = eth_address.into();
 
             let (account, _) = deploy_syscall(
-                self.account_class.read(), eth_address_felt, array![eth_address_felt, get_contract_address().into()].span(), true
+                self.initial_class.read(), eth_address_felt, array![eth_address_felt, get_contract_address().into()].span(), true
             )
                 .unwrap();
 
@@ -135,7 +140,7 @@ pub mod Rosettanet {
         fn set_account_class(ref self: ContractState, class: ClassHash) {
             assert(get_caller_address() == self.dev.read(), 'only dev');
 
-            self.account_class.write(class);
+            self.latest_class.write(class);
 
             self.emit(AccountClassChanged {changer: get_caller_address(), new_class: class});
         }
@@ -186,15 +191,15 @@ pub mod Rosettanet {
             let eth_address_felt: felt252 = eth_address.into();
             calculate_contract_address_from_deploy_syscall(
                 eth_address_felt,
-                self.account_class.read(),
+                self.initial_class.read(),
                 array![eth_address_felt, get_contract_address().into()].span(),
                 0.try_into().unwrap()
             )
         }
 
-        /// Returns current account class hash
-        fn account_class(self: @ContractState) -> ClassHash {
-            self.account_class.read()
+        /// Returns latest account class hash
+        fn latest_class(self: @ContractState) -> ClassHash {
+            self.latest_class.read()
         }
 
         /// Returns native currency address on current network
