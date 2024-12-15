@@ -29,7 +29,7 @@ pub mod RosettaAccount {
     use starknet::{
         ContractAddress, EthAddress, ClassHash, get_contract_address, get_caller_address, get_tx_info
     };
-    use starknet::syscalls::{call_contract_syscall, replace_class_syscall};
+    use starknet::syscalls::{call_contract_syscall, replace_class_syscall, get_class_hash_at_syscall};
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use rosettacontracts::accounts::utils::{is_valid_eth_signature, RosettanetSignature, RosettanetCall, RosettanetMulticall, prepare_multicall_context, validate_target_function, generate_tx_hash};
     use crate::rosettanet::{IRosettanetDispatcher, IRosettanetDispatcherTrait};
@@ -83,6 +83,8 @@ pub mod RosettaAccount {
                     return self.execute_multicall(context);
                 } else if(selector == UPGRADE_SELECTOR) {
                     let latest_hash: ClassHash = IRosettanetDispatcher { contract_address: self.registry.read() }.latest_class();
+                    let current_hash: ClassHash = get_class_hash_at_syscall(get_contract_address()).unwrap();
+                    assert(current_hash != latest_hash, 'no new upgrades');
                     replace_class_syscall(latest_hash).unwrap();
                     return array![array![latest_hash.into()].span()];
                 } else {
