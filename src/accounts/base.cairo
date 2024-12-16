@@ -191,12 +191,6 @@ pub mod RosettaAccount {
 
     #[generate_trait]
     impl InternalImpl of InternalTrait {
-        fn assert_only_self(self: @ContractState) {
-            let caller = get_caller_address();
-            let self = get_contract_address();
-            assert(self == caller, Errors::UNAUTHORIZED);
-        }
-
         /// Validates the signature for the current transaction.
         /// Returns the short string `VALID` if valid, otherwise it reverts.
         fn validate_transaction(self: @ContractState, call: RosettanetCall) -> felt252 {
