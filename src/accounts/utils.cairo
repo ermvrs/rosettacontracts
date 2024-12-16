@@ -31,10 +31,12 @@ pub struct RosettanetCall {
 }
 
 #[derive(Copy, Drop, Clone, Serde)]
-pub struct RosettanetMulticall {
+pub struct RosettanetMulticall { // TODO: redesign this struct
     to: EthAddress,
     value: u256,
-    calldata: Span<felt252>, // We dont need to verify target function here
+    entrypoint: u256,
+    calldata: Span<felt252>, 
+    target_function: Span<felt252>,
     directives: Span<u8>
 }
 
