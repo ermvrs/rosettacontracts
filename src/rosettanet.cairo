@@ -8,6 +8,7 @@ pub trait IRosettanet<TState> {
     fn set_account_class(ref self: TState, class: ClassHash); // Sets account class, this function will be removed after stable account
     fn register_matched_addresses(ref self: TState, sn_address: ContractAddress, eth_address: EthAddress); // Will be used during alpha
     fn upgrade(ref self: TState, class: ClassHash); // Upgrades contract
+    fn change_dev(ref self: TState, dev: ContractAddress); // Changes dev
     // Read methods
     fn get_starknet_address(self: @TState, eth_address: EthAddress) -> ContractAddress;
     fn get_ethereum_address(self: @TState, sn_address: ContractAddress) -> EthAddress;
@@ -33,7 +34,8 @@ pub mod Rosettanet {
         AccountDeployed: AccountDeployed,
         AccountClassChanged: AccountClassChanged,
         Upgraded: Upgraded,
-        PredeployedAccountRegistered: PredeployedAccountRegistered
+        PredeployedAccountRegistered: PredeployedAccountRegistered,
+        DevAddressUpdated: DevAddressUpdated
     }
 
     #[derive(Drop, starknet::Event)]
@@ -67,6 +69,12 @@ pub mod Rosettanet {
     pub struct Upgraded {
         pub upgrader: ContractAddress,
         pub new_class: ClassHash,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    pub struct DevAddressUpdated {
+        pub old: ContractAddress,
+        pub new: ContractAddress,
     }
 
     #[storage]
@@ -166,6 +174,17 @@ pub mod Rosettanet {
             replace_class_syscall(class).unwrap();
 
             self.emit(Upgraded {upgrader: get_caller_address(), new_class: class});
+        }
+
+        /// Updates dev address
+        /// # Arguments
+        /// * `dev` - New dev address
+        fn change_dev(ref self: ContractState, dev: ContractAddress) {
+            assert(get_caller_address() == self.dev.read(), 'only dev');
+
+            self.dev.write(dev);
+
+            self.emit(DevAddressUpdated { old: get_caller_address(), new: dev });
         }
 
         /// Returns registered starknet contract address for specified ethereum address
