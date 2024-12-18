@@ -135,7 +135,7 @@ pub mod Rosettanet {
         /// * `eth_address` - Ethereum Address for already deployed account
         fn register_deployed_account(ref self: ContractState, eth_address: EthAddress) {
             let precalculated_address: ContractAddress = self.precalculate_starknet_account(eth_address);
-            assert(IRosettaAccountDispatcher { contract_address: precalculated_address}.rosettanet() == get_contract_address(), 'wrong deployment');
+            assert(IRosettaAccountDispatcher { contract_address: precalculated_address }.rosettanet() == get_contract_address(), 'wrong deployment');
             // TODO: Add tests for this function
             self.update_registry(precalculated_address, eth_address);
 

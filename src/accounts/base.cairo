@@ -61,13 +61,11 @@ pub mod RosettaAccount {
     }
     #[abi(embed_v0)]
     impl AccountImpl of super::IRosettaAccount<ContractState> {
-        // Instead of Array<Call> we use Array<felt252> since we pass different values to the
-        // parameter
-        // It is EOA execution so multiple calls are not possible right now. We will add Multicalls in a different way in beta
-        // calls params can include raw signed tx or can include the abi parsing bit locations for calldata
         fn __execute__(self: @ContractState, call: RosettanetCall) -> Array<Span<felt252>> {
             let sender = get_caller_address();
             assert(sender.is_zero(), Errors::INVALID_CALLER);
+
+            self.register_account(); // Register this contract if not registered on registry
 
             let eth_target: EthAddress = call.to;
             let sn_target: ContractAddress = IRosettanetDispatcher { contract_address: self.registry.read() }.get_starknet_address(eth_target);
@@ -289,6 +287,14 @@ pub mod RosettaAccount {
         fn execute_multicall(self: @ContractState, calls: Span<RosettanetMulticall>) -> Array<Span<felt252>> {
 
             array![array![].span()]
+        }
+
+        fn register_account(self: @ContractState) {
+            let rosettanet = IRosettanetDispatcher { contract_address: self.registry.read() };
+            let eth_address: EthAddress = self.ethereum_address.read();
+            if(rosettanet.get_starknet_address(eth_address) == starknet::contract_address_const::<0>()) {
+                rosettanet.register_deployed_account(eth_address);
+            }
         }
     }
 }
