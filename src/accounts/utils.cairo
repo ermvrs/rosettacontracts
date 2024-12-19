@@ -31,19 +31,21 @@ pub struct RosettanetCall {
 }
 
 #[derive(Copy, Drop, Clone, Serde)]
-pub struct RosettanetMulticall { // TODO: redesign this struct
+pub struct RosettanetMulticall { 
     to: EthAddress,
-    value: u256,
+    // value: u256, // Payable function call not possible at this version
     entrypoint: u256,
-    calldata: Span<felt252>, 
-    target_function: Span<felt252>,
-    directives: Span<u8>
+    calldata: Span<felt252>,
 }
 
 // TODO: add tests
 pub fn prepare_multicall_context(calldata: Span<felt252>) -> Span<RosettanetMulticall> {
+    // TODO: fonksiyonun adini deserialize_multicall_context olarak degistir
+    // Deserializeyi manuel yapmak gerekiyor
     let mut calldata = calldata;
     let _ = calldata.pop_front(); // First element removed, its selector.
+
+    let calls_count: u64 = calldata.pop_front().unwrap().try_into().unwrap(); // Total calls in multicall array
 
     let calls: Span<RosettanetMulticall> = Serde::deserialize(ref calldata).unwrap();
 
@@ -226,29 +228,20 @@ mod tests {
     use starknet::EthAddress;
 
     #[test]
-    #[ignore]
     fn test_prepare_multicall_context() {
         let target_1: EthAddress = 0x123.try_into().unwrap();
         let target_2: EthAddress = 0x444.try_into().unwrap();
-        let value_1: u256 = 0;
-        let value_2: u256 = 5344;
         let calldata_1: Span<felt252> = array![0xabcabcab, 0x123, 0x456].span();
         let calldata_2: Span<felt252> = array![0xabcabcef, 0x888, 0x999].span();
-        let directives_1: Span<felt252> = array![0x0,0x0].span();
-        let directives_2: Span<felt252> = array![0x1,0x0].span();
-        let mut calldata: Array<felt252> = array![0x02, target_1.into(), value_1.low.into(), value_1.high.into()];
+        let mut calldata: Array<felt252> = array![0xFFFFFFFF, 0x02, target_1.into(), 0x123123];
         calldata.append(calldata_1.len().into());
         calldata.append_span(calldata_1);
-        calldata.append(directives_1.len().into());
-        calldata.append_span(directives_1.into());
 
+        
         calldata.append(target_2.into());
-        calldata.append(value_2.low.into());
-        calldata.append(value_2.high.into());
+        calldata.append(0x123456);
         calldata.append(calldata_2.len().into());
         calldata.append_span(calldata_2);
-        calldata.append(directives_2.len().into());
-        calldata.append_span(directives_2.into());
 
         let deserialized: Span<RosettanetMulticall> = prepare_multicall_context(calldata.span());
 
