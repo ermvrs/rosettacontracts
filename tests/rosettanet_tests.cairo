@@ -29,7 +29,7 @@ fn rosettanet_set_class() {
     rosettanet.set_account_class(1.try_into().unwrap());
     stop_cheat_caller_address(rosettanet.contract_address);
 
-    assert_eq!(rosettanet.account_class(), 1.try_into().unwrap());
+    assert_eq!(rosettanet.latest_class(), 1.try_into().unwrap());
 }
 
 #[test]

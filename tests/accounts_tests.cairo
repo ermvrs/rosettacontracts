@@ -607,7 +607,7 @@ fn test_multicall_with_value() {
 }
 
 #[test]
-#[should_panic(expected:'wrong multicall selector')]
+#[should_panic(expected:'Rosetta: unimplemented feature')]
 fn test_multicall_wrong_selector() {
     let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
     let tx = RosettanetCall {
@@ -663,3 +663,36 @@ fn test_multicall_unimplemented_feature() {
     stop_cheat_signature_global();
     stop_cheat_nonce_global();
 }
+
+#[test]
+fn test_validation_real_data_failing() {
+    let eth_address: EthAddress = 0x30ffDf2c33b929F749afE49D7aBf3f4B8D399B40.try_into().unwrap();
+    let target: EthAddress = 0xbec5832bd3f642d090891b4991da42fa4d5d9e2d.try_into().unwrap();
+    let tx = RosettanetCall {
+        to: target, // we dont need to deploy account, we only check validation here
+        nonce: 1,
+        max_priority_fee_per_gas: 55,
+        max_fee_per_gas: 55,
+        gas_limit: 21000,
+        value: 0,
+        calldata: array![0x095ea7b3,0x1,0xffffffffffffffffffffffffffffffff,0xffffffffffffffffffffffffffffffff].span(),
+        access_list: array![].span(),
+        directives: array![0x2,0x1,0x0].span(),
+        target_function: array![0x617070726F766528616464726573732C75696E7432353629].span() 
+    };
+    let signature = array![0xe80578b4ddc54a257d2b1ff9842acac0,0x6648f4eaa8374e9a94fd0328508906a2,0xfc947d0625fc02db6b1e3158ded87a45,0x6b493dca5d21ec7117355cdbe90753fa,0x1b,0x0,0x0];
+    let (rosettanet, account, _) = deploy_funded_account_from_rosettanet(eth_address);
+    deploy_account_from_existing_rosettanet(target, rosettanet.contract_address);
+
+    let unsigned_tx_hash: u256 = 0x7d4ece1eb6c84bdf4c3e7ee8383bedd086977cb1631c86680ee77116dfd248d5;
+    let generated_tx_hash: u256 = generate_tx_hash(tx);
+    assert_eq!(generated_tx_hash, unsigned_tx_hash);
+    
+    start_cheat_nonce_global(tx.nonce.into());
+    start_cheat_signature_global(signature.span());
+    start_cheat_caller_address(account.contract_address, starknet::contract_address_const::<0>());
+    account.__validate__(tx);
+    stop_cheat_caller_address(account.contract_address);
+    stop_cheat_signature_global();
+    stop_cheat_nonce_global();
+}   

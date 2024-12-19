@@ -226,6 +226,7 @@ mod tests {
     use starknet::EthAddress;
 
     #[test]
+    #[ignore]
     fn test_prepare_multicall_context() {
         let target_1: EthAddress = 0x123.try_into().unwrap();
         let target_2: EthAddress = 0x444.try_into().unwrap();

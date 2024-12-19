@@ -31,9 +31,10 @@ pub fn declare_account() -> ClassHash {
 pub fn deploy_and_set_account() -> IRosettanetDispatcher {
     let contract = declare("Rosettanet").unwrap().contract_class();
     let native_currency = deploy_erc20();
-    let (contract_address, _) = contract.deploy(@array![developer().into(), native_currency.contract_address.into()]).unwrap();
-    let dispatcher = IRosettanetDispatcher { contract_address };
     let account_class = declare_account();
+    let (contract_address, _) = contract.deploy(@array![account_class.into(), developer().into(), native_currency.contract_address.into()]).unwrap();
+    let dispatcher = IRosettanetDispatcher { contract_address };
+    
 
     start_cheat_caller_address(dispatcher.contract_address, developer());
     dispatcher.set_account_class(account_class);
@@ -64,8 +65,9 @@ pub fn deploy_weth() -> IMockWETHDispatcher {
 
 pub fn deploy_rosettanet() -> IRosettanetDispatcher {
     let contract = declare("Rosettanet").unwrap().contract_class();
+    let account_class = declare_account();
     let native_currency = deploy_erc20();
-    let (contract_address, _) = contract.deploy(@array![developer().into(), native_currency.contract_address.into()]).unwrap();
+    let (contract_address, _) = contract.deploy(@array![account_class.into(), developer().into(), native_currency.contract_address.into()]).unwrap();
     IRosettanetDispatcher { contract_address }
 }
 
