@@ -7,7 +7,7 @@ use crate::utils::bytes::{U8SpanExTrait, ByteArrayExTrait};
 use crate::utils::transaction::eip2930::{AccessListItem};
 use starknet::eth_signature::{verify_eth_signature};
 
-pub const CHAIN_ID: u64 = 11155111; // TODO: Correct it
+pub const CHAIN_ID: u64 = 0x52535453; // TODO: Correct it
 
 #[derive(Copy, Drop, Serde)]
 pub struct RosettanetSignature {
@@ -38,18 +38,9 @@ pub struct RosettanetMulticall {
     calldata: Span<felt252>,
 }
 
-// TODO: add tests
+// TODO
 pub fn prepare_multicall_context(calldata: Span<felt252>) -> Span<RosettanetMulticall> {
-    // TODO: fonksiyonun adini deserialize_multicall_context olarak degistir
-    // Deserializeyi manuel yapmak gerekiyor
-    let mut calldata = calldata;
-    let _ = calldata.pop_front(); // First element removed, its selector.
-
-    let calls_count: u64 = calldata.pop_front().unwrap().try_into().unwrap(); // Total calls in multicall array
-
-    let calls: Span<RosettanetMulticall> = Serde::deserialize(ref calldata).unwrap();
-
-    calls
+    array![].span()
 }
 
 pub fn generate_tx_hash(call: RosettanetCall) -> u256 {
