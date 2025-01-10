@@ -4,10 +4,8 @@ Rosetta Contracts is a smart contract library written in Cairo. It allows users 
 ## Accounts
 Starknet account abstraction smart contracts execute and validate transactions with Ethereum call data and signature. This account allows users to interact with Starknet with their Layer 1 accounts.
 
-## Verifier
-Utility smart contracts that format Ethereum call data according to ABI passed. It also validates Ethereum signature and call data formatting. Account contracts use this utility before executing the transactions.
-
-## Lens
-The Lens is a permissionless smart contract that registers and maps Ethereum addresses to the Starknet address equivalent and vice versa. Everyone can register any address to Lens. Only Account factory has a right to match any address with any address it passes. This ability is needed to match newly deployed account contracts with Layer 1 addresses.
-
-Sepolia Deployment : 0x055f17a002c440e850c7005180ae803c7d2752f554add2ef7f3a740a24fadfa6 (Lens Dev)
+## Contract Addresses
+### Sepolia
+Account Class: 0x0437eb056018e5c878f4231478a4e1370a82d3e2b1a163c9d1346e85fde87246    
+Rosettanet Class: 0x00c050554bb686f9c5e6a9557a372fcc0d6e9a9cc15b3d080bd37b15ff67af17    
+Rosettanet: 0x07c519e568e76ee8a72327ab30363059a6757fdd113f7b23db685ecf9b20a539    
