@@ -13,6 +13,7 @@ pub trait IRosettanet<TState> {
     fn get_starknet_address(self: @TState, eth_address: EthAddress) -> ContractAddress;
     fn get_ethereum_address(self: @TState, sn_address: ContractAddress) -> EthAddress;
     fn precalculate_starknet_account(self: @TState, eth_address: EthAddress) -> ContractAddress;
+    fn get_starknet_address_with_fallback(self: @TState, eth_address: EthAddress) -> ContractAddress;
     fn latest_class(self: @TState) -> ClassHash;
     fn native_currency(self: @TState) -> ContractAddress;
     fn developer(self: @TState) -> ContractAddress;
@@ -214,6 +215,19 @@ pub mod Rosettanet {
                 array![eth_address_felt, get_contract_address().into()].span(),
                 0.try_into().unwrap()
             )
+        }
+
+        /// Returns guaranteed Contract Address
+        /// If eth_address exist in registry, returns the registered address
+        /// If not registered, returns precalculated address
+        /// # Arguments
+        /// * * `eth_address` - Ethereum address that going to be used to calculate starknet contract address
+        fn get_starknet_address_with_fallback(self: @ContractState, eth_address: EthAddress) -> ContractAddress {
+            let address_on_registry: ContractAddress = self.eth_to_sn.read(eth_address);
+            if(address_on_registry.is_zero()) {
+                return self.precalculate_starknet_account(eth_address);
+            }
+            address_on_registry
         }
 
         /// Returns latest account class hash
