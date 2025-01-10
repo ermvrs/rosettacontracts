@@ -17,6 +17,33 @@ pub struct Eip1559Transaction {
     pub access_list: Span<AccessListItem>,
 }
 
+#[derive(Copy, Drop, Clone, PartialEq, Serde)]
+pub struct LegacyTransaction {
+    pub chain_id: u64,
+    pub nonce: u64,
+    pub gas_price: u128,
+    pub gas_limit: u128,
+    pub to: EthAddress,
+    pub value: u256,
+    pub input: Span<u8>
+}
+
+pub fn rlp_encode_legacy(tx: LegacyTransaction) -> Span<u8> {
+    // TODO: Write tests and complete tx type
+    let nonce = RLPItem::String(deserialize_bytes_non_zeroes(tx.nonce.into(),8));
+    let gas_price = RLPItem::String(deserialize_bytes_non_zeroes(tx.gas_price.into(),16));
+    let gas_limit = RLPItem::String(deserialize_bytes_non_zeroes(tx.gas_limit.into(),16));
+    let value = RLPItem::String(deserialize_u256(tx.value));
+    let to = RLPItem::String(deserialize_bytes_non_zeroes(tx.to.into(),20));
+    let input = RLPItem::String(tx.input);
+
+    let mut rlp_inputs = RLPItem::List(array![nonce, gas_price, gas_limit, to, value, input].span());
+    let mut encoded_tx = array![];
+
+    encoded_tx.append_span(RLPTrait::encode(array![rlp_inputs].span()).unwrap());
+    encoded_tx.span()
+}
+
 pub fn rlp_encode_eip1559(tx: Eip1559Transaction) -> Span<u8> {
     let chain_id = RLPItem::String(deserialize_bytes_non_zeroes(tx.chain_id.into(),8));
     let nonce = RLPItem::String(deserialize_bytes_non_zeroes(tx.nonce.into(),8));
