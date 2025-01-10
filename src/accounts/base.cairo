@@ -68,7 +68,7 @@ pub mod RosettaAccount {
             self.register_account(); // Register this contract if not registered on registry
 
             let eth_target: EthAddress = call.to;
-            let sn_target: ContractAddress = IRosettanetDispatcher { contract_address: self.registry.read() }.get_starknet_address(eth_target);
+            let sn_target: ContractAddress = IRosettanetDispatcher { contract_address: self.registry.read() }.get_starknet_address_with_fallback(eth_target);
             assert(sn_target != starknet::contract_address_const::<0>(), 'target not registered');
 
             // Multicall or upgrade call
@@ -261,7 +261,7 @@ pub mod RosettaAccount {
                 let current_directive: u8 = *directives.at(index);
                 if(current_directive == 2_u8) {
                     let eth_address: EthAddress = (*calldata.at(index)).try_into().unwrap();
-                    let sn_address = IRosettanetDispatcher{contract_address: self.registry.read()}.get_starknet_address(eth_address);
+                    let sn_address = IRosettanetDispatcher{contract_address: self.registry.read()}.get_starknet_address_with_fallback(eth_address);
                     assert(sn_address != starknet::contract_address_const::<0>(), 'calldata address not registered');
                     updated_array.append(sn_address.into());
                 } else {
@@ -276,7 +276,7 @@ pub mod RosettaAccount {
         // Sends native currency to the receiver address
         fn process_native_transfer(self: @ContractState, value: u256, receiver: EthAddress) -> Span<felt252> {
             assert(value > 0, 'value zero');
-            let sn_address = IRosettanetDispatcher{contract_address: self.registry.read()}.get_starknet_address(receiver);
+            let sn_address = IRosettanetDispatcher{contract_address: self.registry.read()}.get_starknet_address_with_fallback(receiver);
             assert(sn_address != starknet::contract_address_const::<0>(), 'receiver not registered');
 
             let calldata: Span<felt252> = array![sn_address.into(), value.low.into(), value.high.into()].span();
