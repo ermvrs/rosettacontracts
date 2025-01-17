@@ -6,8 +6,10 @@ use crate::utils::traits::SpanDefault;
 use crate::utils::bytes::{U8SpanExTrait, ByteArrayExTrait};
 use crate::utils::transaction::eip2930::{AccessListItem};
 use starknet::eth_signature::{verify_eth_signature};
+use core::panic_with_felt252;
+use crate::accounts::base::RosettaAccount::{MULTICALL_SELECTOR, UPGRADE_SELECTOR};
 
-pub const CHAIN_ID: u64 = 0x52535453; // TODO: Correct it
+pub const CHAIN_ID: u64 = 11155111; // TODO: Correct it
 
 #[derive(Copy, Drop, Serde)]
 pub struct RosettanetSignature {
@@ -32,20 +34,118 @@ pub struct RosettanetCall {
 
 #[derive(Copy, Drop, Clone, Serde)]
 pub struct RosettanetMulticall { 
-    to: EthAddress,
-    // value: u256, // Payable function call not possible at this version
-    entrypoint: u256,
-    calldata: Span<felt252>,
+    pub to: felt252,
+    pub entrypoint: felt252,
+    pub calldata: Span<felt252>,
 }
 
 // TODO
 pub fn prepare_multicall_context(calldata: Span<felt252>) -> Span<RosettanetMulticall> {
-    array![].span()
+    let mut calldata = calldata;
+    let call_count: u64 = match calldata.pop_front() {
+        Option::None => { 0_u64 }, // We may remove that panic or change the logic, since native eth transfer has empty calldata
+        Option::Some(val) => { (*val).try_into().unwrap() }
+    };
+    let mut calls = ArrayTrait::<RosettanetMulticall>::new();
+
+    let mut i = 0;
+    loop {
+        if(i == call_count) {
+            break;
+        }
+
+        let to: felt252 = match calldata.pop_front() {
+            Option::None => { 0x0 }, // TODO: panic
+            Option::Some(val) => { (*val) }
+        };
+        if (to == 0x0) {
+            panic_with_felt252('multicall to wrong');
+        }
+        let entrypoint: felt252 = match calldata.pop_front() {
+            Option::None => { 0x0 }, // TODO: panic
+            Option::Some(val) => { (*val) }
+        };
+
+        if (entrypoint == 0x0) {
+            panic_with_felt252('multicall entry wrong');
+        }
+
+        let calldata_length: u64 = match calldata.pop_front() {
+            Option::None => { 0 },
+            Option::Some(val) => { (*val).try_into().unwrap() }
+        };
+
+        let mut inner_calldata: Array<felt252> = array![];
+        let mut j = 0;
+        loop {
+            if(j == calldata_length) {
+                break;
+            }
+
+            let value: felt252 = match calldata.pop_front() {
+                Option::None => { break; }, // TODO: panic
+                Option::Some(val) => { (*val) }
+            };
+
+            inner_calldata.append(value);
+
+            j += 1;
+        };
+
+        calls.append(RosettanetMulticall {
+            to, entrypoint, calldata: inner_calldata.span()
+        });
+        i += 1;
+    };
+
+    calls.span()
 }
 
 pub fn generate_tx_hash(call: RosettanetCall) -> u256 {
     let parsed_txn = parse_transaction(call);
     calculate_tx_hash(rlp_encode_eip1559(parsed_txn))
+}
+
+pub fn generate_tx_hash_for_internal_transaction(call: RosettanetCall) -> u256 {
+    let parsed_txn = parse_internal_transaction(call);
+    calculate_tx_hash(rlp_encode_eip1559(parsed_txn))
+}
+
+pub fn parse_internal_transaction(call: RosettanetCall) -> Eip1559Transaction {
+    let mut calldata = call.calldata;
+
+    assert(call.access_list.len() == 0, 'Access list not supported');
+
+    let function_signature: felt252 = match calldata.pop_front() {
+        Option::None => { 0 }, // We may remove that panic or change the logic, since native eth transfer has empty calldata
+        Option::Some(val) => { *val }
+    };
+
+    assert(((function_signature == MULTICALL_SELECTOR) || (function_signature == UPGRADE_SELECTOR)), 'selector wrong');
+
+    let function_signature_bytes: Span<u8> = deserialize_bytes(function_signature, 4); // Four bytes is eth signature
+    let mut deserialized_calldata = bytes_from_felts(ref calldata); 
+
+    // Merge function signature bytes and deserialized calldata
+
+    let mut ba: core::byte_array::ByteArray = Default::default();
+    ba.append(@ByteArrayExTrait::from_bytes(function_signature_bytes));
+    ba.append(@ByteArrayExTrait::from_bytes(deserialized_calldata));
+
+    let calldata_bytes: Span<u8> = ba.into_bytes();
+    let eip1559 = Eip1559Transaction {
+        chain_id: CHAIN_ID,
+        nonce: call.nonce,
+        max_priority_fee_per_gas: call.max_priority_fee_per_gas,
+        max_fee_per_gas: call.max_fee_per_gas,
+        gas_limit: call.gas_limit,
+        to: call.to,
+        value: call.value,
+        access_list: call.access_list,
+        input: calldata_bytes
+    };
+
+    eip1559
 }
 
 pub fn parse_transaction(call: RosettanetCall) -> Eip1559Transaction {
@@ -216,27 +316,24 @@ mod tests {
         validate_target_function, parse_transaction, generate_tx_hash, RosettanetCall, RosettanetMulticall};
     use crate::accounts::encoding::{bytes_from_felts};
     use crate::utils::bytes::{ByteArrayExTrait};
-    use starknet::EthAddress;
 
     #[test]
     fn test_prepare_multicall_context() {
-        let target_1: EthAddress = 0x123.try_into().unwrap();
-        let target_2: EthAddress = 0x444.try_into().unwrap();
-        let calldata_1: Span<felt252> = array![0xabcabcab, 0x123, 0x456].span();
-        let calldata_2: Span<felt252> = array![0xabcabcef, 0x888, 0x999].span();
-        let mut calldata: Array<felt252> = array![0xFFFFFFFF, 0x02, target_1.into(), 0x123123];
-        calldata.append(calldata_1.len().into());
-        calldata.append_span(calldata_1);
-
-        
-        calldata.append(target_2.into());
-        calldata.append(0x123456);
-        calldata.append(calldata_2.len().into());
-        calldata.append_span(calldata_2);
+        let target_1: felt252 = 0x123;
+        let target_2: felt252 = 0x444;
+        let entrypoint_1: felt252 = 0xabcabc;
+        let entrypoint_2: felt252 = 0xabcabc;
+        let mut calldata: Array<felt252> = array![0x02, target_1, entrypoint_1, 0x3, 0xabcabcab, 0x123, 0x456, target_2, entrypoint_2, 0x4, 0xabcabcef, 0x888, 0x999, 0x0];
 
         let deserialized: Span<RosettanetMulticall> = prepare_multicall_context(calldata.span());
 
         assert_eq!(deserialized.len(), 2);
+        assert_eq!(*deserialized.at(0).to, target_1);
+        assert_eq!(*deserialized.at(1).to, target_2);
+        assert_eq!(*deserialized.at(0).entrypoint, entrypoint_1);
+        assert_eq!(*deserialized.at(1).entrypoint, entrypoint_2);
+        assert_eq!((*deserialized.at(0)).calldata.len(), 3);
+        assert_eq!((*deserialized.at(1)).calldata.len(), 4);
     }
 
     #[test]
