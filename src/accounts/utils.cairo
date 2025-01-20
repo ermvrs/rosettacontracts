@@ -9,7 +9,7 @@ use starknet::eth_signature::{verify_eth_signature};
 use core::panic_with_felt252;
 use crate::accounts::base::RosettaAccount::{MULTICALL_SELECTOR, UPGRADE_SELECTOR};
 
-pub const CHAIN_ID: u64 = 11155111; // TODO: Correct it
+pub const CHAIN_ID: u64 = 0x52535453; // TODO: Correct it
 
 #[derive(Copy, Drop, Serde)]
 pub struct RosettanetSignature {
