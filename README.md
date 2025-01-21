@@ -6,6 +6,6 @@ Starknet account abstraction smart contracts execute and validate transactions w
 
 ## Contract Addresses
 ### Sepolia
-Account Class: 0x0437eb056018e5c878f4231478a4e1370a82d3e2b1a163c9d1346e85fde87246    
-Rosettanet Class: 0x00c050554bb686f9c5e6a9557a372fcc0d6e9a9cc15b3d080bd37b15ff67af17    
-Rosettanet: 0x07c519e568e76ee8a72327ab30363059a6757fdd113f7b23db685ecf9b20a539    
+Account Class: 0x0785ff074750ca56f7bbf73d22f3d2dd6ab2ae11c9b6db9203a8a7dd5d812d18    
+Rosettanet Class: --    
+Rosettanet: 0x0061fb9267e9a1cec091df1bcf1d4c7a179071e4da64cbc9ca7fccd2d78f88f0    
