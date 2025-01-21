@@ -120,6 +120,13 @@ pub fn deploy_specificly_funded_account_from_rosettanet(eth_address: EthAddress,
     (rosettanet, account, strk)
 }
 
+pub fn change_current_account_class(rosettanet_contract: ContractAddress, new_hash: ClassHash) {
+    let dispatcher = IRosettanetDispatcher { contract_address: rosettanet_contract };
+    start_cheat_caller_address(dispatcher.contract_address, developer());
+    dispatcher.set_account_class(new_hash);
+    stop_cheat_caller_address(dispatcher.contract_address);
+}
+
 // Forcely matches these addresses
 pub fn manipulate_rosettanet_registry(rosettanet_contract: ContractAddress, sn_address: ContractAddress, eth_address: EthAddress) {
     // Currently we use function in registry

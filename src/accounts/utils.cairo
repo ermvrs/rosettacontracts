@@ -9,7 +9,7 @@ use starknet::eth_signature::{verify_eth_signature};
 use core::panic_with_felt252;
 use crate::accounts::base::RosettaAccount::{MULTICALL_SELECTOR, UPGRADE_SELECTOR};
 
-pub const CHAIN_ID: u64 = 0x52535453; // TODO: Correct it
+pub const CHAIN_ID: u64 = 0x52535453; // TODO: Rewrite tests with this chain id
 
 #[derive(Copy, Drop, Serde)]
 pub struct RosettanetSignature {
@@ -352,7 +352,7 @@ mod tests {
         };
 
         let tx_hash = generate_tx_hash(tx);
-        assert_eq!(tx_hash, u256{ low: 0x32c3a9bf29bb09c73fed760364f6c405, high: 0xfea45e666ba85f417463f9c7bd9c0ab5});
+        assert_eq!(tx_hash, u256{ low: 0x59b1204cfc1f34f0be0f12910c1cf268, high: 0xe035616511002e798765243361a7d52f});
     }
 
     #[test]
@@ -375,7 +375,7 @@ mod tests {
         };
 
         let parsed_txn = parse_transaction(call);
-        assert_eq!(parsed_txn.chain_id, 11155111);
+        assert_eq!(parsed_txn.chain_id, 1381192787);
         assert_eq!(parsed_txn.nonce, 1);
         assert_eq!(parsed_txn.input.len(), 0);
     }
@@ -401,7 +401,7 @@ mod tests {
 
         let parsed_txn = parse_transaction(call);
 
-        assert_eq!(parsed_txn.chain_id, 11155111);
+        assert_eq!(parsed_txn.chain_id, 1381192787);
         assert_eq!(parsed_txn.nonce, 1);
         assert_eq!(parsed_txn.input.len(), 100);
         assert_eq!(*parsed_txn.input.at(0), 0x23);
