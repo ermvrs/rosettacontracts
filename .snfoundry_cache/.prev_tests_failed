@@ -1,1 +1,1 @@
-rosettacontracts_integrationtest::accounts_tests::test_execute_erc20_transfer_receiver_not_registered
+rosettacontracts_integrationtest::accounts_tests::test_validate_multicall_transaction
