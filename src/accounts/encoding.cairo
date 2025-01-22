@@ -28,24 +28,6 @@ pub struct LegacyTransaction {
     pub input: Span<u8>
 }
 
-pub fn encode_multicall_array(multicall: Span<RosettanetMulticall>) {
-    let mut encoded = array![];
-    // tuple(uint256,uint256,uint256[])[]
-    encoded.append(0x20); // Offset to start array of tuple
-    encoded.append(multicall.len().into());
-
-    let mut i = 0;
-    loop {
-        if(i == multicall.len()) {
-            break;
-        }
-        // 2 = first 2 uint256s, +1 is length of uint256[]
-        // Maybe we need extra for 0x60 offset
-        let tuple_size = 2 + (*multicall.at(i).calldata).len() + 1 + 1; // how many row that tuple needs
-        let offset = 32 + multicall.len() * 32;
-
-    };
-}
 
 pub fn rlp_encode_legacy(tx: LegacyTransaction) -> Span<u8> {
     // TODO: Write tests and complete tx type

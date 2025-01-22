@@ -312,7 +312,7 @@ pub mod RosettaAccount {
                 match calls.pop_front() {
                     Option::None => { break; },
                     Option::Some(call) => {
-                        let result: Span<felt252> = call_contract_syscall((*call.to).try_into().unwrap(), *call.entrypoint, *call.calldata).expect('multicall fails');
+                        let result: Span<felt252> = call_contract_syscall((*call.to).try_into().expect('into target mc'), *call.entrypoint, *call.calldata).expect('multicall fails');
                         results.append(result);
                     }
                 };

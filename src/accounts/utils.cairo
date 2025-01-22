@@ -42,10 +42,17 @@ pub struct RosettanetMulticall {
 // TODO
 pub fn prepare_multicall_context(calldata: Span<felt252>) -> Span<RosettanetMulticall> {
     let mut calldata = calldata;
+    // Remove function selector.
+    let _: felt252 = match calldata.pop_front() {
+        Option::None => { 0 }, 
+        Option::Some(val) => { *val }
+    };
+
     let call_count: u64 = match calldata.pop_front() {
         Option::None => { 0_u64 }, // We may remove that panic or change the logic, since native eth transfer has empty calldata
         Option::Some(val) => { (*val).try_into().unwrap() }
     };
+
     let mut calls = ArrayTrait::<RosettanetMulticall>::new();
 
     let mut i = 0;
@@ -124,14 +131,15 @@ pub fn parse_internal_transaction(call: RosettanetCall) -> Eip1559Transaction {
     assert(((function_signature == MULTICALL_SELECTOR) || (function_signature == UPGRADE_SELECTOR)), 'selector wrong');
 
     let function_signature_bytes: Span<u8> = deserialize_bytes(function_signature, 4); // Four bytes is eth signature
-    let mut deserialized_calldata = bytes_from_felts(ref calldata); 
+    let mut merged_calldata = convert_felt_span_to_u256_span(calldata); // Bunun içinde test yaz
+    let mut deserialized_calldata = deserialize_u256_span(ref merged_calldata); 
 
     // Merge function signature bytes and deserialized calldata
 
     let mut ba: core::byte_array::ByteArray = Default::default();
     ba.append(@ByteArrayExTrait::from_bytes(function_signature_bytes));
     ba.append(@ByteArrayExTrait::from_bytes(deserialized_calldata));
-
+    
     let calldata_bytes: Span<u8> = ba.into_bytes();
     let eip1559 = Eip1559Transaction {
         chain_id: CHAIN_ID,
@@ -220,6 +228,18 @@ pub fn merge_u256s(calldata: Span<felt252>, directives: Span<u8>) -> Span<u256> 
         } else {
             merged_array.append((*calldata.at(index)).into());
         }
+        index +=1;
+    };
+
+    merged_array.span()
+}
+
+fn convert_felt_span_to_u256_span(calldata: Span<felt252>) -> Span<u256> {
+    let mut merged_array = ArrayTrait::<u256>::new();
+    let mut index = 0;
+
+    while index < calldata.len() {
+        merged_array.append((*calldata.at(index)).into());
         index +=1;
     };
 
@@ -323,7 +343,7 @@ mod tests {
         let target_2: felt252 = 0x444;
         let entrypoint_1: felt252 = 0xabcabc;
         let entrypoint_2: felt252 = 0xabcabc;
-        let mut calldata: Array<felt252> = array![0x02, target_1, entrypoint_1, 0x3, 0xabcabcab, 0x123, 0x456, target_2, entrypoint_2, 0x4, 0xabcabcef, 0x888, 0x999, 0x0];
+        let mut calldata: Array<felt252> = array![0x76971d7f, 0x02, target_1, entrypoint_1, 0x3, 0xabcabcab, 0x123, 0x456, target_2, entrypoint_2, 0x4, 0xabcabcef, 0x888, 0x999, 0x0];
 
         let deserialized: Span<RosettanetMulticall> = prepare_multicall_context(calldata.span());
 
