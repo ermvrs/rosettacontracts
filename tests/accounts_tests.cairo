@@ -822,3 +822,88 @@ fn test_execute_multicall_transaction() {
     assert_eq!(strk.balance_of(strk_receiver_2.try_into().unwrap()), 3000);
     assert_eq!(execution, array![array![0x1].span(), array![0x1].span()]);
 }
+
+#[test]
+fn test_multicall_validate_actual_values() {
+    let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
+    let tx = RosettanetCall {
+        to: eth_address,
+        nonce: 1,
+        max_priority_fee_per_gas: 55,
+        max_fee_per_gas: 55,
+        gas_limit: 21000,
+        value: 0,
+        calldata: array![0x76971d7f, 0x2, 
+        0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7, 0x83afd3f4caedc6eebf44246fe54e38c95e3179a5ec9ea81740eca5b482d12e, 
+        0x3, 0x07D33254052409C04510C3652BC5BE5656F1EFF1B131C7C031592E3FA73F1F70, 0x221B262DD8000, 0x0,
+        0x04c5772d1914fe6ce891b64eb35bf3522aeae1315647314aac58b01137607f3f, 0xe5b455a836c7a254df57ed39d023d46b641b331162c6c0b369647056655409,
+        0x4, 0x455448, 0xE4306A06B19FDC04FDF98CF3C00472F29254C0E1, 0x38D7EA4C68000, 0x0].span(),
+        access_list: array![].span(),
+        directives: array![].span(),
+        target_function: array![].span() 
+    };
+
+    let signature = array![0xf33158ce9a85ed8ba430d45faba907a6,0xd0a3476ce415af96c1e40ae3cc16fab9, 0xfc09b9ed76e6f1abae8cf3b3732c92c2,0x74551833c56fee1df9cb2a2ac411c604, 0x1b, 0x0,0x0];
+    
+    let (rosettanet, account, _) = deploy_funded_account_from_rosettanet(eth_address);
+    
+    let unsigned_tx_hash: u256 = 0x1f766a70ecbf4270faeff147ff3df9fee659426af425bab130f449e47be438eb;
+    let generated_tx_hash: u256 = generate_tx_hash_for_internal_transaction(tx);
+    assert_eq!(generated_tx_hash, unsigned_tx_hash);
+
+    start_cheat_nonce_global(tx.nonce.into());
+    start_cheat_signature_global(signature.span());
+    start_cheat_caller_address(account.contract_address, starknet::contract_address_const::<0>());
+    let validation = account.__validate__(tx);
+    stop_cheat_caller_address(account.contract_address);
+    stop_cheat_signature_global();
+    stop_cheat_nonce_global();
+
+    assert_eq!(validation, starknet::VALIDATED);
+}
+
+#[test]
+fn test_multicall_validate_actual_values_swap() {
+    let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
+    let tx = RosettanetCall {
+        to: eth_address,
+        nonce: 6,
+        max_priority_fee_per_gas: 155216104248442,
+        max_fee_per_gas: 155216104248442,
+        gas_limit: 50000,
+        value: 0,
+        calldata: array![0x76971d7f, 0x2, 0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7, 
+        0x219209e083275171774dab1df80982e9df2096516f06319c5c6d71ae0a8480c, 0x3, 0x02c56e8b00dbe2a71e57472685378fc8988bba947e9a99b26a00fade2b4fe7c2,
+        0x38d7ea4c68000, 0x0, 0x02c56e8b00dbe2a71e57472685378fc8988bba947e9a99b26a00fade2b4fe7c2
+        ,0x01171593aa5bdadda4d6b0efde6cc94ee7649c3163d5efeb19da6c16d63a2a63, 0x17, 0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7,
+        0x38d7ea4c68000, 0x0, 0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d,
+        0x0000000000000000000000000000000000000000000000000005c8ac1d55b34e, 0x0, 0x00000000000000000000000000000000000000000000000000057ea382449d8a, 0x0,
+        0x052d8e9778d026588a51595e30b0f45609b4f771eecf0e335cdefed1d84a9d89,0x0,0x0,0x1, 0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7,
+        0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d, 0x0444a09d96389aa7148f1aada508e30b71299ffe650d9c97fdaae38cb9a23384,
+        0x000000000000000000000000000000000000000000000000000000e8d4a51000, 0x6, 0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d,
+        0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7, 0x000000000000000000000000000000000020c49ba5e353f80000000000000000,
+        0x3e8,0x0,0x0000000000000000000000000000000000011ebd39f990000f1fc7d3532a0ba8].span(),
+        access_list: array![].span(),
+        directives: array![].span(),
+        target_function: array![].span() 
+    };
+
+
+    let signature = array![0x451400a2f9bcef3ab5fe077740dd7340,0xbb7dfa5b5c282d46b46bfadde18c344b, 0x9545626bb4e5348995064c9dd47b007,0x5c42fa0d43e2416471a498caa7b39583, 0x1b, 0x0,0x0];
+    
+    let (rosettanet, account, _) = deploy_funded_account_from_rosettanet(eth_address);
+    
+    let unsigned_tx_hash: u256 = 0x818bd006d9cc1dd0103fce48f6c554f2c23549799eacdced117d87ad54bd7f0d;
+    let generated_tx_hash: u256 = generate_tx_hash_for_internal_transaction(tx);
+    assert_eq!(generated_tx_hash, unsigned_tx_hash);
+
+    start_cheat_nonce_global(tx.nonce.into());
+    start_cheat_signature_global(signature.span());
+    start_cheat_caller_address(account.contract_address, starknet::contract_address_const::<0>());
+    let validation = account.__validate__(tx);
+    stop_cheat_caller_address(account.contract_address);
+    stop_cheat_signature_global();
+    stop_cheat_nonce_global();
+
+    assert_eq!(validation, starknet::VALIDATED);
+}
