@@ -530,17 +530,19 @@ pub impl ByteArrayExt of ByteArrayExTrait {
     fn into_bytes_without_initial_zeroes(self: ByteArray) -> Span<u8> {
         let mut output: Array<u8> = Default::default();
         let mut firstValue = false;
-        for i in 0..self.len() {
-            let val = self[i];
-            if(val == 0 && !firstValue) {
-                continue;
-            }
-            output.append(val);
-            if(!firstValue) {   
-                firstValue = true;  
-                continue;
-            };
-        };
+        for i in 0
+            ..self
+                .len() {
+                    let val = self[i];
+                    if (val == 0 && !firstValue) {
+                        continue;
+                    }
+                    output.append(val);
+                    if (!firstValue) {
+                        firstValue = true;
+                        continue;
+                    };
+                };
         output.span()
     }
 }
