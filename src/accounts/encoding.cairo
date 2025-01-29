@@ -36,7 +36,7 @@ pub fn rlp_encode_legacy(tx: LegacyTransaction) -> Span<u8> {
     let gas_price = RLPItem::String(deserialize_bytes_non_zeroes(tx.gas_price.into(), 16));
     let gas_limit = RLPItem::String(deserialize_bytes_non_zeroes(tx.gas_limit.into(), 8));
     let value = RLPItem::String(deserialize_u256(tx.value));
-    let to = RLPItem::String(deserialize_bytes_non_zeroes(tx.to.into(), 20));
+    let to = RLPItem::String(deserialize_bytes(tx.to.into(), 20));
     let input = RLPItem::String(tx.input);
     let empty = RLPItem::String(array![].span());
 
