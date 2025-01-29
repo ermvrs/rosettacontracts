@@ -415,7 +415,7 @@ mod tests {
     use crate::accounts::utils::{
         merge_u256s, prepare_multicall_context, calculate_eth_function_signature,
         parse_function_name, eth_function_signature_from_felts, calculate_sn_entrypoint,
-        validate_target_function, parse_eip1559_transaction, generate_tx_hash, RosettanetCall,
+        validate_target_function, parse_eip1559_transaction, parse_legacy_transaction, generate_tx_hash, RosettanetCall,
         RosettanetMulticall
     };
     use crate::accounts::encoding::{bytes_from_felts};
@@ -483,7 +483,74 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_transaction_empty_calldata() {
+    fn test_parse_legacy_transaction_empty_calldata() {
+        let calldata = array![].span(); // transferFrom(0x123123,0x456456, u256 {0,0x666})
+        let directives = array![].span(); // Directive length must be -1 bcs first is selector
+        let target_function = array![].span(); // transferFrom
+
+        let call = RosettanetCall {
+            tx_type: 0,
+            to: 1.try_into().unwrap(),
+            nonce: 1,
+            max_priority_fee_per_gas: 0,
+            max_fee_per_gas: 0,
+            gas_price: 151515,
+            gas_limit: 21000,
+            value: 0,
+            calldata: calldata,
+            access_list: array![].span(),
+            directives: directives,
+            target_function: target_function
+        };
+
+        let parsed_txn = parse_legacy_transaction(call);
+        assert_eq!(parsed_txn.chain_id, 1381192787);
+        assert_eq!(parsed_txn.nonce, 1);
+        assert_eq!(parsed_txn.input.len(), 0);
+        assert_eq!(parsed_txn.gas_price, 151515);
+    }
+
+    #[test]
+    fn test_parse_legacy_transaction_usual() {
+        let calldata = array![0x23b872dd, 0x123123, 0x456456, 0x0, 0x666]
+            .span(); // transferFrom(0x123123,0x456456, u256 {0,0x666})
+        let directives = array![0, 0, 1, 0]
+            .span(); // Directive length must be -1 bcs first is selector
+        let target_function = array![
+            0x7472616E7366657246726F6D28616464726573732C616464726573732C, 0x75696E7432353629
+        ]
+            .span(); // transferFrom
+
+        let call = RosettanetCall {
+            tx_type: 0,
+            to: 1.try_into().unwrap(),
+            nonce: 1,
+            max_priority_fee_per_gas: 0,
+            max_fee_per_gas: 0,
+            gas_price: 151515,
+            gas_limit: 21000,
+            value: 0,
+            calldata: calldata,
+            access_list: array![].span(),
+            directives: directives,
+            target_function: target_function
+        };
+
+        let parsed_txn = parse_legacy_transaction(call);
+
+        assert_eq!(parsed_txn.chain_id, 1381192787);
+        assert_eq!(parsed_txn.nonce, 1);
+        assert_eq!(parsed_txn.gas_price, 151515);
+        assert_eq!(parsed_txn.input.len(), 100);
+        assert_eq!(*parsed_txn.input.at(0), 0x23);
+        assert_eq!(*parsed_txn.input.at(1), 0xb8);
+        assert_eq!(*parsed_txn.input.at(2), 0x72);
+        assert_eq!(*parsed_txn.input.at(3), 0xdd);
+        assert_eq!(*parsed_txn.input.at(4), 0x0);
+    }
+
+    #[test]
+    fn test_parse_eip1559_transaction_empty_calldata() {
         let calldata = array![].span(); // transferFrom(0x123123,0x456456, u256 {0,0x666})
         let directives = array![].span(); // Directive length must be -1 bcs first is selector
         let target_function = array![].span(); // transferFrom
@@ -510,7 +577,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_transaction_usual() {
+    fn test_parse_eip1559_transaction_usual() {
         let calldata = array![0x23b872dd, 0x123123, 0x456456, 0x0, 0x666]
             .span(); // transferFrom(0x123123,0x456456, u256 {0,0x666})
         let directives = array![0, 0, 1, 0]
