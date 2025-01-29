@@ -29,7 +29,7 @@ pub impl AccessListItemImpl of AccessListItemTrait {
 
         let mut storage_keys_arr = array![];
         for storage_key in storage_keys {
-            storage_keys_arr.append(RLPItem::String(deserialize_u256_with_zeroes(*storage_key))); 
+            storage_keys_arr.append(RLPItem::String(deserialize_u256_with_zeroes(*storage_key)));
         };
 
         let addr = RLPItem::String(deserialize_bytes(ethereum_address.into(), 20));

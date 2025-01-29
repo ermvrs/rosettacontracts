@@ -3,26 +3,26 @@ use starknet::ContractAddress;
 #[starknet::interface]
 pub trait IMockERC20<TState> {
     // IERC20
-    fn total_supply(self :@TState) -> u256;
-    fn balance_of(self :@TState, account: ContractAddress) -> u256;
-    fn allowance(self :@TState, owner: ContractAddress, spender: ContractAddress) -> u256;
-    fn transfer(self :@TState, recipient: ContractAddress, amount: u256) -> bool;
+    fn total_supply(self: @TState) -> u256;
+    fn balance_of(self: @TState, account: ContractAddress) -> u256;
+    fn allowance(self: @TState, owner: ContractAddress, spender: ContractAddress) -> u256;
+    fn transfer(self: @TState, recipient: ContractAddress, amount: u256) -> bool;
     fn transfer_from(
-        self :@TState, sender: ContractAddress, recipient: ContractAddress, amount: u256
+        self: @TState, sender: ContractAddress, recipient: ContractAddress, amount: u256
     ) -> bool;
-    fn approve(self :@TState, spender: ContractAddress, amount: u256) -> bool;
-    fn mint(ref self:TState, receiver: ContractAddress, amount:u256);
+    fn approve(self: @TState, spender: ContractAddress, amount: u256) -> bool;
+    fn mint(ref self: TState, receiver: ContractAddress, amount: u256);
 
     // IERC20Metadata
-    fn name(self :@TState) -> ByteArray;
-    fn symbol(self :@TState) -> ByteArray;
-    fn decimals(self :@TState) -> u8;
+    fn name(self: @TState) -> ByteArray;
+    fn symbol(self: @TState) -> ByteArray;
+    fn decimals(self: @TState) -> u8;
 
     // IERC20Camel
-    fn totalSupply(self :@TState) -> u256;
-    fn balanceOf(self :@TState, account: ContractAddress) -> u256;
+    fn totalSupply(self: @TState) -> u256;
+    fn balanceOf(self: @TState, account: ContractAddress) -> u256;
     fn transferFrom(
-        self :@TState, sender: ContractAddress, recipient: ContractAddress, amount: u256
+        self: @TState, sender: ContractAddress, recipient: ContractAddress, amount: u256
     ) -> bool;
 }
 
@@ -51,9 +51,7 @@ pub mod MockERC20 {
     }
 
     #[constructor]
-    fn constructor(
-        ref self: ContractState,
-    ) {
+    fn constructor(ref self: ContractState,) {
         let name = "MyToken";
         let symbol = "MTK";
 
@@ -61,11 +59,7 @@ pub mod MockERC20 {
     }
 
     #[external(v0)]
-    fn mint(
-        ref self: ContractState,
-        recipient: ContractAddress,
-        amount: u256
-    ) {
+    fn mint(ref self: ContractState, recipient: ContractAddress, amount: u256) {
         self.erc20.mint(recipient, amount);
     }
 }

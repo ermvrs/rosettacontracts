@@ -1,10 +1,11 @@
-use snforge_std::{declare, ContractClassTrait, DeclareResultTrait, start_cheat_caller_address, stop_cheat_caller_address};
+use snforge_std::{
+    declare, ContractClassTrait, DeclareResultTrait, start_cheat_caller_address,
+    stop_cheat_caller_address
+};
 use starknet::{ClassHash, ContractAddress, EthAddress};
 use core::pedersen::PedersenTrait;
 use core::hash::{HashStateExTrait, HashStateTrait};
-use rosettacontracts::rosettanet::{
-    IRosettanetDispatcher, IRosettanetDispatcherTrait
-};
+use rosettacontracts::rosettanet::{IRosettanetDispatcher, IRosettanetDispatcherTrait};
 use rosettacontracts::accounts::base::{IRosettaAccountDispatcher};
 use rosettacontracts::mocks::erc20::{IMockERC20Dispatcher, IMockERC20DispatcherTrait};
 use rosettacontracts::mocks::weth::{IMockWETHDispatcher, IMockWETHDispatcherTrait};
@@ -32,9 +33,14 @@ pub fn deploy_and_set_account() -> IRosettanetDispatcher {
     let contract = declare("Rosettanet").unwrap().contract_class();
     let native_currency = deploy_erc20();
     let account_class = declare_account();
-    let (contract_address, _) = contract.deploy(@array![account_class.into(), developer().into(), native_currency.contract_address.into()]).unwrap();
+    let (contract_address, _) = contract
+        .deploy(
+            @array![
+                account_class.into(), developer().into(), native_currency.contract_address.into()
+            ]
+        )
+        .unwrap();
     let dispatcher = IRosettanetDispatcher { contract_address };
-    
 
     start_cheat_caller_address(dispatcher.contract_address, developer());
     dispatcher.set_account_class(account_class);
@@ -43,7 +49,7 @@ pub fn deploy_and_set_account() -> IRosettanetDispatcher {
     dispatcher
 }
 
-pub fn developer() -> ContractAddress { 
+pub fn developer() -> ContractAddress {
     starknet::contract_address_const::<1>()
 }
 
@@ -67,11 +73,19 @@ pub fn deploy_rosettanet() -> IRosettanetDispatcher {
     let contract = declare("Rosettanet").unwrap().contract_class();
     let account_class = declare_account();
     let native_currency = deploy_erc20();
-    let (contract_address, _) = contract.deploy(@array![account_class.into(), developer().into(), native_currency.contract_address.into()]).unwrap();
+    let (contract_address, _) = contract
+        .deploy(
+            @array![
+                account_class.into(), developer().into(), native_currency.contract_address.into()
+            ]
+        )
+        .unwrap();
     IRosettanetDispatcher { contract_address }
 }
 
-pub fn deploy_account_from_rosettanet(eth_address: EthAddress) -> (IRosettanetDispatcher, IRosettaAccountDispatcher) {
+pub fn deploy_account_from_rosettanet(
+    eth_address: EthAddress
+) -> (IRosettanetDispatcher, IRosettaAccountDispatcher) {
     let account_class = declare_account();
 
     let rosettanet = deploy_rosettanet();
@@ -85,19 +99,23 @@ pub fn deploy_account_from_rosettanet(eth_address: EthAddress) -> (IRosettanetDi
     (rosettanet, IRosettaAccountDispatcher { contract_address: account })
 }
 
-pub fn deploy_account_from_existing_rosettanet(eth_address: EthAddress, rosettanet_contract: ContractAddress) -> IRosettaAccountDispatcher {
+pub fn deploy_account_from_existing_rosettanet(
+    eth_address: EthAddress, rosettanet_contract: ContractAddress
+) -> IRosettaAccountDispatcher {
     let rosettanet = IRosettanetDispatcher { contract_address: rosettanet_contract };
 
     let account = rosettanet.deploy_account(eth_address);
     IRosettaAccountDispatcher { contract_address: account }
 }
 
-pub fn deploy_funded_account_from_rosettanet(eth_address: EthAddress) -> (IRosettanetDispatcher, IRosettaAccountDispatcher, IMockERC20Dispatcher) {
+pub fn deploy_funded_account_from_rosettanet(
+    eth_address: EthAddress
+) -> (IRosettanetDispatcher, IRosettaAccountDispatcher, IMockERC20Dispatcher) {
     let (rosettanet, account) = deploy_account_from_rosettanet(eth_address);
 
     let native_currency_address = rosettanet.native_currency();
 
-    let strk = IMockERC20Dispatcher { contract_address: native_currency_address};
+    let strk = IMockERC20Dispatcher { contract_address: native_currency_address };
 
     strk.mint(account.contract_address, 1000000);
 
@@ -106,12 +124,14 @@ pub fn deploy_funded_account_from_rosettanet(eth_address: EthAddress) -> (IRoset
     (rosettanet, account, strk)
 }
 
-pub fn deploy_specificly_funded_account_from_rosettanet(eth_address: EthAddress, amount: u256) -> (IRosettanetDispatcher, IRosettaAccountDispatcher, IMockERC20Dispatcher) {
+pub fn deploy_specificly_funded_account_from_rosettanet(
+    eth_address: EthAddress, amount: u256
+) -> (IRosettanetDispatcher, IRosettaAccountDispatcher, IMockERC20Dispatcher) {
     let (rosettanet, account) = deploy_account_from_rosettanet(eth_address);
 
     let native_currency_address = rosettanet.native_currency();
 
-    let strk = IMockERC20Dispatcher { contract_address: native_currency_address};
+    let strk = IMockERC20Dispatcher { contract_address: native_currency_address };
 
     strk.mint(account.contract_address, amount);
 
@@ -128,13 +148,16 @@ pub fn change_current_account_class(rosettanet_contract: ContractAddress, new_ha
 }
 
 // Forcely matches these addresses
-pub fn manipulate_rosettanet_registry(rosettanet_contract: ContractAddress, sn_address: ContractAddress, eth_address: EthAddress) {
+pub fn manipulate_rosettanet_registry(
+    rosettanet_contract: ContractAddress, sn_address: ContractAddress, eth_address: EthAddress
+) {
     // Currently we use function in registry
-    // After alpha version, we have to remove that function. So this function also needs to be rewritten with store function in foundry
+    // After alpha version, we have to remove that function. So this function also needs to be
+    // rewritten with store function in foundry
     start_cheat_caller_address(rosettanet_contract, developer());
-    IRosettanetDispatcher { contract_address: rosettanet_contract }.register_matched_addresses(sn_address, eth_address);
+    IRosettanetDispatcher { contract_address: rosettanet_contract }
+        .register_matched_addresses(sn_address, eth_address);
     stop_cheat_caller_address(rosettanet_contract);
-
 }
 
 #[test]

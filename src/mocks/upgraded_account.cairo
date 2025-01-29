@@ -1,4 +1,3 @@
-
 #[starknet::interface]
 pub trait IMockUpgradedAccount<TState> {
     fn __execute__(self: @TState, call: Array<felt252>) -> Array<Span<felt252>>;
@@ -15,18 +14,17 @@ pub trait IMockUpgradedAccount<TState> {
 #[starknet::contract(account)]
 pub mod MockUpgradedAccount {
     #[storage]
-    struct Storage {
-    }
+    struct Storage {}
 
     #[constructor]
-    fn constructor(ref self: ContractState,) {
-    }
+    fn constructor(ref self: ContractState,) {}
     #[abi(embed_v0)]
     impl AccountImpl of super::IMockUpgradedAccount<ContractState> {
         // Instead of Array<Call> we use Array<felt252> since we pass different values to the
         // parameter
-        // It is EOA execution so multiple calls are not possible right now. We will add Multicalls in a different way in beta
-        // calls params can include raw signed tx or can include the abi parsing bit locations for calldata
+        // It is EOA execution so multiple calls are not possible right now. We will add Multicalls
+        // in a different way in beta calls params can include raw signed tx or can include the abi
+        // parsing bit locations for calldata
         fn __execute__(self: @ContractState, call: Array<felt252>) -> Array<Span<felt252>> {
             return array![array![].span()];
         }
@@ -50,9 +48,7 @@ pub mod MockUpgradedAccount {
         }
 
         fn __validate_deploy__(
-            self: @ContractState,
-            class_hash: felt252,
-            contract_address_salt: felt252,
+            self: @ContractState, class_hash: felt252, contract_address_salt: felt252,
         ) -> felt252 {
             starknet::VALIDATED
         }
