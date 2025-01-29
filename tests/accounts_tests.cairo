@@ -108,6 +108,51 @@ fn test_signature_wrong_address() {
 }
 
 #[test]
+#[should_panic(expected: 'Tx type not supported')]
+fn test_transaction_validation_unsupported_tx_type() {
+    // Testing with empty access list eip1559 transaction
+    // Access list support will be added further
+    let eth_address: EthAddress = 0x30ffDf2c33b929F749afE49D7aBf3f4B8D399B40.try_into().unwrap();
+    let tx = RosettanetCall {
+        tx_type: 1,
+        to: 0xB756B1BC042Fa70D85Ee84eab646a3b438A285Ee.try_into().unwrap(),
+        nonce: 4,
+        max_priority_fee_per_gas: 158129478,
+        max_fee_per_gas: 50742206232,
+        gas_price: 0,
+        gas_limit: 21000,
+        value: 1000000000000000000,
+        calldata: array![].span(),
+        access_list: array![].span(),
+        directives: array![].span(),
+        target_function: array![].span()
+    };
+
+    let signature = array![
+        0x8bba859d5730ac5dc9363a3c4cb101dd,
+        0xb688a37cc78e902c27509be951232f94,
+        0xb0e9624f16c50a779023870d75cad640,
+        0x5c7bf7e431e816e08e9329edcc014fe4,
+        0x1c,
+        0xde0b6b3a7640000,
+        0x0
+    ];
+    let unsigned_tx_hash: u256 = 0xbf4c65f85c5317b99259cedee5a69aacae0551f5a265d4df53714c9deb5add55;
+
+    let generated_tx_hash: u256 = generate_tx_hash(tx);
+    assert_eq!(generated_tx_hash, unsigned_tx_hash);
+
+    let (_, account) = deploy_account_from_rosettanet(eth_address);
+    assert_eq!(account.get_ethereum_address(), eth_address);
+
+    start_cheat_nonce_global(tx.nonce.into());
+    start_cheat_signature_global(signature.span());
+    account.__validate__(tx);
+    stop_cheat_signature_global();
+    stop_cheat_nonce_global();
+}
+
+#[test]
 fn test_transaction_validation_value_transfer_only() {
     // Testing with empty access list eip1559 transaction
     // Access list support will be added further

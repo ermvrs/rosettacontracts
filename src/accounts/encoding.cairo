@@ -31,20 +31,21 @@ pub struct LegacyTransaction {
 
 pub fn rlp_encode_legacy(tx: LegacyTransaction) -> Span<u8> {
     // TODO: Write tests and complete tx type
+    let chain_id = RLPItem::String(deserialize_bytes_non_zeroes(tx.chain_id.into(), 8));
     let nonce = RLPItem::String(deserialize_bytes_non_zeroes(tx.nonce.into(), 8));
     let gas_price = RLPItem::String(deserialize_bytes_non_zeroes(tx.gas_price.into(), 16));
-    let gas_limit = RLPItem::String(deserialize_bytes_non_zeroes(tx.gas_limit.into(), 16));
+    let gas_limit = RLPItem::String(deserialize_bytes_non_zeroes(tx.gas_limit.into(), 8));
     let value = RLPItem::String(deserialize_u256(tx.value));
     let to = RLPItem::String(deserialize_bytes_non_zeroes(tx.to.into(), 20));
     let input = RLPItem::String(tx.input);
+    let zeroes = RLPItem::String(array![0x0].span());
 
     let mut rlp_inputs = RLPItem::List(
-        array![nonce, gas_price, gas_limit, to, value, input].span()
+        array![nonce, gas_price, gas_limit, to, value, input, chain_id, zeroes, zeroes].span()
     );
-    let mut encoded_tx = array![];
 
-    encoded_tx.append_span(RLPTrait::encode(array![rlp_inputs].span()).unwrap());
-    encoded_tx.span()
+    RLPTrait::encode(array![rlp_inputs].span()).unwrap()
+
 }
 
 pub fn rlp_encode_eip1559(tx: Eip1559Transaction) -> Span<u8> {
@@ -178,14 +179,57 @@ pub fn deserialize_bytes_non_zeroes(value: felt252, len: usize) -> Span<u8> {
 #[cfg(test)]
 mod tests {
     use crate::accounts::encoding::{
-        Eip1559Transaction, rlp_encode_eip1559, deserialize_bytes_non_zeroes, bytes_from_felts,
+        Eip1559Transaction, LegacyTransaction, rlp_encode_eip1559, rlp_encode_legacy, deserialize_bytes_non_zeroes, bytes_from_felts,
         deserialize_u256, deserialize_u256_span
     };
     use crate::utils::transaction::eip2930::{AccessListItem};
     use core::num::traits::{Bounded};
 
     #[test]
-    fn rlp_encode_transaction() {
+    fn rlp_encode_legacy_transaction_empty_calldata() {
+        let tx = LegacyTransaction {
+            chain_id: 1381192787,
+            nonce: 6,
+            gas_limit: 21000,
+            gas_price: 151515,
+            value: 0,
+            to: 0xDC1Be555a2B02aEd499141FF9fAF1A13934a5D2d.try_into().unwrap(),
+            input: array![].span(),
+        };
+
+        let encoded = rlp_encode_legacy(tx);
+        assert_eq!(encoded.len(), 39);
+        assert_eq!(*encoded.at(0), 0xE6);
+        assert_eq!(*encoded.at(1), 0x06);
+        assert_eq!(*encoded.at(2), 0x83);
+        assert_eq!(*encoded.at(3), 0x02);
+        assert_eq!(*encoded.at(4), 0x4F);
+    }
+
+    #[test]
+    fn rlp_encode_legacy_transaction_with_calldata() {
+        let tx = LegacyTransaction {
+            chain_id: 1381192787,
+            nonce: 3,
+            gas_limit: 21000,
+            gas_price: 151515,
+            value: 0,
+            to: 0xDC1Be555a2B02aEd499141FF9fAF1A13934a5D2d.try_into().unwrap(),
+            input: array![0xAB, 0xCA, 0xBC].span(),
+        };
+
+        let encoded = rlp_encode_legacy(tx);
+        assert_eq!(encoded.len(), 42);
+        assert_eq!(*encoded.at(0), 0xE9);
+        assert_eq!(*encoded.at(1), 0x03);
+        assert_eq!(*encoded.at(2), 0x83);
+        assert_eq!(*encoded.at(3), 0x02);
+        assert_eq!(*encoded.at(4), 0x4F);
+        assert_eq!(*encoded.at(39), 0x53);
+    }
+
+    #[test]
+    fn rlp_encode_eip1559_transaction() {
         let tx = Eip1559Transaction {
             chain_id: 2933,
             nonce: 1,
