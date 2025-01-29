@@ -457,6 +457,27 @@ mod tests {
     }
 
     #[test]
+    fn test_generate_legacy_tx_hash() {
+        let tx = RosettanetCall {
+            tx_type: 0,
+            to: 0xB756B1BC042Fa70D85Ee84eab646a3b438A285Ee.try_into().unwrap(),
+            nonce: 4,
+            max_priority_fee_per_gas: 0,
+            max_fee_per_gas: 0,
+            gas_price: 152345,
+            gas_limit: 21000,
+            value: 1000000000000000000,
+            calldata: array![].span(),
+            access_list: array![].span(),
+            directives: array![].span(),
+            target_function: array![].span()
+        };
+
+        let tx_hash = generate_tx_hash(tx);
+        assert_eq!(tx_hash, u256 { low: 0x5e26225cec38d1e0310e925b2b7565e9, high: 0x147b5df4a6e91fdbd967747f7b375f15});
+    }
+
+    #[test]
     fn test_generate_tx_hash() {
         let tx = RosettanetCall {
             tx_type: 2,

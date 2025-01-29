@@ -222,6 +222,130 @@ fn test_transaction_validation_value_transfer_only() {
 }
 
 #[test]
+fn test_legacy_transaction_validation_value_transfer_only() {
+    let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
+    let tx = RosettanetCall {
+        tx_type: 0,
+        to: 0xB756B1BC042Fa70D85Ee84eab646a3b438A285Ee.try_into().unwrap(),
+        nonce: 4,
+        max_priority_fee_per_gas: 0,
+        max_fee_per_gas: 0,
+        gas_price: 152345,
+        gas_limit: 21000,
+        value: 1000000000000000000,
+        calldata: array![].span(),
+        access_list: array![].span(),
+        directives: array![].span(),
+        target_function: array![].span()
+    };
+
+    let signature = array![0x584ebdc080c24d8b3d84e5342c9078a6,0xcfb188b344b90a84ed7d38a6256b3427, 0x4537a84e51ec5819ee07de443874c7ea,0x21913827f62c0b6bc9643dd9a8892e75, 0x1b, 0xde0b6b3a7640000,0x0];
+
+    let unsigned_tx_hash: u256 = 0x147b5df4a6e91fdbd967747f7b375f155e26225cec38d1e0310e925b2b7565e9;
+
+    let generated_tx_hash: u256 = generate_tx_hash(tx);
+    assert_eq!(generated_tx_hash, unsigned_tx_hash);
+
+    let (_, account) = deploy_account_from_rosettanet(eth_address);
+    assert_eq!(account.get_ethereum_address(), eth_address);
+
+    start_cheat_nonce_global(tx.nonce.into());
+    start_cheat_signature_global(signature.span());
+    let validation = account.__validate__(tx);
+    stop_cheat_signature_global();
+    stop_cheat_nonce_global();
+
+    assert_eq!(validation, starknet::VALIDATED);
+}
+
+#[test]
+fn test_legacy_transaction_validation_calldata() {
+    // Example usdc transfer
+    let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
+    let tx = RosettanetCall {
+        tx_type: 0,
+        to: 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238
+            .try_into()
+            .unwrap(), // we dont need to deploy account, we only check validation here
+        nonce: 77,
+        max_priority_fee_per_gas: 0,
+        max_fee_per_gas: 0,
+        gas_price: 45235,
+        gas_limit: 21000,
+        value: 0,
+        calldata: array![0xa9059cbb, 0xb756b1bc042fa70d85ee84eab646a3b438a285ee, 0xf4240, 0x0]
+            .span(),
+        access_list: array![].span(),
+        directives: array![0x2, 0x1, 0x0].span(),
+        target_function: array![0x7472616E7366657228616464726573732C75696E7432353629]
+            .span() // transfer(address,uint256)
+    };
+
+    let signature = array![
+        0xa242563ffb0771ea806fc160e0665583,0x6279ab9f3ee976a5a0a47538ca5383be, 0xc8cfbaab64f80111d375dce2c52e896c,0x419770f60d92f921b9d5434941b3891a, 0x1c, 0x0,0x0
+    ];
+    let unsigned_tx_hash: u256 = 0xb2e837d9ee9c8d6e9bb40a9cf18eac862c6b4f9b0bbe5d2437abb9dcade6bab2;
+
+    let generated_tx_hash: u256 = generate_tx_hash(tx);
+    assert_eq!(generated_tx_hash, unsigned_tx_hash);
+
+    let (_, account) = deploy_account_from_rosettanet(eth_address);
+    assert_eq!(account.get_ethereum_address(), eth_address);
+
+    start_cheat_nonce_global(tx.nonce.into());
+    start_cheat_signature_global(signature.span());
+    let validation = account.__validate__(tx);
+    stop_cheat_signature_global();
+    stop_cheat_nonce_global();
+
+    assert_eq!(validation, starknet::VALIDATED);
+}
+
+#[test]
+#[should_panic(expected: 'Invalid signature')]
+fn test_legacy_transaction_validation_calldata_invalid_signature() {
+    // Example usdc transfer
+    let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
+    let tx = RosettanetCall {
+        tx_type: 0,
+        to: 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238
+            .try_into()
+            .unwrap(), // we dont need to deploy account, we only check validation here
+        nonce: 77,
+        max_priority_fee_per_gas: 0,
+        max_fee_per_gas: 0,
+        gas_price: 45235,
+        gas_limit: 21000,
+        value: 0,
+        calldata: array![0xa9059cbb, 0xb756b1bc042fa70d85ee84eab646a3b438a285ee, 0xf4240, 0x0]
+            .span(),
+        access_list: array![].span(),
+        directives: array![0x2, 0x1, 0x0].span(),
+        target_function: array![0x7472616E7366657228616464726573732C75696E7432353629]
+            .span() // transfer(address,uint256)
+    };
+
+    let signature = array![
+        0xa242563ffb0771ea806fc160e0665584,0x6279ab9f3ee976a5a0a47538ca5383be, 0xc8cfbaab64f80111d375dce2c52e896c,0x419770f60d92f921b9d5434941b3891a, 0x1c, 0x0,0x0
+    ];
+    let unsigned_tx_hash: u256 = 0xb2e837d9ee9c8d6e9bb40a9cf18eac862c6b4f9b0bbe5d2437abb9dcade6bab2;
+
+    let generated_tx_hash: u256 = generate_tx_hash(tx);
+    assert_eq!(generated_tx_hash, unsigned_tx_hash);
+
+    let (_, account) = deploy_account_from_rosettanet(eth_address);
+    assert_eq!(account.get_ethereum_address(), eth_address);
+
+    start_cheat_nonce_global(tx.nonce.into());
+    start_cheat_signature_global(signature.span());
+    let validation = account.__validate__(tx);
+    stop_cheat_signature_global();
+    stop_cheat_nonce_global();
+
+    assert_eq!(validation, starknet::VALIDATED);
+}
+
+#[test]
 fn test_transaction_validation_calldata() {
     // Example usdc transfer
     let eth_address: EthAddress = 0x30ffDf2c33b929F749afE49D7aBf3f4B8D399B40.try_into().unwrap();
@@ -655,6 +779,55 @@ fn test_execute_erc20_transfer_receiver_not_registered() {
     stop_cheat_nonce_global();
 
     assert_eq!(erc20.balance_of(fallback_account_address), 0xf4240);
+}
+
+#[test]
+fn test_execute_erc20_transfer_legacy() {
+    // Example usdc transfer
+    let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
+    let erc20_eth: EthAddress = 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238.try_into().unwrap();
+    let tx = RosettanetCall {
+        to: erc20_eth, // we dont need to deploy account, we only check validation here
+        tx_type: 0,
+        nonce: 23,
+        max_priority_fee_per_gas: 0,
+        max_fee_per_gas: 0,
+        gas_price: 39191,
+        gas_limit: 21000,
+        value: 0,
+        calldata: array![0xa9059cbb, 0xb756b1bc042fa70d85ee84eab646a3b438a285ee, 0xf4240, 0x0]
+            .span(), // sends 1000000 tokens
+        access_list: array![].span(),
+        directives: array![0x2, 0x1, 0x0].span(),
+        target_function: array![0x7472616E7366657228616464726573732C75696E7432353629]
+            .span() // transfer(address,uint256)
+    };
+
+    let signature = array![
+        0x8dbeaba3292e8da5751fe696af7248f3,0xad1e5653ac0873d540479f7a9619e94b, 0x5142bfaa68b44d063e3ca9a1e71dff21,0x6dcaafc193c6f1ad9eb684ab8d87c49b, 0x1c, 0x0,0x0
+    ];
+    let (rosettanet, account, _) = deploy_funded_account_from_rosettanet(eth_address);
+    let receiver = deploy_account_from_existing_rosettanet(
+        0xb756b1bc042fa70d85ee84eab646a3b438a285ee.try_into().unwrap(), rosettanet.contract_address
+    );
+
+    let erc20 = deploy_erc20();
+
+    erc20.mint(account.contract_address, 1500000); // Fund account
+
+    manipulate_rosettanet_registry(rosettanet.contract_address, erc20.contract_address, erc20_eth);
+
+    start_cheat_nonce_global(tx.nonce.into());
+    start_cheat_signature_global(signature.span());
+    start_cheat_caller_address(account.contract_address, starknet::contract_address_const::<0>());
+    let execution = account.__execute__(tx);
+    stop_cheat_caller_address(account.contract_address);
+    stop_cheat_signature_global();
+    stop_cheat_nonce_global();
+
+    assert_eq!(erc20.balance_of(receiver.contract_address), 1000000);
+    assert_eq!(erc20.balance_of(account.contract_address), 500000);
+    assert_eq!(execution, array![array![0x1].span()]); // erc20 transfer returns true
 }
 
 #[test]

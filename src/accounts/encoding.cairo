@@ -38,10 +38,10 @@ pub fn rlp_encode_legacy(tx: LegacyTransaction) -> Span<u8> {
     let value = RLPItem::String(deserialize_u256(tx.value));
     let to = RLPItem::String(deserialize_bytes_non_zeroes(tx.to.into(), 20));
     let input = RLPItem::String(tx.input);
-    let zeroes = RLPItem::String(array![0x0].span());
+    let empty = RLPItem::String(array![].span());
 
     let mut rlp_inputs = RLPItem::List(
-        array![nonce, gas_price, gas_limit, to, value, input, chain_id, zeroes, zeroes].span()
+        array![nonce, gas_price, gas_limit, to, value, input, chain_id, empty, empty].span()
     );
 
     RLPTrait::encode(array![rlp_inputs].span()).unwrap()
