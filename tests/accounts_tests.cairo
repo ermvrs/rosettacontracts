@@ -68,6 +68,29 @@ fn test_signature_validation_eip1559() {
 }
 
 #[test]
+fn test_signature_validation_legacy() {
+    // Legacy tx hash
+    let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
+    let unsigned_tx_hash: u256 = 0x04af5100efeb883338fbc81c2c167f0907889760af4002d45b378ee093a882ac;
+    let signature = array![0x34e45bcf8ecf1ca3bd52ea7a93ef7d31,0x74d09bfb0301645262106184fee00493, 0xd43382bdf45a8c272bcf101e9fcfa716,0x55296d9471410304362b0e4fd0ab7e06, 0x1b, 0x0,0x0];
+    let (_, account) = deploy_account_from_rosettanet(eth_address);
+
+    assert_eq!(account.is_valid_signature(unsigned_tx_hash, signature), starknet::VALIDATED);
+}
+
+#[test]
+#[should_panic(expected: 'Invalid signature')]
+fn test_signature_validation_legacy_invalid() {
+    // Legacy tx hash
+    let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
+    let unsigned_tx_hash: u256 = 0x04af5100efeb883338fbc81c2c167f0907889760af4002d45b378ee093a882ac;
+    let signature = array![0x34e44bcf8ecf1ca3bd52ea7a93ef7d31,0x74d09bfb0301645262106184fee00493, 0xd43382bdf45a8c272bcf101e9fcfa716,0x55296d9471410304362b0e4fd0ab7e06, 0x1b, 0x0,0x0];
+    let (_, account) = deploy_account_from_rosettanet(eth_address);
+
+    assert_eq!(account.is_valid_signature(unsigned_tx_hash, signature), starknet::VALIDATED);
+}
+
+#[test]
 #[should_panic(expected: 'Invalid signature')]
 fn test_wrong_signature() {
     let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
