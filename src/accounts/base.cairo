@@ -56,6 +56,7 @@ pub mod RosettaAccount {
     pub const MULTICALL_SELECTOR: felt252 =
         0x76971d7f; // function multicall((uint256,uint256,uint256[])[])
     pub const UPGRADE_SELECTOR: felt252 = 0x74d0bb9d; // function upgradeRosettanetAccount(uint256)
+    pub const RAW_CALL_SELECTOR: felt252 = 0x2e7fa323; // function rawCall(uint256,uint256,uint256)
 
     #[storage]
     struct Storage {
@@ -122,9 +123,12 @@ pub mod RosettaAccount {
                 return array![array![].span()];
             }
 
-            let entrypoint = validate_target_function(call.target_function, call.calldata);
+            // let entrypoint = validate_target_function(call.target_function, call.calldata);
+            
             let mut calldata = call.calldata;
-            let _ = calldata.pop_front(); // Remove first element, it is function selector
+            let selector = calldata.pop_front().unwrap(); // Remove first element, it is function selector
+            let entrypoint = IRosettanetDispatcher {contract_address: self.registry.read()}.get_starknet_entrypoint(*selector);
+            assert(entrypoint != 0x0, 'function not registered');
 
             assert(calldata.len() == call.directives.len(), 'calldata directive len wrong');
 
@@ -212,9 +216,31 @@ pub mod RosettaAccount {
 
     #[generate_trait]
     impl InternalImpl of InternalTrait {
+        // Optimized validation
+        fn validate_transaction(self: @ContractState, call: RosettanetCall) -> felt252 {
+            assert(call.tx_type == 0 || call.tx_type == 2, 'Tx type not supported');
+            let tx_info = get_tx_info().unbox();
+            // TODO: Tx version check
+
+            if (call.to == self.ethereum_address.read()) {
+                return self.validate_internal_transaction(call);
+            }
+
+            // Validate target function removed. It got from trusted registry.
+
+            // Validate transaction signature
+            let expected_hash = generate_tx_hash(call);
+
+            let value_on_signature = self.get_transaction_value();
+            assert(call.value == value_on_signature, 'value sig-tx mismatch');
+
+            let signature = tx_info.signature; // Signature includes v,r,s
+            assert(self._is_valid_signature(expected_hash, signature), Errors::INVALID_SIGNATURE);
+            starknet::VALIDATED
+        }
         /// Validates the signature for the current transaction.
         /// Returns the short string `VALID` if valid, otherwise it reverts.
-        fn validate_transaction(self: @ContractState, call: RosettanetCall) -> felt252 {
+        fn validate_transaction_old(self: @ContractState, call: RosettanetCall) -> felt252 {
             assert(call.tx_type == 0 || call.tx_type == 2, 'Tx type not supported');
             let tx_info = get_tx_info().unbox();
             // TODO: Tx version check

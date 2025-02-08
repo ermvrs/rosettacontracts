@@ -14,3 +14,5 @@ pub mod mocks {
     pub mod weth;
     pub mod upgraded_account;
 }
+
+pub mod optimized_rlp;
