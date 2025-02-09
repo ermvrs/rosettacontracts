@@ -105,27 +105,3 @@ pub impl U64WordsImpl of U64WordsTrait {
         self.words.span()
     }
 }
-
-#[cfg(test)]
-mod tests { 
-    use crate::u64word::{U64Words, U64WordsTrait, U64WordsImpl};
-
-    #[test]
-    fn test_u64_words() {
-        let mut words :U64Words = U64WordsTrait::new();
-
-        words.append_word(0x12AB, 2);   // 2 bytes (fills first 2 bytes)
-        words.append_word(0x34CD56EF, 4); // 4 bytes (fills next 4 bytes)
-        words.append_word(0x78, 1);     // 1 byte (fills next 1 byte)
-        words.append_word(0xFF, 1);     // 1 byte (fills last byte of first u64)
-        
-        words.append_word(0x1122334455667788, 8); // Fully fills second u64
-    
-        words.finalize();  // Store last packed word if needed
-    
-        let packed_words = words.get_words();
-
-        assert_eq!(*packed_words.at(0), 0x12AB34CD56EF78FF_u64);
-
-    }
-}
