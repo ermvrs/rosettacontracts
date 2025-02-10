@@ -101,6 +101,18 @@ pub impl OptimizedRLPImpl of OptimizedRLPTrait {
     }
 }
 
+pub fn u256_to_rlp_input(input: u256) -> @ByteArray {
+    let mut rlp_input: ByteArray = Default::default();
+    if input.high > 0 {
+        rlp_input.append_word(input.low.into(), 16);
+        rlp_input.append_word(input.high.into(), get_byte_size_u128(input.high).into());
+    } else {
+        rlp_input.append_word(input.low.into(), get_byte_size_u128(input.low).into());
+    }
+
+    @rlp_input
+}
+
 pub fn compute_keccak(input: @ByteArray) -> u256 {
     keccak::compute_keccak_byte_array(input).reverse_endianness()
 }
@@ -124,6 +136,21 @@ fn get_byte_size(mut value: u64) -> u8 {
     while value > 0 {
         bytes += 1;
         value = value / 256;  // Simulate `value >>= 8`
+    };
+
+    bytes
+}
+
+fn get_byte_size_u128(mut value: u128) -> u32 {
+    if value == 0 {
+        return 1_u32;
+    }
+
+    let mut bytes = 0_u32;
+
+    while value > 0 {
+        bytes += 1;
+        value = value / 256;
     };
 
     bytes

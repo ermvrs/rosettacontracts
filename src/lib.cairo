@@ -4,6 +4,7 @@ pub mod accounts {
     pub mod base;
     pub mod utils;
     pub mod encoding;
+    pub mod utils_new;
 }
 
 pub mod utils;

@@ -1,1 +1,3 @@
-rosettacontracts::optimized_rlp::tests::test_rlp_encode_legacy_tx_calldata_long
+rosettacontracts_integrationtest::accounts_tests::test_transaction_validation_calldata
+rosettacontracts_integrationtest::accounts_tests::test_legacy_transaction_validation_calldata
+rosettacontracts_integrationtest::accounts_tests::test_validation_real_data_failing

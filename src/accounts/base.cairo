@@ -216,6 +216,10 @@ pub mod RosettaAccount {
 
     #[generate_trait]
     impl InternalImpl of InternalTrait {
+        fn optimized_validate_transaction(self: @ContractState, call: RosettanetCall) -> felt252 {
+            assert(call.tx_type == 0 || call.tx_type == 2, 'Tx type not supported');
+            // TODO: Tx version check
+        }
         // Optimized validation
         fn validate_transaction(self: @ContractState, call: RosettanetCall) -> felt252 {
             assert(call.tx_type == 0 || call.tx_type == 2, 'Tx type not supported');
