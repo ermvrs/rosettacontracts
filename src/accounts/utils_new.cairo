@@ -69,13 +69,13 @@ fn convert_calldata_to_bytearray(mut calldata: Span<felt252>, directives: Span<u
                     .unwrap(),
                 high: (*calldata.at(i + 1)).try_into().unwrap()
             };
-            ba.append_word(elem.low.into(), 16);
             ba.append_word(elem.high.into(), 16);
+            ba.append_word(elem.low.into(), 16);
             i += 1;
         } else {
             let elem: u256 = (*calldata.at(i)).into();
-            ba.append_word(elem.low.into(), 16);
             ba.append_word(elem.high.into(), 16);
+            ba.append_word(elem.low.into(), 16);
         }
 
         i += 1;

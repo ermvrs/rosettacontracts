@@ -4,8 +4,9 @@ use snforge_std::{
 };
 
 use rosettacontracts::accounts::utils::{
-    RosettanetCall, generate_tx_hash, generate_tx_hash_for_internal_transaction
+    RosettanetCall, generate_tx_hash_for_internal_transaction
 };
+use rosettacontracts::accounts::utils_new::{generate_tx_hash};
 use rosettacontracts::utils::transaction::eip2930::{AccessListItem};
 use rosettacontracts::accounts::base::{IRosettaAccountDispatcherTrait};
 use rosettacontracts::rosettanet::{IRosettanetDispatcherTrait};

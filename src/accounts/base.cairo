@@ -37,9 +37,11 @@ pub mod RosettaAccount {
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use rosettacontracts::accounts::utils::{
         is_valid_eth_signature, RosettanetSignature, RosettanetCall, RosettanetMulticall,
-        prepare_multicall_context, validate_target_function, generate_tx_hash,
+        prepare_multicall_context, validate_target_function,
         generate_tx_hash_for_internal_transaction
     };
+
+    use rosettacontracts::accounts::utils_new::{generate_tx_hash};
     use crate::rosettanet::{IRosettanetDispatcher, IRosettanetDispatcherTrait};
     use openzeppelin::utils::deployments::{calculate_contract_address_from_deploy_syscall};
 
@@ -216,10 +218,6 @@ pub mod RosettaAccount {
 
     #[generate_trait]
     impl InternalImpl of InternalTrait {
-        fn optimized_validate_transaction(self: @ContractState, call: RosettanetCall) -> felt252 {
-            assert(call.tx_type == 0 || call.tx_type == 2, 'Tx type not supported');
-            // TODO: Tx version check
-        }
         // Optimized validation
         fn validate_transaction(self: @ContractState, call: RosettanetCall) -> felt252 {
             assert(call.tx_type == 0 || call.tx_type == 2, 'Tx type not supported');
