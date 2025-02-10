@@ -159,7 +159,7 @@ fn get_byte_size_u128(mut value: u128) -> u32 {
 
 #[cfg(test)]
 mod tests {
-    use crate::optimized_rlp::{get_byte_size, OptimizedRLPTrait, OptimizedRLPImpl};
+    use crate::optimized_rlp::{get_byte_size, OptimizedRLPTrait, OptimizedRLPImpl, compute_keccak};
     use crate::accounts::encoding;
     use crate::accounts::utils;
     use crate::utils::bytes::{U8SpanExTrait};
@@ -176,7 +176,7 @@ mod tests {
             gas_price: 0x3b9aca00,
             value: 0xde0b6b3a7640000,
             to: 0x742d35cc6634c0532925a3b844bc454e4438f44e.try_into().unwrap(),
-            input: array![0xAB, 0xCA, 0xBC].span(),
+            input: array![0xAB, 0xCA, 0xBC,0xAB, 0xCA, 0xBC, 0x00, 0x00, 0x00, 0x1].span(),
         };
 
         let actual_result: Span<u8> = encoding::rlp_encode_legacy(tx);
@@ -187,7 +187,8 @@ mod tests {
         let to = OptimizedRLPTrait::encode_short_string(0x742d35cc6634c0532925a3b844bc454e4438f44e, 20).unwrap(); // try with address with init zeros
         let value = OptimizedRLPTrait::encode_short_string(0xde0b6b3a7640000, 8).unwrap();
         let mut cd: ByteArray = Default::default();
-        cd.append_word(0xABCABC, 3);
+        cd.append_word(0xABCABCABCABC, 6);
+        cd.append_word(0x1, 4);
         let data = OptimizedRLPTrait::encode_bytearray(@cd).unwrap();
         let chain_id = OptimizedRLPTrait::encode_short_string(0x1, 1).unwrap();
         let empty = OptimizedRLPTrait::encode_short_string(0x0, 0).unwrap();
@@ -202,7 +203,12 @@ mod tests {
         while i < actual_result.len() {
             assert_eq!(*actual_result.at(i), result.at(i).unwrap());
             i += 1;
-        }
+        };
+
+        let actual_tx_hash = encoding::calculate_tx_hash(actual_result);
+        let tx_hash = compute_keccak(result);
+
+        assert_eq!(actual_tx_hash, tx_hash);
     }
 
     #[test]

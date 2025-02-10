@@ -102,7 +102,8 @@ fn get_byte_size(mut value: u128) -> u32 {
 #[cfg(test)]
 mod tests { 
     use crate::accounts::utils_new::{convert_calldata_to_bytearray, rlp_encode_tx, generate_tx_hash};
-    use crate::accounts::utils::{RosettanetCall};
+    use crate::accounts::utils::{RosettanetCall, merge_u256s};
+    use crate::accounts::encoding;
     // TODO: tests with calldata. Validation error on calldata txs
     #[test]
     fn test_generate_eip1559_tx_hash() {
@@ -174,6 +175,20 @@ mod tests {
         let rlp_encoded_tx = rlp_encode_tx(call);
 
         assert_eq!(rlp_encoded_tx.len(), 39);
+    }
+
+    #[test]
+    fn compare_calldata_conversion() {
+        let mut calldata = array![0xa9059cbb, 0xb756b1bc042fa70d85ee84eab646a3b438a285ee, 0xf4240, 0x0, 0xb756b1bc042fa70d85ee84eab646a3b438a285ee, 0xb756b1bc042fa70d85ee84eab646a3b438a285ee, 0xb756b1bc042fa70d85ee84eab646a3b438a285ee].span();
+        let mut calldata_no_signature = array![0xb756b1bc042fa70d85ee84eab646a3b438a285ee, 0xf4240, 0x0, 0xb756b1bc042fa70d85ee84eab646a3b438a285ee, 0xb756b1bc042fa70d85ee84eab646a3b438a285ee, 0xb756b1bc042fa70d85ee84eab646a3b438a285ee].span();
+        let directives = array![0x2, 0x1, 0x0, 0x0, 0x0, 0x0].span();
+
+        let mut actual_merged = merge_u256s(calldata_no_signature, directives);
+        let actual_deserialized = encoding::deserialize_u256_span(ref actual_merged);
+
+        let converted = convert_calldata_to_bytearray(calldata, directives);
+
+        assert_eq!(converted.len() + 1,  actual_deserialized.len());
     }
     
     #[test]
