@@ -4,7 +4,7 @@ use crate::accounts::encoding::{
     Eip1559Transaction, LegacyTransaction, deserialize_bytes, rlp_encode_legacy,
     deserialize_u256_span, bytes_from_felts, calculate_tx_hash, rlp_encode_eip1559
 };
-use crate::utils::constants::{POW_2_250};
+use crate::utils::constants::{POW_2_250, POW_2_8, POW_2_16, POW_2_24};
 use crate::utils::traits::SpanDefault;
 use crate::utils::bytes::{U8SpanExTrait, ByteArrayExTrait};
 use crate::utils::transaction::eip2930::{AccessListItem};
@@ -359,7 +359,7 @@ pub fn validate_target_function(
 
 // func: ascii function name selector transfer(address,uint256)
 // returns sn entrypoint
-fn calculate_sn_entrypoint(func: Span<u8>) -> felt252 {
+pub fn calculate_sn_entrypoint(func: Span<u8>) -> felt252 {
     let mut func_clone = func;
     let func_name = parse_function_name(ref func_clone);
 
@@ -372,7 +372,7 @@ fn calculate_sn_entrypoint(func: Span<u8>) -> felt252 {
 
 // Returns only function name from ethereum function selector
 // transfer(address,uint256) -> transfer
-fn parse_function_name(ref func: Span<u8>) -> Span<u8> {
+pub fn parse_function_name(ref func: Span<u8>) -> Span<u8> {
     let mut name = array![];
 
     loop {
@@ -393,7 +393,7 @@ fn parse_function_name(ref func: Span<u8>) -> Span<u8> {
 // Returns function signature
 // Pass array of felts containing ascii of function name
 // Check parse_function_name tests for examples
-fn eth_function_signature_from_felts(func: Span<felt252>) -> Span<u8> {
+pub fn eth_function_signature_from_felts(func: Span<felt252>) -> Span<u8> {
     let mut func_clone = func;
     let bytes = bytes_from_felts(ref func_clone);
 
@@ -409,17 +409,31 @@ pub fn calculate_eth_function_signature(func: Span<u8>) -> Span<u8> {
     array![*bytes.at(0), *bytes.at(1), *bytes.at(2), *bytes.at(3)].span()
 }
 
+pub fn eth_selector_from_span(selector: Span<u8>) -> felt252 {
+    let value: u128 = (*selector.at(3)).into() + ((*selector.at(2)).into() * POW_2_8) + ((*selector.at(1)).into() * POW_2_16) + ((*selector.at(0)).into() * POW_2_24);
+
+    value.into()
+}
+
 
 #[cfg(test)]
 mod tests {
     use crate::accounts::utils::{
         merge_u256s, prepare_multicall_context, calculate_eth_function_signature,
         parse_function_name, eth_function_signature_from_felts, calculate_sn_entrypoint,
-        validate_target_function, parse_eip1559_transaction, parse_legacy_transaction, generate_tx_hash, RosettanetCall,
+        validate_target_function, parse_eip1559_transaction, parse_legacy_transaction, eth_selector_from_span, generate_tx_hash, RosettanetCall,
         RosettanetMulticall
     };
     use crate::accounts::encoding::{bytes_from_felts};
     use crate::utils::bytes::{ByteArrayExTrait};
+
+    #[test]
+    fn test_eth_selector_from_span() {
+        let selector = array![0xAA, 0xBB, 0xCC, 0xFF].span();
+
+        let eth_selector = eth_selector_from_span(selector);
+        assert_eq!(eth_selector, 0xAABBCCFF);
+    }
 
     #[test]
     fn test_prepare_multicall_context() {

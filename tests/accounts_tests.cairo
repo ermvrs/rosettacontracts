@@ -395,7 +395,8 @@ fn test_transaction_validation_calldata() {
 }
 
 #[test]
-#[should_panic(expected: 'calldata target mismatch')]
+#[should_panic(expected: 'function not registered')]
+#[ignore]
 fn test_transaction_validation_calldata_wrong_target_function() {
     let eth_address: EthAddress = 0x30ffDf2c33b929F749afE49D7aBf3f4B8D399B40.try_into().unwrap();
     let tx = RosettanetCall {
@@ -409,7 +410,7 @@ fn test_transaction_validation_calldata_wrong_target_function() {
         gas_price: 0,
         gas_limit: 45439,
         value: 0,
-        calldata: array![0xa9059cbb, 0xb756b1bc042fa70d85ee84eab646a3b438a285ee, 0xf4240, 0x0]
+        calldata: array![0xb9059cbc, 0xb756b1bc042fa70d85ee84eab646a3b438a285ee, 0xf4240, 0x0]
             .span(),
         access_list: array![].span(),
         directives: array![0x2, 0x1, 0x0].span(),

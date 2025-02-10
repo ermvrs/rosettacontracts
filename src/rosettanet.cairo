@@ -17,6 +17,7 @@ pub trait IRosettanet<TState> {
     fn register_matched_addresses(
         ref self: TState, sn_address: ContractAddress, eth_address: EthAddress
     ); // Will be used during alpha
+    fn register_function(ref self: TState, fn_name: Span<felt252>);
     fn upgrade(ref self: TState, class: ClassHash); // Upgrades contract
     fn change_dev(ref self: TState, dev: ContractAddress); // Changes dev
     // Read methods
@@ -26,6 +27,7 @@ pub trait IRosettanet<TState> {
     fn get_starknet_address_with_fallback(
         self: @TState, eth_address: EthAddress
     ) -> ContractAddress;
+    fn get_starknet_entrypoint(self: @TState, eth_selector: felt252) -> felt252;
     fn latest_class(self: @TState) -> ClassHash;
     fn native_currency(self: @TState) -> ContractAddress;
     fn developer(self: @TState) -> ContractAddress;
@@ -43,6 +45,8 @@ pub mod Rosettanet {
     use rosettacontracts::accounts::base::{
         IRosettaAccountDispatcher, IRosettaAccountDispatcherTrait
     };
+    use rosettacontracts::accounts::utils::{calculate_sn_entrypoint, eth_selector_from_span, eth_function_signature_from_felts};
+    use rosettacontracts::accounts::encoding::{bytes_from_felts};
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -98,6 +102,7 @@ pub mod Rosettanet {
     struct Storage {
         sn_to_eth: Map<ContractAddress, EthAddress>,
         eth_to_sn: Map<EthAddress, ContractAddress>,
+        selector_to_entrypoint: Map<felt252, felt252>,
         latest_class: ClassHash,
         // Accounts will always deployed with initial class, so we can always precalculate the
         // addresses.
@@ -198,6 +203,17 @@ pub mod Rosettanet {
             self.emit(AddressRegistered { sn_address: sn_address, eth_address: eth_address });
         }
 
+        fn register_function(ref self: ContractState, fn_name: Span<felt252>) {
+            let entrypoint: felt252 = self.calculate_starknet_entrypoint(fn_name);
+            let eth_selector: felt252 = self.calculate_ethereum_selector(fn_name);
+
+            let current_register: felt252 = self.selector_to_entrypoint.read(eth_selector);
+
+            assert(current_register == 0x0, 'function exist');
+
+            self.selector_to_entrypoint.write(eth_selector, entrypoint);
+        }
+
         /// Updates this contracts class
         /// # Arguments
         /// * `class` - New class hash
@@ -268,6 +284,11 @@ pub mod Rosettanet {
             address_on_registry
         }
 
+        fn get_starknet_entrypoint(self: @ContractState, eth_selector: felt252) -> felt252 {
+            // TODO: maybe we can revert if zero
+            self.selector_to_entrypoint.read(eth_selector)
+        }
+
         /// Returns latest account class hash
         fn latest_class(self: @ContractState) -> ClassHash {
             self.latest_class.read()
@@ -312,6 +333,24 @@ pub mod Rosettanet {
             );
 
             eth_address.try_into().unwrap()
+        }
+
+        fn calculate_starknet_entrypoint(self: @ContractState, fn_name: Span<felt252>) -> felt252 {
+            let mut fn_name = fn_name;
+
+            let fn_name_bytes = bytes_from_felts(ref fn_name);
+
+            let sn_entrypoint: felt252 = calculate_sn_entrypoint(fn_name_bytes);
+
+            sn_entrypoint
+        }
+
+        fn calculate_ethereum_selector(self: @ContractState, fn_name: Span<felt252>) -> felt252 {
+            let bytes = eth_function_signature_from_felts(fn_name);
+
+            let eth_selector: felt252 = eth_selector_from_span(bytes);
+
+            eth_selector
         }
     }
 }
