@@ -141,6 +141,56 @@ mod tests {
     use core::keccak;
 
     #[test]
+    fn test_rlp_encode_legacy_tx_calldata_long() {
+        let nonce = OptimizedRLPTrait::encode_short_string(0x1, 1).unwrap();
+        let max_priority_fee_per_gas = OptimizedRLPTrait::encode_short_string(0x3b9aca00, 4).unwrap();
+        let max_fee_per_gas = OptimizedRLPTrait::encode_short_string(0x3b9aca00, 4).unwrap();
+        let gas_limit = OptimizedRLPTrait::encode_short_string(0x5208, 2).unwrap();
+        let to = OptimizedRLPTrait::encode_short_string(0x000035cc6634c0532925a3b844bc454e4438f44e, 20).unwrap(); // try with address with init zeros
+        let value = OptimizedRLPTrait::encode_short_string(0xde0b6b3a7640000, 8).unwrap();
+        let chain_id = OptimizedRLPTrait::encode_short_string(0x1, 1).unwrap();
+        let access_list = OptimizedRLPTrait::encode_as_list(array![].span(), 0, 0);
+
+        let mut ba: ByteArray = Default::default();
+
+        ba.append_word(0xFFF, 16);
+        ba.append_word(0xFFF, 16);
+        ba.append_word(0xFFF, 16);
+        ba.append_word(0xFFF, 16);
+        ba.append_word(0xFFF, 16);
+        ba.append_word(0xFFF, 16);
+        ba.append_word(0xFFF, 16);
+        ba.append_word(0xFFF, 16);
+        ba.append_word(0xFFF, 16);
+        ba.append_word(0xFFF, 16);
+        ba.append_word(0xFFF, 16);
+        ba.append_word(0xFFF, 16);
+        ba.append_word(0xFFF, 16);
+        ba.append_word(0xFFF, 16);
+        ba.append_word(0xFFF, 16);
+        ba.append_word(0xFFF, 16);
+        ba.append_word(0xFFF, 16);
+        ba.append_word(0xFFF, 16);
+        ba.append_word(0xFFF, 16);
+        ba.append_word(0xFFF, 16);
+        ba.append_word(0xFFF, 16);
+        ba.append_word(0xFFF, 16);
+        ba.append_word(0xFFF, 16);
+        ba.append_word(0xFFF, 16);
+        ba.append_word(0xFFF, 16);
+        ba.append_word(0xFFF, 16);
+        ba.append_word(0xFFF, 16);
+        ba.append_word(0xFFF, 16);
+        ba.append_word(0xFFF, 16);
+
+        let calldata = OptimizedRLPTrait::encode_bytearray(@ba).unwrap();
+        let total_len = nonce.len() + max_priority_fee_per_gas.len() + max_fee_per_gas.len() + gas_limit.len() + to.len() + value.len() + calldata.len() + chain_id.len() + access_list.len();
+        let result = OptimizedRLPTrait::encode_as_list(array![chain_id, nonce, max_priority_fee_per_gas, max_fee_per_gas, gas_limit, to, value, calldata, access_list].span(), total_len, 0x2);
+
+        assert_eq!(result.len(), 517);
+    }
+
+    #[test]
     fn compare_rlp_encode_actual_eip1559_tx_no_calldata() {
         let tx = encoding::Eip1559Transaction {
             chain_id: 0x1,

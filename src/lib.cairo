@@ -16,4 +16,3 @@ pub mod mocks {
 }
 
 pub mod optimized_rlp;
-pub mod u64word;
