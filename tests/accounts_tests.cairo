@@ -3,11 +3,11 @@ use snforge_std::{
     stop_cheat_nonce_global, start_cheat_caller_address, stop_cheat_caller_address
 };
 
-use rosettacontracts::accounts::utils::{
-    RosettanetCall 
+use rosettacontracts::accounts::types::{
+    RosettanetCall, AccessListItem
 };
-use rosettacontracts::accounts::utils_new::{generate_tx_hash};
-use rosettacontracts::utils::transaction::eip2930::{AccessListItem};
+
+use rosettacontracts::accounts::utils::{generate_tx_hash};
 use rosettacontracts::accounts::base::{IRosettaAccountDispatcherTrait};
 use rosettacontracts::rosettanet::{IRosettanetDispatcherTrait};
 use rosettacontracts::mocks::erc20::{IMockERC20DispatcherTrait, IMockERC20Dispatcher};
