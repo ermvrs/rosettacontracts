@@ -62,7 +62,10 @@ pub fn calculate_sn_entrypoint(fn_name: Span<felt252>) -> felt252 {
 }
 
 pub fn eth_selector_from_span(selector: Span<u8>) -> felt252 {
-    let value: u128 = (*selector.at(3)).into() + ((*selector.at(2)).into() * POW_2_8) + ((*selector.at(1)).into() * POW_2_16) + ((*selector.at(0)).into() * POW_2_24);
+    let value: u128 = (*selector.at(3)).into()
+        + ((*selector.at(2)).into() * POW_2_8)
+        + ((*selector.at(1)).into() * POW_2_16)
+        + ((*selector.at(0)).into() * POW_2_24);
 
     value.into()
 }
@@ -73,7 +76,9 @@ pub fn eth_function_signature_from_felts(func: Span<felt252>) -> felt252 {
     let mut ba = Default::default();
     ba.append_word(keccak_hash.high.into(), 16);
 
-    eth_selector_from_span(array![ba.at(0).unwrap(), ba.at(1).unwrap(), ba.at(2).unwrap(), ba.at(3).unwrap()].span())
+    eth_selector_from_span(
+        array![ba.at(0).unwrap(), ba.at(1).unwrap(), ba.at(2).unwrap(), ba.at(3).unwrap()].span()
+    )
 }
 
 

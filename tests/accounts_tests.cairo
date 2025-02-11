@@ -3,9 +3,7 @@ use snforge_std::{
     stop_cheat_nonce_global, start_cheat_caller_address, stop_cheat_caller_address
 };
 
-use rosettacontracts::accounts::types::{
-    RosettanetCall, AccessListItem
-};
+use rosettacontracts::accounts::types::{RosettanetCall, AccessListItem};
 
 use rosettacontracts::accounts::utils::{generate_tx_hash};
 use rosettacontracts::accounts::base::{IRosettaAccountDispatcherTrait};
@@ -73,7 +71,15 @@ fn test_signature_validation_legacy() {
     // Legacy tx hash
     let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
     let unsigned_tx_hash: u256 = 0x04af5100efeb883338fbc81c2c167f0907889760af4002d45b378ee093a882ac;
-    let signature = array![0x34e45bcf8ecf1ca3bd52ea7a93ef7d31,0x74d09bfb0301645262106184fee00493, 0xd43382bdf45a8c272bcf101e9fcfa716,0x55296d9471410304362b0e4fd0ab7e06, 0x1b, 0x0,0x0];
+    let signature = array![
+        0x34e45bcf8ecf1ca3bd52ea7a93ef7d31,
+        0x74d09bfb0301645262106184fee00493,
+        0xd43382bdf45a8c272bcf101e9fcfa716,
+        0x55296d9471410304362b0e4fd0ab7e06,
+        0x1b,
+        0x0,
+        0x0
+    ];
     let (_, account) = deploy_account_from_rosettanet(eth_address);
 
     assert_eq!(account.is_valid_signature(unsigned_tx_hash, signature), starknet::VALIDATED);
@@ -85,7 +91,15 @@ fn test_signature_validation_legacy_invalid() {
     // Legacy tx hash
     let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
     let unsigned_tx_hash: u256 = 0x04af5100efeb883338fbc81c2c167f0907889760af4002d45b378ee093a882ac;
-    let signature = array![0x34e44bcf8ecf1ca3bd52ea7a93ef7d31,0x74d09bfb0301645262106184fee00493, 0xd43382bdf45a8c272bcf101e9fcfa716,0x55296d9471410304362b0e4fd0ab7e06, 0x1b, 0x0,0x0];
+    let signature = array![
+        0x34e44bcf8ecf1ca3bd52ea7a93ef7d31,
+        0x74d09bfb0301645262106184fee00493,
+        0xd43382bdf45a8c272bcf101e9fcfa716,
+        0x55296d9471410304362b0e4fd0ab7e06,
+        0x1b,
+        0x0,
+        0x0
+    ];
     let (_, account) = deploy_account_from_rosettanet(eth_address);
 
     assert_eq!(account.is_valid_signature(unsigned_tx_hash, signature), starknet::VALIDATED);
@@ -240,7 +254,15 @@ fn test_legacy_transaction_validation_value_transfer_only() {
         target_function: array![].span()
     };
 
-    let signature = array![0x584ebdc080c24d8b3d84e5342c9078a6,0xcfb188b344b90a84ed7d38a6256b3427, 0x4537a84e51ec5819ee07de443874c7ea,0x21913827f62c0b6bc9643dd9a8892e75, 0x1b, 0xde0b6b3a7640000,0x0];
+    let signature = array![
+        0x584ebdc080c24d8b3d84e5342c9078a6,
+        0xcfb188b344b90a84ed7d38a6256b3427,
+        0x4537a84e51ec5819ee07de443874c7ea,
+        0x21913827f62c0b6bc9643dd9a8892e75,
+        0x1b,
+        0xde0b6b3a7640000,
+        0x0
+    ];
 
     let unsigned_tx_hash: u256 = 0x147b5df4a6e91fdbd967747f7b375f155e26225cec38d1e0310e925b2b7565e9;
 
@@ -283,7 +305,13 @@ fn test_legacy_transaction_validation_calldata() {
     };
 
     let signature = array![
-        0xa242563ffb0771ea806fc160e0665583,0x6279ab9f3ee976a5a0a47538ca5383be, 0xc8cfbaab64f80111d375dce2c52e896c,0x419770f60d92f921b9d5434941b3891a, 0x1c, 0x0,0x0
+        0xa242563ffb0771ea806fc160e0665583,
+        0x6279ab9f3ee976a5a0a47538ca5383be,
+        0xc8cfbaab64f80111d375dce2c52e896c,
+        0x419770f60d92f921b9d5434941b3891a,
+        0x1c,
+        0x0,
+        0x0
     ];
     let unsigned_tx_hash: u256 = 0xb2e837d9ee9c8d6e9bb40a9cf18eac862c6b4f9b0bbe5d2437abb9dcade6bab2;
 
@@ -327,7 +355,13 @@ fn test_legacy_transaction_validation_calldata_invalid_signature() {
     };
 
     let signature = array![
-        0xa242563ffb0771ea806fc160e0665584,0x6279ab9f3ee976a5a0a47538ca5383be, 0xc8cfbaab64f80111d375dce2c52e896c,0x419770f60d92f921b9d5434941b3891a, 0x1c, 0x0,0x0
+        0xa242563ffb0771ea806fc160e0665584,
+        0x6279ab9f3ee976a5a0a47538ca5383be,
+        0xc8cfbaab64f80111d375dce2c52e896c,
+        0x419770f60d92f921b9d5434941b3891a,
+        0x1c,
+        0x0,
+        0x0
     ];
     let unsigned_tx_hash: u256 = 0xb2e837d9ee9c8d6e9bb40a9cf18eac862c6b4f9b0bbe5d2437abb9dcade6bab2;
 
@@ -807,7 +841,13 @@ fn test_execute_erc20_transfer_legacy() {
     };
 
     let signature = array![
-        0x8dbeaba3292e8da5751fe696af7248f3,0xad1e5653ac0873d540479f7a9619e94b, 0x5142bfaa68b44d063e3ca9a1e71dff21,0x6dcaafc193c6f1ad9eb684ab8d87c49b, 0x1c, 0x0,0x0
+        0x8dbeaba3292e8da5751fe696af7248f3,
+        0xad1e5653ac0873d540479f7a9619e94b,
+        0x5142bfaa68b44d063e3ca9a1e71dff21,
+        0x6dcaafc193c6f1ad9eb684ab8d87c49b,
+        0x1c,
+        0x0,
+        0x0
     ];
     let (rosettanet, account, _) = deploy_funded_account_from_rosettanet(eth_address);
     register_functions(rosettanet);
@@ -1614,7 +1654,8 @@ fn test_only_deploy_step_cost() {
 
     let (_, account, _) = deploy_funded_account_from_rosettanet(eth_address);
 
-    //let unsigned_tx_hash: u256 = 0x818bd006d9cc1dd0103fce48f6c554f2c23549799eacdced117d87ad54bd7f0d;
+    //let unsigned_tx_hash: u256 =
+    //0x818bd006d9cc1dd0103fce48f6c554f2c23549799eacdced117d87ad54bd7f0d;
     //let generated_tx_hash: u256 = generate_tx_hash(tx);
     //assert_eq!(generated_tx_hash, unsigned_tx_hash);
 
@@ -1625,6 +1666,5 @@ fn test_only_deploy_step_cost() {
     stop_cheat_caller_address(account.contract_address);
     stop_cheat_signature_global();
     stop_cheat_nonce_global();
-
     //assert_eq!(validation, starknet::VALIDATED);
 }
