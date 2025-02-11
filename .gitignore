@@ -8,3 +8,5 @@ deployment.md
 d
 .snfoundry_cache/.prev_tests_failed
 signer
+.snfoundry_cache
+deployer
