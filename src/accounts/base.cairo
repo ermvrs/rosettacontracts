@@ -1,5 +1,5 @@
 use starknet::{EthAddress, ContractAddress};
-use rosettacontracts::accounts::utils::{RosettanetCall};
+use rosettacontracts::accounts::types::{RosettanetCall};
 
 
 #[starknet::interface]
@@ -35,13 +35,9 @@ pub mod RosettaAccount {
     };
     use starknet::syscalls::{call_contract_syscall, replace_class_syscall};
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
-    use rosettacontracts::accounts::utils::{
-        is_valid_eth_signature, RosettanetSignature, RosettanetCall, RosettanetMulticall,
-        prepare_multicall_context, validate_target_function,
-        generate_tx_hash_for_internal_transaction
-    };
-
-    use rosettacontracts::accounts::utils_new::{generate_tx_hash};
+    use rosettacontracts::accounts::types::{RosettanetSignature, RosettanetCall, RosettanetMulticall};
+    use rosettacontracts::accounts::utils::{generate_tx_hash, is_valid_eth_signature};
+    use rosettacontracts::accounts::multicall::{prepare_multicall_context};
     use crate::rosettanet::{IRosettanetDispatcher, IRosettanetDispatcherTrait};
     use openzeppelin::utils::deployments::{calculate_contract_address_from_deploy_syscall};
 
@@ -145,9 +141,6 @@ pub mod RosettaAccount {
         }
 
         fn __validate__(self: @ContractState, call: RosettanetCall) -> felt252 {
-            // TODO: check if validations enough
-            // assert(calls.transaction.length > 9, 'Calldata wrong'); // TODO: First version only
-            // supports EIP1559 Check if to address registered on lens
             self.validate_transaction(call)
         }
 

@@ -45,8 +45,7 @@ pub mod Rosettanet {
     use rosettacontracts::accounts::base::{
         IRosettaAccountDispatcher, IRosettaAccountDispatcherTrait
     };
-    use rosettacontracts::accounts::utils::{calculate_sn_entrypoint, eth_selector_from_span, eth_function_signature_from_felts};
-    use rosettacontracts::accounts::encoding::{bytes_from_felts};
+    use rosettacontracts::utils::{calculate_sn_entrypoint, eth_function_signature_from_felts};
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -336,21 +335,13 @@ pub mod Rosettanet {
         }
 
         fn calculate_starknet_entrypoint(self: @ContractState, fn_name: Span<felt252>) -> felt252 {
-            let mut fn_name = fn_name;
-
-            let fn_name_bytes = bytes_from_felts(ref fn_name);
-
-            let sn_entrypoint: felt252 = calculate_sn_entrypoint(fn_name_bytes);
+            let sn_entrypoint: felt252 = calculate_sn_entrypoint(fn_name);
 
             sn_entrypoint
         }
 
         fn calculate_ethereum_selector(self: @ContractState, fn_name: Span<felt252>) -> felt252 {
-            let bytes = eth_function_signature_from_felts(fn_name);
-
-            let eth_selector: felt252 = eth_selector_from_span(bytes);
-
-            eth_selector
+            eth_function_signature_from_felts(fn_name)
         }
     }
 }

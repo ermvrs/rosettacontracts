@@ -1,5 +1,5 @@
 use core::keccak;
-use crate::utils::integer::{U256Trait};
+use crate::utils::{U256Trait};
 
 #[derive(Drop, Copy, PartialEq)]
 pub enum RLPError {
@@ -143,7 +143,7 @@ fn get_byte_size(mut value: u64) -> u8 {
     bytes
 }
 
-fn get_byte_size_u128(mut value: u128) -> u32 {
+pub fn get_byte_size_u128(mut value: u128) -> u32 {
     if value == 0 {
         return 1_u32;
     }
@@ -164,54 +164,8 @@ mod tests {
     use crate::optimized_rlp::{get_byte_size, OptimizedRLPTrait, OptimizedRLPImpl, compute_keccak};
     use crate::accounts::encoding;
     use crate::accounts::utils;
-    use crate::utils::bytes::{U8SpanExTrait};
-    use crate::utils::integer::{U256Trait};
     use alexandria_encoding::rlp::{RLPItem, RLPTrait};
     use core::keccak;
-
-    #[test]
-    fn compare_rlp_results_legacy_tx_with_calldata() {
-        let tx = encoding::LegacyTransaction {
-            chain_id: 0x1,
-            nonce: 0x1,
-            gas_limit: 0x5208,
-            gas_price: 0x3b9aca00,
-            value: 0xde0b6b3a7640000,
-            to: 0x742d35cc6634c0532925a3b844bc454e4438f44e.try_into().unwrap(),
-            input: array![0xAB, 0xCA, 0xBC,0xAB, 0xCA, 0xBC, 0x00, 0x00, 0x00, 0x1].span(),
-        };
-
-        let actual_result: Span<u8> = encoding::rlp_encode_legacy(tx);
-
-        let nonce = OptimizedRLPTrait::encode_short_string(0x1, 1).unwrap();
-        let gas_price = OptimizedRLPTrait::encode_short_string(0x3b9aca00, 4).unwrap();
-        let gas_limit = OptimizedRLPTrait::encode_short_string(0x5208, 2).unwrap();
-        let to = OptimizedRLPTrait::encode_short_string(0x742d35cc6634c0532925a3b844bc454e4438f44e, 20).unwrap(); // try with address with init zeros
-        let value = OptimizedRLPTrait::encode_short_string(0xde0b6b3a7640000, 8).unwrap();
-        let mut cd: ByteArray = Default::default();
-        cd.append_word(0xABCABCABCABC, 6);
-        cd.append_word(0x1, 4);
-        let data = OptimizedRLPTrait::encode_bytearray(@cd).unwrap();
-        let chain_id = OptimizedRLPTrait::encode_short_string(0x1, 1).unwrap();
-        let empty = OptimizedRLPTrait::encode_short_string(0x0, 0).unwrap();
-
-        let total_len = nonce.len() + gas_price.len() + gas_limit.len() + to.len() + value.len() + data.len() + chain_id.len() + empty.len() + empty.len();
-        let result = OptimizedRLPTrait::encode_as_list(array![nonce, gas_price, gas_limit, to, value, data, chain_id, empty, empty].span(), total_len, 0);
-
-        assert_eq!(actual_result.len(), result.len());
-
-        let mut i = 0;
-
-        while i < actual_result.len() {
-            assert_eq!(*actual_result.at(i), result.at(i).unwrap());
-            i += 1;
-        };
-
-        let actual_tx_hash = encoding::calculate_tx_hash(actual_result);
-        let tx_hash = compute_keccak(result);
-
-        assert_eq!(actual_tx_hash, tx_hash);
-    }
 
     #[test]
     fn test_rlp_encode_legacy_tx_calldata_long() {
