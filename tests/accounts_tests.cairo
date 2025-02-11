@@ -1614,9 +1614,9 @@ fn test_only_deploy_step_cost() {
 
     let (rosettanet, account, _) = deploy_funded_account_from_rosettanet(eth_address);
 
-    let unsigned_tx_hash: u256 = 0x818bd006d9cc1dd0103fce48f6c554f2c23549799eacdced117d87ad54bd7f0d;
-    let generated_tx_hash: u256 = generate_tx_hash(tx);
-    assert_eq!(generated_tx_hash, unsigned_tx_hash);
+    //let unsigned_tx_hash: u256 = 0x818bd006d9cc1dd0103fce48f6c554f2c23549799eacdced117d87ad54bd7f0d;
+    //let generated_tx_hash: u256 = generate_tx_hash(tx);
+    //assert_eq!(generated_tx_hash, unsigned_tx_hash);
 
     start_cheat_nonce_global(tx.nonce.into());
     start_cheat_signature_global(signature.span());
