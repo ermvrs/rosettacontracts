@@ -8,7 +8,7 @@ use core::hash::{HashStateExTrait, HashStateTrait};
 use rosettacontracts::rosettanet::{IRosettanetDispatcher, IRosettanetDispatcherTrait};
 use rosettacontracts::accounts::base::{IRosettaAccountDispatcher};
 use rosettacontracts::mocks::erc20::{IMockERC20Dispatcher, IMockERC20DispatcherTrait};
-use rosettacontracts::mocks::weth::{IMockWETHDispatcher, IMockWETHDispatcherTrait};
+use rosettacontracts::mocks::weth::{IMockWETHDispatcher};
 
 fn compute_hash_on_elements(data: Span<felt252>) -> felt252 {
     let mut state = PedersenTrait::new(0);
@@ -70,10 +70,17 @@ pub fn deploy_weth() -> IMockWETHDispatcher {
 }
 
 pub fn register_functions(rosettanet: IRosettanetDispatcher) {
-    rosettanet.register_function(array![0x7472616E7366657228616464726573732C75696E7432353629].span()); // transfer(address,uint256)
-    rosettanet.register_function(array![0x63616C6C43616C63756C61746F722829].span()); // callCalculator()
+    rosettanet
+        .register_function(
+            array![0x7472616E7366657228616464726573732C75696E7432353629].span()
+        ); // transfer(address,uint256)
+    rosettanet
+        .register_function(array![0x63616C6C43616C63756C61746F722829].span()); // callCalculator()
     rosettanet.register_function(array![0x6465706F7369742829].span()); // deposit()
-    rosettanet.register_function(array![0x617070726F766528616464726573732C75696E7432353629].span()); // approve(address,uint256)
+    rosettanet
+        .register_function(
+            array![0x617070726F766528616464726573732C75696E7432353629].span()
+        ); // approve(address,uint256)
 }
 
 pub fn deploy_rosettanet() -> IRosettanetDispatcher {
@@ -191,6 +198,10 @@ fn test_storage_manipulation() {
 fn test_deploy_rosettanet() {
     let rosettanet = deploy_rosettanet();
 
+    register_functions(rosettanet);
+
     let transfer_entrypoint = rosettanet.get_starknet_entrypoint(0xa9059cbb);
-   // assert_eq!(transfer_entrypoint, 0x83afd3f4caedc6eebf44246fe54e38c95e3179a5ec9ea81740eca5b482d12e);
+    assert_eq!(
+        transfer_entrypoint, 0x83afd3f4caedc6eebf44246fe54e38c95e3179a5ec9ea81740eca5b482d12e
+    );
 }

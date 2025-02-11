@@ -35,7 +35,9 @@ pub mod RosettaAccount {
     };
     use starknet::syscalls::{call_contract_syscall, replace_class_syscall};
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
-    use rosettacontracts::accounts::types::{RosettanetSignature, RosettanetCall, RosettanetMulticall};
+    use rosettacontracts::accounts::types::{
+        RosettanetSignature, RosettanetCall, RosettanetMulticall
+    };
     use rosettacontracts::accounts::utils::{generate_tx_hash, is_valid_eth_signature};
     use rosettacontracts::accounts::multicall::{prepare_multicall_context};
     use crate::rosettanet::{IRosettanetDispatcher, IRosettanetDispatcherTrait};
@@ -122,10 +124,13 @@ pub mod RosettaAccount {
             }
 
             // let entrypoint = validate_target_function(call.target_function, call.calldata);
-            
+
             let mut calldata = call.calldata;
-            let selector = calldata.pop_front().unwrap(); // Remove first element, it is function selector
-            let entrypoint = IRosettanetDispatcher {contract_address: self.registry.read()}.get_starknet_entrypoint(*selector);
+            let selector = calldata
+                .pop_front()
+                .unwrap(); // Remove first element, it is function selector
+            let entrypoint = IRosettanetDispatcher { contract_address: self.registry.read() }
+                .get_starknet_entrypoint(*selector);
             assert(entrypoint != 0x0, 'function not registered');
 
             assert(calldata.len() == call.directives.len(), 'calldata directive len wrong');
@@ -215,7 +220,9 @@ pub mod RosettaAccount {
         // Optimized validation
         fn validate_transaction(self: @ContractState, call: RosettanetCall) -> felt252 {
             let self_eth_address: EthAddress = self.ethereum_address.read();
-            assert(call.tx_type == 0 || call.tx_type == 2 || call.tx_type == 8, 'Tx type not supported');
+            assert(
+                call.tx_type == 0 || call.tx_type == 2 || call.tx_type == 8, 'Tx type not supported'
+            );
             let tx_info = get_tx_info().unbox();
             // TODO: Tx version check
 
@@ -237,13 +244,18 @@ pub mod RosettaAccount {
             assert(call.value == value_on_signature, 'value sig-tx mismatch');
 
             let signature = tx_info.signature; // Signature includes v,r,s
-            assert(self._is_valid_signature(expected_hash, signature, self_eth_address), Errors::INVALID_SIGNATURE);
+            assert(
+                self._is_valid_signature(expected_hash, signature, self_eth_address),
+                Errors::INVALID_SIGNATURE
+            );
             starknet::VALIDATED
         }
 
         /// Returns whether the given signature is valid for the given hash
         /// using the account's current public key.
-        fn _is_valid_signature(self: @ContractState, hash: u256, signature: Span<felt252>, eth_address: EthAddress) -> bool {
+        fn _is_valid_signature(
+            self: @ContractState, hash: u256, signature: Span<felt252>, eth_address: EthAddress
+        ) -> bool {
             // first 5 element signature, last 2 elements are value
             assert(signature.len() == 7, 'Invalid Signature length');
             let r: u256 = u256 {
