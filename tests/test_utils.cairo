@@ -69,6 +69,13 @@ pub fn deploy_weth() -> IMockWETHDispatcher {
     IMockWETHDispatcher { contract_address }
 }
 
+pub fn register_functions(rosettanet: IRosettanetDispatcher) {
+    rosettanet.register_function(array![0x7472616E7366657228616464726573732C75696E7432353629].span()); // transfer(address,uint256)
+    rosettanet.register_function(array![0x63616C6C43616C63756C61746F722829].span()); // callCalculator()
+    rosettanet.register_function(array![0x6465706F7369742829].span()); // deposit()
+    rosettanet.register_function(array![0x617070726F766528616464726573732C75696E7432353629].span()); // approve(address,uint256)
+}
+
 pub fn deploy_rosettanet() -> IRosettanetDispatcher {
     let contract = declare("Rosettanet").unwrap().contract_class();
     let account_class = declare_account();
@@ -81,11 +88,6 @@ pub fn deploy_rosettanet() -> IRosettanetDispatcher {
         )
         .unwrap();
     let rosettanet = IRosettanetDispatcher { contract_address };
-
-    rosettanet.register_function(array![0x7472616E7366657228616464726573732C75696E7432353629].span()); // transfer(address,uint256)
-    rosettanet.register_function(array![0x63616C6C43616C63756C61746F722829].span()); // callCalculator()
-    rosettanet.register_function(array![0x6465706F7369742829].span()); // deposit()
-    rosettanet.register_function(array![0x617070726F766528616464726573732C75696E7432353629].span()); // approve(address,uint256)
 
     rosettanet
 }
@@ -115,8 +117,9 @@ pub fn deploy_account_from_existing_rosettanet(
     IRosettaAccountDispatcher { contract_address: account }
 }
 
+
 pub fn deploy_funded_account_from_rosettanet(
-    eth_address: EthAddress
+    eth_address: EthAddress,
 ) -> (IRosettanetDispatcher, IRosettaAccountDispatcher, IMockERC20Dispatcher) {
     let (rosettanet, account) = deploy_account_from_rosettanet(eth_address);
 
@@ -146,6 +149,7 @@ pub fn deploy_specificly_funded_account_from_rosettanet(
 
     (rosettanet, account, strk)
 }
+
 
 pub fn change_current_account_class(rosettanet_contract: ContractAddress, new_hash: ClassHash) {
     let dispatcher = IRosettanetDispatcher { contract_address: rosettanet_contract };

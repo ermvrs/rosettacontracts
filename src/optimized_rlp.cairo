@@ -41,6 +41,8 @@ pub impl OptimizedRLPImpl of OptimizedRLPTrait {
         let len = input.len();
         if len == 0 {
             output.append_word(0x80, 1); // TODO: use append_byte ?
+        } else if len == 1 && ((input.at(0).unwrap()) == 0_u8){
+            output.append_word(0x80, 1); 
         } else if len == 1 && ((input.at(0).unwrap()) < 0x80_u8) {
             output.append_word(input.at(0).unwrap().into(), 1); // TODO: use append_byte ?
         } else if len < 56 {
