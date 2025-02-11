@@ -21,6 +21,7 @@ pub fn parse_function_name(full_signature: @ByteArray) -> @ByteArray {
             break;
         }
         name.append_word(val.into(), 1);
+        i += 1;
     };
 
     @name

@@ -159,11 +159,9 @@ pub fn is_valid_eth_signature(
 
 #[cfg(test)]
 mod tests { 
-    use crate::accounts::utils_new::{convert_calldata_to_bytearray, rlp_encode_tx, generate_tx_hash};
-    use crate::accounts::utils::{RosettanetCall, merge_u256s, parse_legacy_transaction};
-    use crate::optimized_rlp::{compute_keccak};
-    use crate::accounts::encoding;
-    // TODO: tests with calldata. Validation error on calldata txs
+    use crate::accounts::utils::{convert_calldata_to_bytearray, rlp_encode_tx, generate_tx_hash};
+    use crate::accounts::types::{RosettanetCall};
+    
     #[test]
     fn test_generate_eip1559_tx_hash() {
         let tx = RosettanetCall {
@@ -236,77 +234,6 @@ mod tests {
         assert_eq!(rlp_encoded_tx.len(), 39);
     }
 
-    #[test]
-    fn test_compare_actual_txs_with_calldata() {
-        let calldata =  array![0xa9059cbb, 0xb756b1bc042fa70d85ee84eab646a3b438a285ee, 0xf4240, 0x0].span();
-        let directives = array![0x2, 0x1, 0x0].span();
-        let target_function = array![0x7472616E7366657228616464726573732C75696E7432353629]
-            .span();
-        let tx = RosettanetCall {
-            tx_type: 0,
-            to: 0xDC1Be555a2B02aEd499141FF9fAF1A13934a5D2d.try_into().unwrap(),
-            nonce: 6,
-            max_priority_fee_per_gas: 0,
-            max_fee_per_gas: 0,
-            gas_price: 151515,
-            gas_limit: 21000,
-            value: 0,
-            calldata: calldata,
-            access_list: array![].span(),
-            directives: directives,
-            target_function: target_function
-        };
-
-        let parsed_tx: encoding::LegacyTransaction = parse_legacy_transaction(tx);
-        let rlp_encoded_actual_tx = encoding::rlp_encode_legacy(parsed_tx);
-        let actual_tx_hash = encoding::calculate_tx_hash(rlp_encoded_actual_tx);
-
-        // New
-
-        let new_rlp_encoded_tx = rlp_encode_tx(tx);
-        let new_tx_hash = compute_keccak(new_rlp_encoded_tx);
-
-
-        assert_eq!(rlp_encoded_actual_tx.len(), new_rlp_encoded_tx.len()); // len: 109
-
-        let mut i = 0;
-        while i < rlp_encoded_actual_tx.len() {
-            if(new_rlp_encoded_tx.at(i).unwrap() != *rlp_encoded_actual_tx.at(i)) {
-                println!("{}", i);
-            }
-            assert_eq!(new_rlp_encoded_tx.at(i).unwrap(),  *rlp_encoded_actual_tx.at(i));
-            i += 1;
-        };
-
-        assert_eq!(new_tx_hash, actual_tx_hash);
-
-    }
-
-    #[test]
-    fn compare_calldata_conversion() {
-        let mut calldata = array![0xb756b1bc042fa70d85ee8, 0xf4240, 0x0, 0xb756b1bc042fa70d85ee84eab646a3b438a285ee, 0xb756b1bc042fa70d85ee84eab646a3b438a285ee, 0xb756b1bc042fa70d85ee84eab646a3b438a285ee].span();
-        let mut calldata_no_signature = array![0xb756b1bc042fa70d85ee8, 0xf4240, 0x0, 0xb756b1bc042fa70d85ee84eab646a3b438a285ee, 0xb756b1bc042fa70d85ee84eab646a3b438a285ee, 0xb756b1bc042fa70d85ee84eab646a3b438a285ee].span();
-        let directives = array![0x2, 0x1, 0x0, 0x0, 0x0, 0x0].span();
-
-        let mut actual_merged = merge_u256s(calldata_no_signature, directives);
-        let actual_deserialized = encoding::deserialize_u256_span(ref actual_merged);
-
-        let converted = convert_calldata_to_bytearray(calldata, directives, false);
-
-        assert_eq!(converted.len(),  actual_deserialized.len());
-
-        let mut i = 4;
-
-        while i < converted.len() {
-            assert_eq!(converted.at(i).unwrap(),  *actual_deserialized.at(i));
-            i += 1;
-        };
-
-        let actual_calldata_rlp = encoding::calculate_tx_hash(actual_deserialized);
-        let calldata_rlp = compute_keccak(converted);
-
-        assert_eq!(actual_calldata_rlp, calldata_rlp);
-    }
     
     #[test]
     fn test_calldata_conversion() {

@@ -161,10 +161,7 @@ pub fn get_byte_size_u128(mut value: u128) -> u32 {
 
 #[cfg(test)]
 mod tests {
-    use crate::optimized_rlp::{get_byte_size, OptimizedRLPTrait, OptimizedRLPImpl, compute_keccak};
-    use crate::accounts::encoding;
-    use crate::accounts::utils;
-    use alexandria_encoding::rlp::{RLPItem, RLPTrait};
+    use crate::optimized_rlp::{get_byte_size, OptimizedRLPTrait, OptimizedRLPImpl};
     use core::keccak;
 
     #[test]
@@ -218,45 +215,6 @@ mod tests {
     }
 
     #[test]
-    fn compare_rlp_encode_actual_eip1559_tx_no_calldata() {
-        let tx = encoding::Eip1559Transaction {
-            chain_id: 0x1,
-            nonce: 0x1,
-            gas_limit: 0x5208,
-            max_priority_fee_per_gas: 0x3b9aca00,
-            max_fee_per_gas: 0x3b9aca00, 
-            value: 0xde0b6b3a7640000,
-            to: 0x000035cc6634c0532925a3b844bc454e4438f44e.try_into().unwrap(),
-            input: array![].span(),
-            access_list: array![].span()
-        };
-
-        let actual_result: Span<u8> = encoding::rlp_encode_eip1559(tx);
-
-        let nonce = OptimizedRLPTrait::encode_short_string(0x1, 1).unwrap();
-        let max_priority_fee_per_gas = OptimizedRLPTrait::encode_short_string(0x3b9aca00, 4).unwrap();
-        let max_fee_per_gas = OptimizedRLPTrait::encode_short_string(0x3b9aca00, 4).unwrap();
-        let gas_limit = OptimizedRLPTrait::encode_short_string(0x5208, 2).unwrap();
-        let to = OptimizedRLPTrait::encode_short_string(0x000035cc6634c0532925a3b844bc454e4438f44e, 20).unwrap(); // try with address with init zeros
-        let value = OptimizedRLPTrait::encode_short_string(0xde0b6b3a7640000, 8).unwrap();
-        let data = OptimizedRLPTrait::encode_short_string(0x0, 0).unwrap();
-        let chain_id = OptimizedRLPTrait::encode_short_string(0x1, 1).unwrap();
-        let access_list = OptimizedRLPTrait::encode_as_list(array![].span(), 0, 0);
-
-        let total_len = nonce.len() + max_priority_fee_per_gas.len() + max_fee_per_gas.len() + gas_limit.len() + to.len() + value.len() + data.len() + chain_id.len() + access_list.len();
-        let result = OptimizedRLPTrait::encode_as_list(array![chain_id, nonce, max_priority_fee_per_gas, max_fee_per_gas, gas_limit, to, value, data, access_list].span(), total_len, 0x2);
-        
-        assert_eq!(actual_result.len(), result.len());
-
-        assert_eq!(*actual_result.at(0), result.at(0).unwrap());
-        assert_eq!(*actual_result.at(1), result.at(1).unwrap());
-        assert_eq!(*actual_result.at(2), result.at(2).unwrap());
-        assert_eq!(*actual_result.at(3), result.at(3).unwrap());
-        assert_eq!(*actual_result.at(4), result.at(4).unwrap());
-        assert_eq!(*actual_result.at(5), result.at(5).unwrap());
-    }
-
-    #[test]
     fn test_rlp_encode_eip1559_tx_no_calldata() {
         let nonce = OptimizedRLPTrait::encode_short_string(0x1, 1).unwrap();
         let max_priority_fee_per_gas = OptimizedRLPTrait::encode_short_string(0x3b9aca00, 4).unwrap();
@@ -281,34 +239,6 @@ mod tests {
         assert_eq!(result.at(48).unwrap(), 0xc0);
     }
  
-    #[test]
-    fn compare_rlp_encode_actual_legacy_tx_no_calldata() {
-        let tx = encoding::LegacyTransaction {
-            chain_id: 0x1,
-            nonce: 0x1,
-            gas_limit: 0x5208,
-            gas_price: 0x3b9aca00,
-            value: 0xde0b6b3a7640000,
-            to: 0x742d35cc6634c0532925a3b844bc454e4438f44e.try_into().unwrap(),
-            input: array![].span(),
-        };
-
-        let actual_result: Span<u8> = encoding::rlp_encode_legacy(tx);
-
-        let nonce = OptimizedRLPTrait::encode_short_string(0x1, 1).unwrap();
-        let gas_price = OptimizedRLPTrait::encode_short_string(0x3b9aca00, 4).unwrap();
-        let gas_limit = OptimizedRLPTrait::encode_short_string(0x5208, 2).unwrap();
-        let to = OptimizedRLPTrait::encode_short_string(0x742d35cc6634c0532925a3b844bc454e4438f44e, 20).unwrap(); // try with address with init zeros
-        let value = OptimizedRLPTrait::encode_short_string(0xde0b6b3a7640000, 8).unwrap();
-        let data = OptimizedRLPTrait::encode_short_string(0x0, 0).unwrap();
-        let chain_id = OptimizedRLPTrait::encode_short_string(0x1, 1).unwrap();
-        let empty = OptimizedRLPTrait::encode_short_string(0x0, 0).unwrap();
-
-        let total_len = nonce.len() + gas_price.len() + gas_limit.len() + to.len() + value.len() + data.len() + chain_id.len() + empty.len() + empty.len();
-        let result = OptimizedRLPTrait::encode_as_list(array![nonce, gas_price, gas_limit, to, value, data, chain_id, empty, empty].span(), total_len, 0);
-
-        assert_eq!(actual_result.len(), result.len());
-    }
 
     #[test]
     fn test_rlp_encode_legacy_tx_no_calldata() {
@@ -394,44 +324,6 @@ mod tests {
     }
 
     #[test]
-    fn compare_keccaks() {
-        let calldata = array![0xdead, 0xffffffffffffffffffffffffffffffff, 0xffffffffffffffffffffffffffffffff];
-        let mut long_values = utils::merge_u256s(calldata.span(), array![0,1,0].span());
-        let long_values_bytes = encoding::deserialize_u256_span(ref long_values);
-
-        let actual_rlp = RLPItem::String(long_values_bytes);
-        let actual_result = RLPTrait::encode(array![actual_rlp].span()).unwrap();
-
-        let actual_keccak = actual_result.compute_keccak256_hash();
-
-        let mut ba: ByteArray = Default::default();
-
-        //ba.append_word(0x095ea7b3, 4); // todo: also test with initial bytes zero
-        ba.append_word(0x00, 16);
-        ba.append_word(0xdead, 16);
-        ba.append_word(0xffffffffffffffffffffffffffffffff, 16);
-        ba.append_word(0xffffffffffffffffffffffffffffffff, 16);
-
-        let result = OptimizedRLPTrait::encode_bytearray(@ba).unwrap();
-
-        let opt_keccak = keccak::compute_keccak_byte_array(result).reverse_endianness();
-
-        assert_eq!(result.len(), actual_result.len());
-
-        assert_eq!(opt_keccak, actual_keccak);
-    }
-
-    #[test]
-    fn step_cost_actual_rlp_long_string() {
-        let calldata = array![0x095ea7b3, 0xdead, 0xffffffffffffffffffffffffffffffff, 0xffffffffffffffffffffffffffffffff];
-        let mut long_values = utils::merge_u256s(calldata.span(), array![0,0,1,0].span());
-        let long_values_bytes = encoding::deserialize_u256_span(ref long_values);
-
-        let actual_rlp = RLPItem::String(long_values_bytes);
-        let actual_result = RLPTrait::encode(array![actual_rlp].span()).unwrap();
-    }
-
-    #[test]
     fn step_cost_opt_rlp_long_string() {
         let mut ba: ByteArray = Default::default();
 
@@ -441,16 +333,7 @@ mod tests {
         ba.append_word(0xffffffffffffffffffffffffffffffff, 16);
         ba.append_word(0xffffffffffffffffffffffffffffffff, 16);
 
-        let result = OptimizedRLPTrait::encode_bytearray(@ba).unwrap();
-    }
-
-    #[test]
-    fn step_cost_actual_rlp() {
-        let sampledata = 0xFFAABBCC;
-
-        let sample_bytes = encoding::deserialize_bytes_non_zeroes(sampledata, 4);
-        let actual_rlp = RLPItem::String(sample_bytes);
-        let actual_result = RLPTrait::encode(array![actual_rlp].span()).unwrap();
+        OptimizedRLPTrait::encode_bytearray(@ba).unwrap();
     }
 
     #[test]
@@ -459,32 +342,11 @@ mod tests {
         let mut ba: ByteArray = Default::default();
         ba.append_word(sampledata, 4);
 
-        let result = OptimizedRLPTrait::encode_bytearray(@ba).unwrap();
-    }
-
-    #[test]
-    fn compare_rlp_results() {
-        let sampledata = 0xFFAABBCC;
-
-        let sample_bytes = encoding::deserialize_bytes_non_zeroes(sampledata, 4);
-        let actual_rlp = RLPItem::String(sample_bytes);
-        let actual_result = RLPTrait::encode(array![actual_rlp].span()).unwrap();
-
-        let mut ba: ByteArray = Default::default();
-        ba.append_word(sampledata, 4);
-
-        let result = OptimizedRLPTrait::encode_bytearray(@ba).unwrap();
-
-        assert_eq!(actual_result.len(), result.len());
-        assert_eq!(*actual_result.at(0), result.at(0).unwrap());
-        assert_eq!(*actual_result.at(1), result.at(1).unwrap());
-        assert_eq!(*actual_result.at(2), result.at(2).unwrap());
+        OptimizedRLPTrait::encode_bytearray(@ba).unwrap();
     }
 
     #[test]
     fn test_rlp_encode_example_calldata() {
-        let calldata = array![0x095ea7b3, 0xdead, 0xffffffffffffffffffffffffffffffff, 0xffffffffffffffffffffffffffffffff];
-
         let mut ba: ByteArray = Default::default();
 
         ba.append_word(0x095ea7b3, 4); // todo: also test with initial bytes zero

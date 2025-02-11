@@ -8,7 +8,7 @@ use core::hash::{HashStateExTrait, HashStateTrait};
 use rosettacontracts::rosettanet::{IRosettanetDispatcher, IRosettanetDispatcherTrait};
 use rosettacontracts::accounts::base::{IRosettaAccountDispatcher};
 use rosettacontracts::mocks::erc20::{IMockERC20Dispatcher, IMockERC20DispatcherTrait};
-use rosettacontracts::mocks::weth::{IMockWETHDispatcher, IMockWETHDispatcherTrait};
+use rosettacontracts::mocks::weth::{IMockWETHDispatcher};
 
 fn compute_hash_on_elements(data: Span<felt252>) -> felt252 {
     let mut state = PedersenTrait::new(0);
