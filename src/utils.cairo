@@ -1,154 +1,101 @@
-pub mod serialization;
-pub mod rlp;
-pub mod array;
-pub mod bytes;
-pub mod constants;
-pub mod helpers;
-pub mod math;
-pub mod integer;
-pub mod traits;
-pub mod eth_address;
-pub mod test_data;
+use core::integer::{u128_byte_reverse};
 
-pub mod transaction {
-    pub mod eip1559;
-    pub mod eip2930;
-    pub mod common;
+use crate::constants::{POW_2_250, POW_2_8, POW_2_16, POW_2_24};
+use crate::optimized_rlp::{compute_keccak, get_byte_size_u128};
+
+pub fn u128_split(input: u128) -> (u64, u64) {
+    let (high, low) = core::integer::u128_safe_divmod(
+        input, 0x10000000000000000_u128.try_into().unwrap()
+    );
+
+    (high.try_into().unwrap(), low.try_into().unwrap())
 }
 
-use core::array::SpanTrait;
-use core::num::traits::{Zero, One};
-use core::starknet::secp256_trait::{Signature};
-use core::starknet::storage_access::{StorageBaseAddress, storage_address_from_base};
-use core::starknet::{EthAddress, ContractAddress};
-use crate::utils::math::{Bitshift};
-use crate::errors::{EVMError, ensure, TYPE_CONVERSION_ERROR};
+pub fn parse_function_name(full_signature: @ByteArray) -> @ByteArray {
+    let mut name: ByteArray = Default::default();
 
-pub impl DefaultSignature of Default<Signature> {
-    #[inline(always)]
-    fn default() -> Signature {
-        Signature { r: 0, s: 0, y_parity: false, }
-    }
-}
-
-pub impl SpanDefault<T, impl TDrop: Drop<T>> of Default<Span<T>> {
-    #[inline(always)]
-    fn default() -> Span<T> {
-        array![].span()
-    }
-}
-
-pub impl EthAddressDefault of Default<EthAddress> {
-    #[inline(always)]
-    fn default() -> EthAddress {
-        0.try_into().unwrap()
-    }
-}
-
-pub impl ContractAddressDefault of Default<ContractAddress> {
-    #[inline(always)]
-    fn default() -> ContractAddress {
-        0.try_into().unwrap()
-    }
-}
-
-pub impl BoolIntoNumeric<T, +Zero<T>, +One<T>> of Into<bool, T> {
-    #[inline(always)]
-    fn into(self: bool) -> T {
-        if self {
-            One::<T>::one()
-        } else {
-            Zero::<T>::zero()
+    let mut i = 0;
+    loop {
+        let val = full_signature.at(i).unwrap();
+        if (val == 0x28) {
+            break;
         }
-    }
+        name.append_word(val.into(), 1);
+        i += 1;
+    };
+
+    @name
 }
 
-pub impl NumericIntoBool<T, +Drop<T>, +Zero<T>, +One<T>, +PartialEq<T>> of Into<T, bool> {
-    #[inline(always)]
-    fn into(self: T) -> bool {
-        self != Zero::<T>::zero()
-    }
+fn function_signature_from_felt_span(fn_name: Span<felt252>) -> @ByteArray {
+    let mut fn_name = fn_name;
+    let mut output: ByteArray = Default::default();
+    loop {
+        match fn_name.pop_front() {
+            Option::None => { break; },
+            Option::Some(val) => {
+                let elem: u256 = (*val).into();
+                if elem.high > 0 {
+                    output.append_word(elem.high.into(), get_byte_size_u128(elem.high).into());
+                    output.append_word(elem.low.into(), 16);
+                } else {
+                    output.append_word(elem.low.into(), get_byte_size_u128(elem.low).into());
+                }
+            }
+        };
+    };
+
+    @output
 }
 
-pub impl EthAddressIntoU256 of Into<EthAddress, u256> {
-    fn into(self: EthAddress) -> u256 {
-        let intermediate: felt252 = self.into();
-        intermediate.into()
-    }
+pub fn calculate_sn_entrypoint(fn_name: Span<felt252>) -> felt252 {
+    // let mut func_clone = func;
+    let complete_fn_signature: @ByteArray = function_signature_from_felt_span(fn_name);
+
+    let func_name: @ByteArray = parse_function_name(complete_fn_signature);
+
+    let keccak_hash: u256 = compute_keccak(func_name); // full name
+
+    let (_, sn_keccak) = DivRem::div_rem(keccak_hash, POW_2_250.try_into().unwrap());
+
+    sn_keccak.try_into().unwrap()
 }
 
-pub impl U256TryIntoContractAddress of TryInto<u256, ContractAddress> {
-    fn try_into(self: u256) -> Option<ContractAddress> {
-        let maybe_value: Option<felt252> = self.try_into();
-        match maybe_value {
-            Option::Some(value) => value.try_into(),
-            Option::None => Option::None,
-        }
-    }
+pub fn eth_selector_from_span(selector: Span<u8>) -> felt252 {
+    let value: u128 = (*selector.at(3)).into()
+        + ((*selector.at(2)).into() * POW_2_8)
+        + ((*selector.at(1)).into() * POW_2_16)
+        + ((*selector.at(0)).into() * POW_2_24);
+
+    value.into()
 }
 
-pub impl StorageBaseAddressIntoU256 of Into<StorageBaseAddress, u256> {
-    fn into(self: StorageBaseAddress) -> u256 {
-        let self: felt252 = storage_address_from_base(self).into();
-        self.into()
-    }
+pub fn eth_function_signature_from_felts(func: Span<felt252>) -> felt252 {
+    let function_signature: @ByteArray = function_signature_from_felt_span(func);
+    let keccak_hash: u256 = compute_keccak(function_signature);
+    let mut ba = Default::default();
+    ba.append_word(keccak_hash.high.into(), 16);
+
+    eth_selector_from_span(
+        array![ba.at(0).unwrap(), ba.at(1).unwrap(), ba.at(2).unwrap(), ba.at(3).unwrap()].span()
+    )
 }
 
-//TODO remove once merged in corelib
-pub impl StorageBaseAddressPartialEq of PartialEq<StorageBaseAddress> {
-    fn eq(lhs: @StorageBaseAddress, rhs: @StorageBaseAddress) -> bool {
-        let lhs: felt252 = (*lhs).into();
-        let rhs: felt252 = (*rhs).into();
-        lhs == rhs
+
+#[generate_trait]
+pub impl U256Impl of U256Trait {
+    /// Splits an u256 into 4 little endian u64.
+    /// Returns ((high_high, high_low),(low_high, low_low))
+    fn split_into_u64_le(self: u256) -> ((u64, u64), (u64, u64)) {
+        let low_le = u128_byte_reverse(self.low);
+        let high_le = u128_byte_reverse(self.high);
+        (u128_split(high_le), u128_split(low_le))
     }
-    fn ne(lhs: @StorageBaseAddress, rhs: @StorageBaseAddress) -> bool {
-        !(*lhs == *rhs)
-    }
-}
 
-pub trait TryIntoResult<T, U> {
-    fn try_into_result(self: T) -> Result<U, EVMError>;
-}
-
-pub impl SpanU8TryIntoResultEthAddress of TryIntoResult<Span<u8>, EthAddress> {
-    fn try_into_result(mut self: Span<u8>) -> Result<EthAddress, EVMError> {
-        let len = self.len();
-        if len == 0 {
-            return Result::Ok(0.try_into().unwrap());
-        }
-        ensure(!(len > 20), EVMError::TypeConversionError(TYPE_CONVERSION_ERROR))?;
-        let offset: u32 = len.into() - 1;
-        let mut result: u256 = 0;
-        for i in 0
-            ..len {
-                let byte: u256 = (*self.at(i)).into();
-                result += byte.shl(8 * (offset - i).into());
-            };
-        let address: felt252 = result.try_into_result()?;
-
-        Result::Ok(address.try_into().unwrap())
-    }
-}
-
-pub impl EthAddressTryIntoResultContractAddress of TryIntoResult<ContractAddress, EthAddress> {
-    fn try_into_result(self: ContractAddress) -> Result<EthAddress, EVMError> {
-        let tmp: felt252 = self.into();
-        tmp.try_into().ok_or(EVMError::TypeConversionError(TYPE_CONVERSION_ERROR))
-    }
-}
-
-pub impl U256TryIntoResult<U, +TryInto<u256, U>> of TryIntoResult<u256, U> {
-    fn try_into_result(self: u256) -> Result<U, EVMError> {
-        match self.try_into() {
-            Option::Some(value) => Result::Ok(value),
-            Option::None => Result::Err(EVMError::TypeConversionError(TYPE_CONVERSION_ERROR))
-        }
-    }
-}
-
-pub impl U8IntoEthAddress of Into<u8, EthAddress> {
-    fn into(self: u8) -> EthAddress {
-        let value: felt252 = self.into();
-        value.try_into().unwrap()
+    /// Reverse the endianness of an u256
+    fn reverse_endianness(self: u256) -> u256 {
+        let new_low = u128_byte_reverse(self.high);
+        let new_high = u128_byte_reverse(self.low);
+        u256 { low: new_low, high: new_high }
     }
 }

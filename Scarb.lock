@@ -2,55 +2,6 @@
 version = 1
 
 [[package]]
-name = "alexandria_bytes"
-version = "0.1.0"
-source = "git+https://github.com/keep-starknet-strange/alexandria.git#95d98a5182001d07673b856a356eff0e6bd05354"
-dependencies = [
- "alexandria_data_structures",
- "alexandria_math",
-]
-
-[[package]]
-name = "alexandria_data_structures"
-version = "0.2.0"
-source = "git+https://github.com/keep-starknet-strange/alexandria.git#95d98a5182001d07673b856a356eff0e6bd05354"
-dependencies = [
- "alexandria_encoding",
-]
-
-[[package]]
-name = "alexandria_encoding"
-version = "0.1.0"
-source = "git+https://github.com/keep-starknet-strange/alexandria.git#95d98a5182001d07673b856a356eff0e6bd05354"
-dependencies = [
- "alexandria_bytes",
- "alexandria_math",
- "alexandria_numeric",
-]
-
-[[package]]
-name = "alexandria_math"
-version = "0.2.1"
-source = "git+https://github.com/keep-starknet-strange/alexandria.git#95d98a5182001d07673b856a356eff0e6bd05354"
-
-[[package]]
-name = "alexandria_numeric"
-version = "0.1.0"
-source = "git+https://github.com/keep-starknet-strange/alexandria.git#95d98a5182001d07673b856a356eff0e6bd05354"
-dependencies = [
- "alexandria_math",
- "alexandria_searching",
-]
-
-[[package]]
-name = "alexandria_searching"
-version = "0.1.0"
-source = "git+https://github.com/keep-starknet-strange/alexandria.git#95d98a5182001d07673b856a356eff0e6bd05354"
-dependencies = [
- "alexandria_data_structures",
-]
-
-[[package]]
 name = "openzeppelin"
 version = "0.17.0"
 source = "registry+https://scarbs.xyz/"
@@ -168,9 +119,6 @@ checksum = "sha256:36d93e353f42fd6b824abcd8b4b51c3f5d02c893c5f886ae81403b0368aa5
 name = "rosettacontracts"
 version = "0.1.0"
 dependencies = [
- "alexandria_data_structures",
- "alexandria_encoding",
- "alexandria_numeric",
  "openzeppelin",
  "snforge_std",
 ]

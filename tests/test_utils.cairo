@@ -8,7 +8,7 @@ use core::hash::{HashStateExTrait, HashStateTrait};
 use rosettacontracts::rosettanet::{IRosettanetDispatcher, IRosettanetDispatcherTrait};
 use rosettacontracts::accounts::base::{IRosettaAccountDispatcher};
 use rosettacontracts::mocks::erc20::{IMockERC20Dispatcher, IMockERC20DispatcherTrait};
-use rosettacontracts::mocks::weth::{IMockWETHDispatcher, IMockWETHDispatcherTrait};
+use rosettacontracts::mocks::weth::{IMockWETHDispatcher};
 
 fn compute_hash_on_elements(data: Span<felt252>) -> felt252 {
     let mut state = PedersenTrait::new(0);
@@ -69,6 +69,20 @@ pub fn deploy_weth() -> IMockWETHDispatcher {
     IMockWETHDispatcher { contract_address }
 }
 
+pub fn register_functions(rosettanet: IRosettanetDispatcher) {
+    rosettanet
+        .register_function(
+            array![0x7472616E7366657228616464726573732C75696E7432353629].span()
+        ); // transfer(address,uint256)
+    rosettanet
+        .register_function(array![0x63616C6C43616C63756C61746F722829].span()); // callCalculator()
+    rosettanet.register_function(array![0x6465706F7369742829].span()); // deposit()
+    rosettanet
+        .register_function(
+            array![0x617070726F766528616464726573732C75696E7432353629].span()
+        ); // approve(address,uint256)
+}
+
 pub fn deploy_rosettanet() -> IRosettanetDispatcher {
     let contract = declare("Rosettanet").unwrap().contract_class();
     let account_class = declare_account();
@@ -80,7 +94,9 @@ pub fn deploy_rosettanet() -> IRosettanetDispatcher {
             ]
         )
         .unwrap();
-    IRosettanetDispatcher { contract_address }
+    let rosettanet = IRosettanetDispatcher { contract_address };
+
+    rosettanet
 }
 
 pub fn deploy_account_from_rosettanet(
@@ -108,8 +124,9 @@ pub fn deploy_account_from_existing_rosettanet(
     IRosettaAccountDispatcher { contract_address: account }
 }
 
+
 pub fn deploy_funded_account_from_rosettanet(
-    eth_address: EthAddress
+    eth_address: EthAddress,
 ) -> (IRosettanetDispatcher, IRosettaAccountDispatcher, IMockERC20Dispatcher) {
     let (rosettanet, account) = deploy_account_from_rosettanet(eth_address);
 
@@ -139,6 +156,7 @@ pub fn deploy_specificly_funded_account_from_rosettanet(
 
     (rosettanet, account, strk)
 }
+
 
 pub fn change_current_account_class(rosettanet_contract: ContractAddress, new_hash: ClassHash) {
     let dispatcher = IRosettanetDispatcher { contract_address: rosettanet_contract };
@@ -171,4 +189,19 @@ fn test_storage_manipulation() {
 
     assert_eq!(rosettanet.get_starknet_address(eth_address), sn_address);
     assert_eq!(rosettanet.get_ethereum_address(sn_address), eth_address);
+}
+
+// This test is exist to calculate how many steps spent on rosettanet deployment
+// Actual usage wont include this amount because deployment done only once.
+// Each test deploys rosettanet again.
+#[test]
+fn test_deploy_rosettanet() {
+    let rosettanet = deploy_rosettanet();
+
+    register_functions(rosettanet);
+
+    let transfer_entrypoint = rosettanet.get_starknet_entrypoint(0xa9059cbb);
+    assert_eq!(
+        transfer_entrypoint, 0x83afd3f4caedc6eebf44246fe54e38c95e3179a5ec9ea81740eca5b482d12e
+    );
 }

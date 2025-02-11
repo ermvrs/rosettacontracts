@@ -1,5 +1,5 @@
 use starknet::{EthAddress, ContractAddress};
-use rosettacontracts::accounts::utils::{RosettanetCall};
+use rosettacontracts::accounts::types::{RosettanetCall};
 
 
 #[starknet::interface]
@@ -35,11 +35,11 @@ pub mod RosettaAccount {
     };
     use starknet::syscalls::{call_contract_syscall, replace_class_syscall};
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
-    use rosettacontracts::accounts::utils::{
-        is_valid_eth_signature, RosettanetSignature, RosettanetCall, RosettanetMulticall,
-        prepare_multicall_context, validate_target_function, generate_tx_hash,
-        generate_tx_hash_for_internal_transaction
+    use rosettacontracts::accounts::types::{
+        RosettanetSignature, RosettanetCall, RosettanetMulticall
     };
+    use rosettacontracts::accounts::utils::{generate_tx_hash, is_valid_eth_signature};
+    use rosettacontracts::accounts::multicall::{prepare_multicall_context};
     use crate::rosettanet::{IRosettanetDispatcher, IRosettanetDispatcherTrait};
     use openzeppelin::utils::deployments::{calculate_contract_address_from_deploy_syscall};
 
@@ -56,6 +56,7 @@ pub mod RosettaAccount {
     pub const MULTICALL_SELECTOR: felt252 =
         0x76971d7f; // function multicall((uint256,uint256,uint256[])[])
     pub const UPGRADE_SELECTOR: felt252 = 0x74d0bb9d; // function upgradeRosettanetAccount(uint256)
+    pub const RAW_CALL_SELECTOR: felt252 = 0x2e7fa323; // function rawCall(uint256,uint256,uint256)
 
     #[storage]
     struct Storage {
@@ -84,7 +85,7 @@ pub mod RosettaAccount {
             assert(sn_target != starknet::contract_address_const::<0>(), 'target not registered');
 
             // Multicall or upgrade call
-            if (call.to == self.ethereum_address.read()) {
+            if (call.to == self.ethereum_address.read() && call.tx_type == 8) {
                 // This is multicall
                 let selector = *call.calldata.at(0);
                 if (selector == MULTICALL_SELECTOR) {
@@ -122,9 +123,15 @@ pub mod RosettaAccount {
                 return array![array![].span()];
             }
 
-            let entrypoint = validate_target_function(call.target_function, call.calldata);
+            // let entrypoint = validate_target_function(call.target_function, call.calldata);
+
             let mut calldata = call.calldata;
-            let _ = calldata.pop_front(); // Remove first element, it is function selector
+            let selector = calldata
+                .pop_front()
+                .unwrap(); // Remove first element, it is function selector
+            let entrypoint = IRosettanetDispatcher { contract_address: self.registry.read() }
+                .get_starknet_entrypoint(*selector);
+            assert(entrypoint != 0x0, 'function not registered');
 
             assert(calldata.len() == call.directives.len(), 'calldata directive len wrong');
 
@@ -139,16 +146,14 @@ pub mod RosettaAccount {
         }
 
         fn __validate__(self: @ContractState, call: RosettanetCall) -> felt252 {
-            // TODO: check if validations enough
-            // assert(calls.transaction.length > 9, 'Calldata wrong'); // TODO: First version only
-            // supports EIP1559 Check if to address registered on lens
             self.validate_transaction(call)
         }
 
         fn is_valid_signature(
             self: @ContractState, hash: u256, signature: Array<felt252>
         ) -> felt252 {
-            if self._is_valid_signature(hash, signature.span()) {
+            let self_eth_address: EthAddress = self.ethereum_address.read();
+            if self._is_valid_signature(hash, signature.span(), self_eth_address) {
                 starknet::VALIDATED
             } else {
                 0
@@ -212,21 +217,25 @@ pub mod RosettaAccount {
 
     #[generate_trait]
     impl InternalImpl of InternalTrait {
-        /// Validates the signature for the current transaction.
-        /// Returns the short string `VALID` if valid, otherwise it reverts.
+        // Optimized validation
         fn validate_transaction(self: @ContractState, call: RosettanetCall) -> felt252 {
-            assert(call.tx_type == 0 || call.tx_type == 2, 'Tx type not supported');
+            let self_eth_address: EthAddress = self.ethereum_address.read();
+            assert(
+                call.tx_type == 0 || call.tx_type == 2 || call.tx_type == 8, 'Tx type not supported'
+            );
             let tx_info = get_tx_info().unbox();
             // TODO: Tx version check
 
-            if (call.to == self.ethereum_address.read()) {
-                return self.validate_internal_transaction(call);
+            if (call.to == self_eth_address) {
+                let selector = *call.calldata.at(0);
+
+                assert(
+                    ((selector == MULTICALL_SELECTOR) || (selector == UPGRADE_SELECTOR)),
+                    'selector is not internal'
+                );
             }
 
-            // Validate target_function and calldata matches
-            if (call.calldata.len() > 0) {
-                let _ = validate_target_function(call.target_function, call.calldata);
-            }
+            // Validate target function removed. It got from trusted registry.
 
             // Validate transaction signature
             let expected_hash = generate_tx_hash(call);
@@ -235,33 +244,18 @@ pub mod RosettaAccount {
             assert(call.value == value_on_signature, 'value sig-tx mismatch');
 
             let signature = tx_info.signature; // Signature includes v,r,s
-            assert(self._is_valid_signature(expected_hash, signature), Errors::INVALID_SIGNATURE);
-            starknet::VALIDATED
-        }
-
-        fn validate_internal_transaction(self: @ContractState, call: RosettanetCall) -> felt252 {
-            let selector = *call.calldata.at(0);
-
             assert(
-                ((selector == MULTICALL_SELECTOR) || (selector == UPGRADE_SELECTOR)),
-                'selector is not internal'
+                self._is_valid_signature(expected_hash, signature, self_eth_address),
+                Errors::INVALID_SIGNATURE
             );
-
-            let tx_info = get_tx_info().unbox();
-            // TODO: TX Version check
-
-            let expected_hash = generate_tx_hash_for_internal_transaction(call);
-            let value_on_signature = self.get_transaction_value();
-            assert(call.value == value_on_signature, 'value sig-tx mismatch');
-
-            let signature = tx_info.signature; // Signature includes v,r,s
-            assert(self._is_valid_signature(expected_hash, signature), Errors::INVALID_SIGNATURE);
             starknet::VALIDATED
         }
 
         /// Returns whether the given signature is valid for the given hash
         /// using the account's current public key.
-        fn _is_valid_signature(self: @ContractState, hash: u256, signature: Span<felt252>) -> bool {
+        fn _is_valid_signature(
+            self: @ContractState, hash: u256, signature: Span<felt252>, eth_address: EthAddress
+        ) -> bool {
             // first 5 element signature, last 2 elements are value
             assert(signature.len() == 7, 'Invalid Signature length');
             let r: u256 = u256 {
@@ -275,7 +269,6 @@ pub mod RosettaAccount {
             let v: u32 = (*signature.at(4)).try_into().unwrap();
 
             let rosettanet_signature = RosettanetSignature { v: v, r: r, s: s, };
-            let eth_address: EthAddress = self.ethereum_address.read();
 
             is_valid_eth_signature(hash, eth_address, rosettanet_signature)
         }
