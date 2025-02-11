@@ -10,13 +10,13 @@ use rosettacontracts::accounts::types::{
 use rosettacontracts::accounts::utils::{generate_tx_hash};
 use rosettacontracts::accounts::base::{IRosettaAccountDispatcherTrait};
 use rosettacontracts::rosettanet::{IRosettanetDispatcherTrait};
-use rosettacontracts::mocks::erc20::{IMockERC20DispatcherTrait, IMockERC20Dispatcher};
+use rosettacontracts::mocks::erc20::{IMockERC20DispatcherTrait};
 use rosettacontracts::mocks::weth::{IMockWETHDispatcherTrait};
 use starknet::{EthAddress};
 use rosettacontracts_integrationtest::test_utils::{
     deploy_weth, eth_account, deploy_account_from_rosettanet, deploy_funded_account_from_rosettanet,
     deploy_specificly_funded_account_from_rosettanet, deploy_account_from_existing_rosettanet,
-    manipulate_rosettanet_registry, deploy_erc20, declare_erc20, change_current_account_class, register_functions
+    manipulate_rosettanet_registry, deploy_erc20, register_functions
 };
 
 // TODO: test deploying account from its own
@@ -1072,7 +1072,7 @@ fn test_multicall_with_value() {
         0x2386F26FC10000,
         0x0
     ];
-    let (rosettanet, account, strk) = deploy_specificly_funded_account_from_rosettanet(
+    let (_, account, _) = deploy_specificly_funded_account_from_rosettanet(
         eth_address, 20000000000000000_u256
     );
 
@@ -1113,7 +1113,7 @@ fn test_multicall_wrong_selector() {
         0x2386F26FC10000,
         0x0
     ];
-    let (rosettanet, account, strk) = deploy_specificly_funded_account_from_rosettanet(
+    let (_, account, _) = deploy_specificly_funded_account_from_rosettanet(
         eth_address, 20000000000000000_u256
     );
 
@@ -1154,7 +1154,7 @@ fn test_unimplemented_feature() {
         0x2386F26FC10000,
         0x0
     ];
-    let (rosettanet, account, strk) = deploy_specificly_funded_account_from_rosettanet(
+    let (_, account, _) = deploy_specificly_funded_account_from_rosettanet(
         eth_address, 20000000000000000_u256
     );
 
@@ -1253,7 +1253,7 @@ fn test_validate_multicall_transaction() {
         0x0,
         0x0
     ];
-    let (rosettanet, account, _) = deploy_funded_account_from_rosettanet(eth_address);
+    let (_, account, _) = deploy_funded_account_from_rosettanet(eth_address);
 
     let unsigned_tx_hash: u256 = 0x66c3880f27b684f53da1f020f6995153435154c89a11e6c641fa5d137c9edfe8;
     let generated_tx_hash: u256 = generate_tx_hash(tx);
@@ -1311,7 +1311,7 @@ fn test_validate_multicall_transaction_wrong_signature() {
         0x0,
         0x0
     ];
-    let (rosettanet, account, _) = deploy_funded_account_from_rosettanet(eth_address);
+    let (_, account, _) = deploy_funded_account_from_rosettanet(eth_address);
 
     let unsigned_tx_hash: u256 = 0x66c3880f27b684f53da1f020f6995153435154c89a11e6c641fa5d137c9edfe8;
     let generated_tx_hash: u256 = generate_tx_hash(tx);
@@ -1341,7 +1341,7 @@ fn test_execute_multicall_transaction() {
     let transfer_entrypoint: felt252 =
         0x83afd3f4caedc6eebf44246fe54e38c95e3179a5ec9ea81740eca5b482d12e;
     // We dont use eth addresses on multicall
-    let (rosettanet, account, strk) = deploy_funded_account_from_rosettanet(eth_address);
+    let (_, account, strk) = deploy_funded_account_from_rosettanet(eth_address);
     assert_eq!(
         strk.contract_address.into(),
         0xA551825F2E7D5313EE03B1DFE40E2A7B78B27A7FED40FA17AEC27E010BFA96
@@ -1450,7 +1450,7 @@ fn test_multicall_validate_actual_values() {
         0x0
     ];
 
-    let (rosettanet, account, _) = deploy_funded_account_from_rosettanet(eth_address);
+    let (_, account, _) = deploy_funded_account_from_rosettanet(eth_address);
 
     let unsigned_tx_hash: u256 = 0x1f766a70ecbf4270faeff147ff3df9fee659426af425bab130f449e47be438eb;
     let generated_tx_hash: u256 = generate_tx_hash(tx);
@@ -1531,7 +1531,7 @@ fn test_multicall_validate_actual_values_swap() {
         0x0
     ];
 
-    let (rosettanet, account, _) = deploy_funded_account_from_rosettanet(eth_address);
+    let (_, account, _) = deploy_funded_account_from_rosettanet(eth_address);
 
     let unsigned_tx_hash: u256 = 0x818bd006d9cc1dd0103fce48f6c554f2c23549799eacdced117d87ad54bd7f0d;
     let generated_tx_hash: u256 = generate_tx_hash(tx);
@@ -1612,7 +1612,7 @@ fn test_only_deploy_step_cost() {
         0x0
     ];
 
-    let (rosettanet, account, _) = deploy_funded_account_from_rosettanet(eth_address);
+    let (_, account, _) = deploy_funded_account_from_rosettanet(eth_address);
 
     //let unsigned_tx_hash: u256 = 0x818bd006d9cc1dd0103fce48f6c554f2c23549799eacdced117d87ad54bd7f0d;
     //let generated_tx_hash: u256 = generate_tx_hash(tx);
