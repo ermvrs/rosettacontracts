@@ -13,17 +13,19 @@ jobs:
     name: Lint build and test
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - name: Extract scarb version
-      run: |
-        SCARB_VERSION=$(grep 'scarb-version = ' Scarb.toml | sed 's/scarb-version = "\(.*\)"/\1/')
-        echo "SCARB_VERSION=$SCARB_VERSION" >> $GITHUB_ENV
-    - uses: software-mansion/setup-scarb@v1
-      with:
-        scarb-version: ${{ env.SCARB_VERSION }}
-    - name: Cairo lint
-      run: scarb fmt --check
-    - name: Cairo build
-      run: scarb build
-    - name: Cairo test
-      run: scarb test
+     - name: Scarb Version Check
+       if: ${{ vars.SCARB_VERSION == '' }}
+       run: |
+         echo ${{ vars.SCARB_VERSION }}
+         echo "SCARB_VERSION is not set."
+         exit 1
+     - uses: actions/checkout@v3
+     - uses: software-mansion/setup-scarb@v1
+       with:
+         scarb-version: "${{ vars.SCARB_VERSION }}"
+     - name: Cairo lint
+       run: scarb fmt --check
+     - name: Cairo build
+       run: scarb build
+     - name: Cairo test
+       run: scarb test
