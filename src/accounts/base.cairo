@@ -76,7 +76,7 @@ pub mod RosettaAccount {
             assert(sender.is_zero(), Errors::INVALID_CALLER);
 
             // Only try to register if its first tx
-            if(call.nonce == 0 || call.nonce == 1) {
+            if (call.nonce == 0 || call.nonce == 1) {
                 self.register_account(); // Register this contract if not registered on registry
             }
 
