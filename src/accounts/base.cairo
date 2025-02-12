@@ -75,7 +75,10 @@ pub mod RosettaAccount {
             let sender = get_caller_address();
             assert(sender.is_zero(), Errors::INVALID_CALLER);
 
-            self.register_account(); // Register this contract if not registered on registry
+            // Only try to register if its first tx
+            if(call.nonce == 0 || call.nonce == 1) {
+                self.register_account(); // Register this contract if not registered on registry
+            }
 
             let eth_target: EthAddress = call.to;
             let sn_target: ContractAddress = IRosettanetDispatcher {
