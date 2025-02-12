@@ -13,16 +13,10 @@ jobs:
     name: Lint build and test
     runs-on: ubuntu-latest
     steps:
-     - name: Scarb Version Check
-       if: ${{ vars.SCARB_VERSION == '' }}
-       run: |
-         echo ${{ vars.SCARB_VERSION }}
-         echo "SCARB_VERSION is not set."
-         exit 1
      - uses: actions/checkout@v3
      - uses: software-mansion/setup-scarb@v1
        with:
-         scarb-version: "${{ vars.SCARB_VERSION }}"
+         scarb-version: "2.8.3"
      - name: Cairo lint
        run: scarb fmt --check
      - name: Cairo build
