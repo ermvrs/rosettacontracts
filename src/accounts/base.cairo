@@ -223,9 +223,7 @@ pub mod RosettaAccount {
         // Optimized validation
         fn validate_transaction(self: @ContractState, call: RosettanetCall) -> felt252 {
             let self_eth_address: EthAddress = self.ethereum_address.read();
-            assert(
-                call.tx_type == 0 || call.tx_type == 2, 'Tx type not supported'
-            );
+            assert(call.tx_type == 0 || call.tx_type == 2, 'Tx type not supported');
             let tx_info = get_tx_info().unbox();
             // TODO: Tx version check
 

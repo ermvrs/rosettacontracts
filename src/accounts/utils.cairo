@@ -81,7 +81,6 @@ fn rlp_encode_tx(call: RosettanetCall) -> @ByteArray {
 
         let calldata = convert_calldata(call.calldata, call.directives, true);
 
-
         let total_len = nonce.len()
             + max_priority_fee_per_gas.len()
             + max_fee_per_gas.len()
@@ -112,11 +111,13 @@ fn rlp_encode_tx(call: RosettanetCall) -> @ByteArray {
     }
 }
 
-fn convert_calldata(mut calldata: Span<felt252>, directives: Span<u8>, with_signature: bool) -> @ByteArray {
-    if(calldata.len() == 0) {
+fn convert_calldata(
+    mut calldata: Span<felt252>, directives: Span<u8>, with_signature: bool
+) -> @ByteArray {
+    if (calldata.len() == 0) {
         return OptimizedRLPTrait::encode_bytearray(@"").unwrap();
     }
-    if(*calldata.at(0) == MULTICALL_SELECTOR) {
+    if (*calldata.at(0) == MULTICALL_SELECTOR) {
         // Multicall
         return OptimizedRLPTrait::encode_bytearray(
             convert_internal_call_calldata_to_bytearray(calldata, with_signature)
