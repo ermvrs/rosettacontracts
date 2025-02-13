@@ -1090,7 +1090,7 @@ fn test_multicall_with_value() {
     let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
     let tx = RosettanetCall {
         to: eth_address, // we dont need to deploy account, we only check validation here
-        tx_type: 8,
+        tx_type: 2,
         nonce: 96,
         max_priority_fee_per_gas: 13620452,
         max_fee_per_gas: 46700970384,
@@ -1131,7 +1131,7 @@ fn test_multicall_wrong_selector() {
     let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
     let tx = RosettanetCall {
         to: eth_address, // we dont need to deploy account, we only check validation here
-        tx_type: 8,
+        tx_type: 2,
         nonce: 96,
         max_priority_fee_per_gas: 13620452,
         max_fee_per_gas: 46700970384,
@@ -1172,7 +1172,7 @@ fn test_unimplemented_feature() {
     let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
     let tx = RosettanetCall {
         to: eth_address, // we dont need to deploy account, we only check validation here
-        tx_type: 8,
+        tx_type: 2,
         nonce: 96,
         max_priority_fee_per_gas: 13620452,
         max_fee_per_gas: 46700970384,
@@ -1258,7 +1258,7 @@ fn test_validate_multicall_transaction() {
     let eth_address: EthAddress = 0x30ffDf2c33b929F749afE49D7aBf3f4B8D399B40.try_into().unwrap();
     let tx = RosettanetCall {
         to: eth_address, // Target is same bcs its feature call
-        tx_type: 8,
+        tx_type: 2,
         nonce: 59,
         max_priority_fee_per_gas: 55,
         max_fee_per_gas: 55,
@@ -1316,7 +1316,7 @@ fn test_validate_multicall_transaction_wrong_signature() {
     let eth_address: EthAddress = 0x30ffDf2c33b929F749afE49D7aBf3f4B8D399B40.try_into().unwrap();
     let tx = RosettanetCall {
         to: eth_address, // Target is same bcs its feature call
-        tx_type: 8,
+        tx_type: 2,
         nonce: 59,
         max_priority_fee_per_gas: 55,
         max_fee_per_gas: 55,
@@ -1389,7 +1389,7 @@ fn test_execute_multicall_transaction() {
 
     let tx = RosettanetCall {
         to: eth_address,
-        tx_type: 8,
+        tx_type: 2,
         nonce: 59,
         max_priority_fee_per_gas: 55,
         max_fee_per_gas: 55,
@@ -1450,7 +1450,7 @@ fn test_multicall_validate_actual_values() {
     let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
     let tx = RosettanetCall {
         to: eth_address,
-        tx_type: 8,
+        tx_type: 2,
         nonce: 1,
         max_priority_fee_per_gas: 55,
         max_fee_per_gas: 55,
@@ -1512,7 +1512,7 @@ fn test_multicall_validate_actual_values_swap() {
     let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
     let tx = RosettanetCall {
         to: eth_address,
-        tx_type: 8,
+        tx_type: 2,
         nonce: 6,
         max_priority_fee_per_gas: 155216104248442,
         max_fee_per_gas: 155216104248442,
@@ -1593,7 +1593,7 @@ fn test_only_deploy_step_cost() {
     let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
     let tx = RosettanetCall {
         to: eth_address,
-        tx_type: 8,
+        tx_type: 2,
         nonce: 6,
         max_priority_fee_per_gas: 155216104248442,
         max_fee_per_gas: 155216104248442,

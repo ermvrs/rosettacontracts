@@ -88,7 +88,7 @@ pub mod RosettaAccount {
             assert(sn_target != starknet::contract_address_const::<0>(), 'target not registered');
 
             // Multicall or upgrade call
-            if (call.to == self.ethereum_address.read() && call.tx_type == 8) {
+            if (call.to == self.ethereum_address.read()) {
                 // This is multicall
                 let selector = *call.calldata.at(0);
                 if (selector == MULTICALL_SELECTOR) {
@@ -224,7 +224,7 @@ pub mod RosettaAccount {
         fn validate_transaction(self: @ContractState, call: RosettanetCall) -> felt252 {
             let self_eth_address: EthAddress = self.ethereum_address.read();
             assert(
-                call.tx_type == 0 || call.tx_type == 2 || call.tx_type == 8, 'Tx type not supported'
+                call.tx_type == 0 || call.tx_type == 2, 'Tx type not supported'
             );
             let tx_info = get_tx_info().unbox();
             // TODO: Tx version check

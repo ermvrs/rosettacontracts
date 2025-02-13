@@ -3,6 +3,7 @@ use starknet::eth_signature::{verify_eth_signature};
 use starknet::{EthAddress};
 
 use crate::constants::{CHAIN_ID};
+use crate::accounts::base::RosettaAccount::{MULTICALL_SELECTOR};
 use crate::accounts::types::{RosettanetCall, RosettanetSignature};
 use crate::optimized_rlp::{OptimizedRLPTrait, OptimizedRLPImpl, compute_keccak, u256_to_rlp_input};
 
@@ -38,10 +39,7 @@ fn rlp_encode_tx(call: RosettanetCall) -> @ByteArray {
         //get_byte_size(call.value.low) + get_byte_size(call.value.high)).unwrap();
         let empty = OptimizedRLPTrait::encode_short_string(0x0, 0).unwrap();
 
-        let calldata = OptimizedRLPTrait::encode_bytearray(
-            convert_calldata_to_bytearray(call.calldata, call.directives, true)
-        )
-            .unwrap();
+        let calldata = convert_calldata(call.calldata, call.directives, true);
 
         let total_len = nonce.len()
             + gas_price.len()
@@ -56,60 +54,6 @@ fn rlp_encode_tx(call: RosettanetCall) -> @ByteArray {
             array![nonce, gas_price, gas_limit, to, value, calldata, chain_id, empty, empty].span(),
             total_len,
             0
-        );
-
-        return result;
-    } else if call.tx_type == 2 {
-        let nonce = OptimizedRLPTrait::encode_short_string(
-            call.nonce.into(), get_byte_size(call.nonce.into())
-        )
-            .unwrap();
-        let max_priority_fee_per_gas = OptimizedRLPTrait::encode_short_string(
-            call.max_priority_fee_per_gas.into(), get_byte_size(call.max_priority_fee_per_gas)
-        )
-            .unwrap();
-        let max_fee_per_gas = OptimizedRLPTrait::encode_short_string(
-            call.max_fee_per_gas.into(), get_byte_size(call.max_fee_per_gas)
-        )
-            .unwrap();
-        let gas_limit = OptimizedRLPTrait::encode_short_string(
-            call.gas_limit.into(), get_byte_size(call.gas_limit.into())
-        )
-            .unwrap();
-        let to = OptimizedRLPTrait::encode_short_string(call.to.into(), 20).unwrap();
-        let value = OptimizedRLPTrait::encode_bytearray(u256_to_rlp_input(call.value)).unwrap();
-        let chain_id = OptimizedRLPTrait::encode_short_string(CHAIN_ID.into(), 4).unwrap();
-        let access_list = OptimizedRLPTrait::encode_as_list(array![].span(), 0, 0);
-
-        let calldata = OptimizedRLPTrait::encode_bytearray(
-            convert_calldata_to_bytearray(call.calldata, call.directives, true)
-        )
-            .unwrap();
-
-        let total_len = nonce.len()
-            + max_priority_fee_per_gas.len()
-            + max_fee_per_gas.len()
-            + gas_limit.len()
-            + to.len()
-            + value.len()
-            + calldata.len()
-            + chain_id.len()
-            + access_list.len();
-        let result = OptimizedRLPTrait::encode_as_list(
-            array![
-                chain_id,
-                nonce,
-                max_priority_fee_per_gas,
-                max_fee_per_gas,
-                gas_limit,
-                to,
-                value,
-                calldata,
-                access_list
-            ]
-                .span(),
-            total_len,
-            0x2
         );
 
         return result;
@@ -135,10 +79,8 @@ fn rlp_encode_tx(call: RosettanetCall) -> @ByteArray {
         let chain_id = OptimizedRLPTrait::encode_short_string(CHAIN_ID.into(), 4).unwrap();
         let access_list = OptimizedRLPTrait::encode_as_list(array![].span(), 0, 0);
 
-        let calldata = OptimizedRLPTrait::encode_bytearray(
-            convert_internal_call_calldata_to_bytearray(call.calldata, true)
-        )
-            .unwrap();
+        let calldata = convert_calldata(call.calldata, call.directives, true);
+
 
         let total_len = nonce.len()
             + max_priority_fee_per_gas.len()
@@ -167,6 +109,24 @@ fn rlp_encode_tx(call: RosettanetCall) -> @ByteArray {
         );
 
         return result;
+    }
+}
+
+fn convert_calldata(mut calldata: Span<felt252>, directives: Span<u8>, with_signature: bool) -> @ByteArray {
+    if(calldata.len() == 0) {
+        return OptimizedRLPTrait::encode_bytearray(@"").unwrap();
+    }
+    if(*calldata.at(0) == MULTICALL_SELECTOR) {
+        // Multicall
+        return OptimizedRLPTrait::encode_bytearray(
+            convert_internal_call_calldata_to_bytearray(calldata, with_signature)
+        )
+            .unwrap();
+    } else {
+        return OptimizedRLPTrait::encode_bytearray(
+            convert_calldata_to_bytearray(calldata, directives, with_signature)
+        )
+            .unwrap();
     }
 }
 
