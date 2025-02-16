@@ -31,7 +31,7 @@ pub mod RosettaAccount {
     use core::panic_with_felt252;
     use starknet::{
         ContractAddress, EthAddress, ClassHash, get_contract_address, get_caller_address,
-        get_tx_info
+        get_tx_info, get_execution_info
     };
     use starknet::syscalls::{call_contract_syscall, replace_class_syscall};
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
@@ -56,7 +56,6 @@ pub mod RosettaAccount {
     pub const MULTICALL_SELECTOR: felt252 =
         0x76971d7f; // function multicall((uint256,uint256,uint256[])[])
     pub const UPGRADE_SELECTOR: felt252 = 0x74d0bb9d; // function upgradeRosettanetAccount(uint256)
-    pub const RAW_CALL_SELECTOR: felt252 = 0x2e7fa323; // function rawCall(uint256,uint256,uint256)
 
     #[storage]
     struct Storage {
@@ -75,77 +74,37 @@ pub mod RosettaAccount {
             let sender = get_caller_address();
             assert(sender.is_zero(), Errors::INVALID_CALLER);
 
-            // Only try to register if its first tx
             if (call.nonce == 0 || call.nonce == 1) {
                 self.register_account(); // Register this contract if not registered on registry
             }
 
-            let eth_target: EthAddress = call.to;
-            let sn_target: ContractAddress = IRosettanetDispatcher {
-                contract_address: self.registry.read()
-            }
-                .get_starknet_address_with_fallback(eth_target);
-            assert(sn_target != starknet::contract_address_const::<0>(), 'target not registered');
+            let this_address = self.ethereum_address.read();
 
-            // Multicall or upgrade call
-            if (call.to == self.ethereum_address.read()) {
-                // This is multicall
-                let selector = *call.calldata.at(0);
-                if (selector == MULTICALL_SELECTOR) {
-                    assert(call.value == 0, 'multicall value not zero');
-                    let context = prepare_multicall_context(
-                        call.calldata
-                    ); // First calldata element removed inside this function
-                    return self.execute_multicall(context);
-                } else if (selector == UPGRADE_SELECTOR) {
-                    let latest_hash: ClassHash = IRosettanetDispatcher {
-                        contract_address: self.registry.read()
-                    }
-                        .latest_class();
-                    // let current_hash: ClassHash =
-                    // get_class_hash_at_syscall(get_contract_address()).unwrap();
-                    // assert(current_hash != latest_hash, 'no new upgrades');
-                    // TODO: Add class hash check after it is available on starknet
-                    replace_class_syscall(latest_hash).unwrap();
-                    return array![array![latest_hash.into()].span()];
-                } else {
-                    panic_with_felt252(Errors::UNIMPLEMENTED_FEATURE);
+            assert(call.to == this_address, 'Only multicall available');
+            let selector = *call.calldata.at(0);
+
+            if(selector == MULTICALL_SELECTOR) {
+                assert(call.value == 0, 'multicall value not zero');
+                let context = prepare_multicall_context(
+                    call.calldata
+                ); // First calldata element removed inside this function
+                return self.execute_multicall(context); 
+            } else if (selector == UPGRADE_SELECTOR) {
+                let latest_hash: ClassHash = IRosettanetDispatcher {
+                    contract_address: self.registry.read()
                 }
+                    .latest_class();
+                // let current_hash: ClassHash =
+                // get_class_hash_at_syscall(get_contract_address()).unwrap();
+                // assert(current_hash != latest_hash, 'no new upgrades');
+                // TODO: Add class hash check after it is available on starknet
+                replace_class_syscall(latest_hash).unwrap();
+                return array![array![latest_hash.into()].span()];
+            } else {
+                panic_with_felt252(Errors::UNIMPLEMENTED_FEATURE);
             }
 
-            // If value transfer, send STRK before calling contract
-            if (call.value > 0) {
-                // Re-check value
-                let value_on_signature = self.get_transaction_value();
-                assert(call.value == value_on_signature, 'value sig-tx mismatch');
-                self.process_native_transfer(value_on_signature, call.to); // sends strk
-            }
-
-            if (call.calldata.len() == 0) {
-                // do nothing
-                return array![array![].span()];
-            }
-
-            // let entrypoint = validate_target_function(call.target_function, call.calldata);
-
-            let mut calldata = call.calldata;
-            let selector = calldata
-                .pop_front()
-                .unwrap(); // Remove first element, it is function selector
-            let entrypoint = IRosettanetDispatcher { contract_address: self.registry.read() }
-                .get_starknet_entrypoint(*selector);
-            assert(entrypoint != 0x0, 'function not registered');
-
-            assert(calldata.len() == call.directives.len(), 'calldata directive len wrong');
-
-            let address_updated_calldata = self
-                .update_addresses(calldata, call.directives); // This function security concerns me
-            let result: Span<felt252> = call_contract_syscall(
-                sn_target, entrypoint, address_updated_calldata
-            )
-                .unwrap();
-            // self.nonce.write(self.nonce.read() + 1); // Problem here ???
-            array![result]
+            return array![array![].span()]; // Unreachable code, added to let function compiled
         }
 
         fn __validate__(self: @ContractState, call: RosettanetCall) -> felt252 {
@@ -222,21 +181,24 @@ pub mod RosettaAccount {
     impl InternalImpl of InternalTrait {
         // Optimized validation
         fn validate_transaction(self: @ContractState, call: RosettanetCall) -> felt252 {
+            let execution_info = get_execution_info().unbox();
+
+            let tx_info = execution_info.tx_info.unbox();
+            // TODO: tx version check
+
             let self_eth_address: EthAddress = self.ethereum_address.read();
             assert(call.tx_type == 0 || call.tx_type == 2, 'Tx type not supported');
-            let tx_info = get_tx_info().unbox();
-            // TODO: Tx version check
 
-            if (call.to == self_eth_address) {
-                let selector = *call.calldata.at(0);
+            // TODO: assert gas limit with max_fee, and gas price of max fee per gas with other property of resource bound
 
-                assert(
-                    ((selector == MULTICALL_SELECTOR) || (selector == UPGRADE_SELECTOR)),
-                    'selector is not internal'
-                );
-            }
+            assert(call.to == self_eth_address, 'only self calls available');
+            let selector = *call.calldata.at(0);
 
-            // Validate target function removed. It got from trusted registry.
+            assert(
+                ((selector == MULTICALL_SELECTOR) || (selector == UPGRADE_SELECTOR)),
+                'selector is not internal'
+            );
+            
 
             // Validate transaction signature
             let expected_hash = generate_tx_hash(call);
@@ -286,37 +248,7 @@ pub mod RosettaAccount {
             }
         }
 
-        // TODO: write tests
-        fn update_addresses(
-            self: @ContractState, calldata: Span<felt252>, directives: Span<u8>
-        ) -> Span<felt252> {
-            assert(calldata.len() == directives.len(), 'R-AB-1 sanity fails');
-            let mut updated_array = ArrayTrait::<felt252>::new();
-            let mut index = 0;
-
-            while index < calldata.len() {
-                let current_directive: u8 = *directives.at(index);
-                if (current_directive == 2_u8) {
-                    let eth_address: EthAddress = (*calldata.at(index)).try_into().unwrap();
-                    let sn_address = IRosettanetDispatcher {
-                        contract_address: self.registry.read()
-                    }
-                        .get_starknet_address_with_fallback(eth_address);
-                    assert(
-                        sn_address != starknet::contract_address_const::<0>(),
-                        'calldata address not registered'
-                    );
-                    updated_array.append(sn_address.into());
-                } else {
-                    updated_array.append(*calldata.at(index));
-                }
-                index += 1;
-            };
-
-            updated_array.span()
-        }
-
-        // Sends native currency to the receiver address
+        // Sends native currency to the receiver address, To be used after
         fn process_native_transfer(
             self: @ContractState, value: u256, receiver: EthAddress
         ) -> Span<felt252> {
