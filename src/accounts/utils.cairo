@@ -39,7 +39,7 @@ fn rlp_encode_tx(call: RosettanetCall) -> @ByteArray {
         //get_byte_size(call.value.low) + get_byte_size(call.value.high)).unwrap();
         let empty = OptimizedRLPTrait::encode_short_string(0x0, 0).unwrap();
 
-        let calldata = convert_calldata(call.calldata, call.directives, true);
+        let calldata = convert_calldata(call.calldata, array![].span(), true);
 
         let total_len = nonce.len()
             + gas_price.len()
@@ -79,7 +79,7 @@ fn rlp_encode_tx(call: RosettanetCall) -> @ByteArray {
         let chain_id = OptimizedRLPTrait::encode_short_string(CHAIN_ID.into(), 4).unwrap();
         let access_list = OptimizedRLPTrait::encode_as_list(array![].span(), 0, 0);
 
-        let calldata = convert_calldata(call.calldata, call.directives, true);
+        let calldata = convert_calldata(call.calldata, array![].span(), true);
 
         let total_len = nonce.len()
             + max_priority_fee_per_gas.len()
@@ -239,9 +239,6 @@ mod tests {
             gas_limit: 21000,
             value: 1,
             calldata: array![].span(),
-            access_list: array![].span(),
-            directives: array![].span(),
-            target_function: array![].span()
         };
 
         let tx_hash = generate_tx_hash(tx);
@@ -265,9 +262,6 @@ mod tests {
             gas_limit: 21000,
             value: 1000000000000000000,
             calldata: array![].span(),
-            access_list: array![].span(),
-            directives: array![].span(),
-            target_function: array![].span()
         };
 
         let tx_hash = generate_tx_hash(tx);
@@ -282,8 +276,6 @@ mod tests {
     #[test]
     fn test_rlp_encode_legacy() {
         let calldata = array![].span(); // transferFrom(0x123123,0x456456, u256 {0,0x666})
-        let directives = array![].span(); // Directive length must be -1 bcs first is selector
-        let target_function = array![].span(); // transferFrom
         let call = RosettanetCall {
             tx_type: 0,
             to: 0xDC1Be555a2B02aEd499141FF9fAF1A13934a5D2d.try_into().unwrap(),
@@ -294,9 +286,6 @@ mod tests {
             gas_limit: 21000,
             value: 0,
             calldata: calldata,
-            access_list: array![].span(),
-            directives: directives,
-            target_function: target_function
         };
 
         let rlp_encoded_tx = rlp_encode_tx(call);
