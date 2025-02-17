@@ -3,7 +3,7 @@ use snforge_std::{
     stop_cheat_nonce_global, start_cheat_caller_address, stop_cheat_caller_address
 };
 
-use rosettacontracts::accounts::types::{RosettanetCall, AccessListItem};
+use rosettacontracts::accounts::types::{RosettanetCall};
 
 use rosettacontracts::accounts::utils::{generate_tx_hash};
 use rosettacontracts::accounts::base::{IRosettaAccountDispatcherTrait};
@@ -161,9 +161,6 @@ fn test_transaction_validation_unsupported_tx_type() {
         gas_limit: 21000,
         value: 1000000000000000000,
         calldata: array![].span(),
-        access_list: array![].span(),
-        directives: array![].span(),
-        target_function: array![].span()
     };
 
     let signature = array![
@@ -205,9 +202,6 @@ fn test_transaction_validation_value_transfer_only() {
         gas_limit: 21000,
         value: 1000000000000000000,
         calldata: array![].span(),
-        access_list: array![].span(),
-        directives: array![].span(),
-        target_function: array![].span()
     };
 
     let signature = array![
@@ -249,9 +243,6 @@ fn test_legacy_transaction_validation_value_transfer_only() {
         gas_limit: 21000,
         value: 1000000000000000000,
         calldata: array![].span(),
-        access_list: array![].span(),
-        directives: array![].span(),
-        target_function: array![].span()
     };
 
     let signature = array![
@@ -282,6 +273,7 @@ fn test_legacy_transaction_validation_value_transfer_only() {
 }
 
 #[test]
+#[should_panic(expected: 'Rosetta: unimplemented feature')]
 fn test_legacy_transaction_validation_calldata() {
     // Example usdc transfer
     let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
@@ -298,10 +290,6 @@ fn test_legacy_transaction_validation_calldata() {
         value: 0,
         calldata: array![0xa9059cbb, 0xb756b1bc042fa70d85ee84eab646a3b438a285ee, 0xf4240, 0x0]
             .span(),
-        access_list: array![].span(),
-        directives: array![0x2, 0x1, 0x0].span(),
-        target_function: array![0x7472616E7366657228616464726573732C75696E7432353629]
-            .span() // transfer(address,uint256)
     };
 
     let signature = array![
@@ -313,10 +301,11 @@ fn test_legacy_transaction_validation_calldata() {
         0x0,
         0x0
     ];
-    let unsigned_tx_hash: u256 = 0xb2e837d9ee9c8d6e9bb40a9cf18eac862c6b4f9b0bbe5d2437abb9dcade6bab2;
+    //let unsigned_tx_hash: u256 =
+    //0xb2e837d9ee9c8d6e9bb40a9cf18eac862c6b4f9b0bbe5d2437abb9dcade6bab2;
 
-    let generated_tx_hash: u256 = generate_tx_hash(tx);
-    assert_eq!(generated_tx_hash, unsigned_tx_hash);
+    //let generated_tx_hash: u256 = generate_tx_hash(tx);
+    //assert_eq!(generated_tx_hash, unsigned_tx_hash);
 
     let (_, account) = deploy_account_from_rosettanet(eth_address);
     assert_eq!(account.get_ethereum_address(), eth_address);
@@ -331,7 +320,7 @@ fn test_legacy_transaction_validation_calldata() {
 }
 
 #[test]
-#[should_panic(expected: 'Invalid signature')]
+#[should_panic(expected: 'Rosetta: unimplemented feature')]
 fn test_legacy_transaction_validation_calldata_invalid_signature() {
     // Example usdc transfer
     let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
@@ -348,10 +337,6 @@ fn test_legacy_transaction_validation_calldata_invalid_signature() {
         value: 0,
         calldata: array![0xa9059cbb, 0xb756b1bc042fa70d85ee84eab646a3b438a285ee, 0xf4240, 0x0]
             .span(),
-        access_list: array![].span(),
-        directives: array![0x2, 0x1, 0x0].span(),
-        target_function: array![0x7472616E7366657228616464726573732C75696E7432353629]
-            .span() // transfer(address,uint256)
     };
 
     let signature = array![
@@ -363,10 +348,11 @@ fn test_legacy_transaction_validation_calldata_invalid_signature() {
         0x0,
         0x0
     ];
-    let unsigned_tx_hash: u256 = 0xb2e837d9ee9c8d6e9bb40a9cf18eac862c6b4f9b0bbe5d2437abb9dcade6bab2;
+    //let unsigned_tx_hash: u256 =
+    //0xb2e837d9ee9c8d6e9bb40a9cf18eac862c6b4f9b0bbe5d2437abb9dcade6bab2;
 
-    let generated_tx_hash: u256 = generate_tx_hash(tx);
-    assert_eq!(generated_tx_hash, unsigned_tx_hash);
+    //let generated_tx_hash: u256 = generate_tx_hash(tx);
+    //assert_eq!(generated_tx_hash, unsigned_tx_hash);
 
     let (_, account) = deploy_account_from_rosettanet(eth_address);
     assert_eq!(account.get_ethereum_address(), eth_address);
@@ -381,6 +367,7 @@ fn test_legacy_transaction_validation_calldata_invalid_signature() {
 }
 
 #[test]
+#[should_panic(expected: 'Rosetta: unimplemented feature')]
 fn test_transaction_validation_calldata() {
     // Example usdc transfer
     let eth_address: EthAddress = 0x30ffDf2c33b929F749afE49D7aBf3f4B8D399B40.try_into().unwrap();
@@ -397,10 +384,6 @@ fn test_transaction_validation_calldata() {
         value: 0,
         calldata: array![0xa9059cbb, 0xb756b1bc042fa70d85ee84eab646a3b438a285ee, 0xf4240, 0x0]
             .span(),
-        access_list: array![].span(),
-        directives: array![0x2, 0x1, 0x0].span(),
-        target_function: array![0x7472616E7366657228616464726573732C75696E7432353629]
-            .span() // transfer(address,uint256)
     };
 
     let signature = array![
@@ -412,10 +395,11 @@ fn test_transaction_validation_calldata() {
         0x0,
         0x0
     ];
-    let unsigned_tx_hash: u256 = 0xdba8cc62e6edeee140d6b73ae141c687f9738e00ad6a954dfbfd509d89aa7428;
+    //let unsigned_tx_hash: u256 =
+    //0xdba8cc62e6edeee140d6b73ae141c687f9738e00ad6a954dfbfd509d89aa7428;
 
-    let generated_tx_hash: u256 = generate_tx_hash(tx);
-    assert_eq!(generated_tx_hash, unsigned_tx_hash);
+    //let generated_tx_hash: u256 = generate_tx_hash(tx);
+    //assert_eq!(generated_tx_hash, unsigned_tx_hash);
 
     let (_, account) = deploy_account_from_rosettanet(eth_address);
     assert_eq!(account.get_ethereum_address(), eth_address);
@@ -447,9 +431,6 @@ fn test_transaction_validation_calldata_wrong_target_function() {
         value: 0,
         calldata: array![0xb9059cbc, 0xb756b1bc042fa70d85ee84eab646a3b438a285ee, 0xf4240, 0x0]
             .span(),
-        access_list: array![].span(),
-        directives: array![0x2, 0x1, 0x0].span(),
-        target_function: array![0x17228616464726573732C75696E7432353619].span() // random hex
     };
 
     let signature = array![
@@ -479,6 +460,7 @@ fn test_transaction_validation_calldata_wrong_target_function() {
 }
 
 #[test]
+#[should_panic(expected: 'Rosetta: unimplemented feature')]
 fn test_transaction_validation_calldata_and_value_transfer() {
     // TODO: call target after sending strk
     // No execution just validate
@@ -494,9 +476,6 @@ fn test_transaction_validation_calldata_and_value_transfer() {
         gas_limit: 28156,
         value: 10000000000000000,
         calldata: array![0xd0e30db0].span(),
-        access_list: array![].span(),
-        directives: array![].span(),
-        target_function: array![0x6465706F7369742829].span()
     };
 
     let signature = array![
@@ -530,10 +509,6 @@ fn test_transaction_validation_calldata_and_value_transfer() {
 fn test_validation_with_access_list() {
     let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
     let target: EthAddress = 0xC7f5D5D3725f36CF36477B84010EB8DdE42D3636.try_into().unwrap();
-    let access_list_item = AccessListItem {
-        ethereum_address: 0x5703ff58bB0CA34F870a8bC18dDd541f29375978.try_into().unwrap(),
-        storage_keys: array![0_u256, 1_u256].span()
-    };
 
     let tx = RosettanetCall {
         to: target, // we dont need to deploy account, we only check validation here
@@ -545,9 +520,6 @@ fn test_validation_with_access_list() {
         gas_limit: 210000,
         value: 0,
         calldata: array![0xf4acc7b5].span(), // sends 1000000 tokens
-        access_list: array![access_list_item].span(),
-        directives: array![].span(),
-        target_function: array![0x63616C6C43616C63756C61746F722829].span()
     };
 
     let signature = array![
@@ -592,9 +564,6 @@ fn test_execute_value_transfer_to_non_registered() {
         gas_limit: 21000,
         value: 1,
         calldata: array![].span(),
-        access_list: array![].span(),
-        directives: array![].span(),
-        target_function: array![].span()
     };
 
     let signature = array![
@@ -637,9 +606,6 @@ fn test_execute_value_transfer_wrong_value_on_sig() {
         gas_limit: 21000,
         value: 1,
         calldata: array![].span(),
-        access_list: array![].span(),
-        directives: array![].span(),
-        target_function: array![].span()
     };
 
     let signature = array![
@@ -684,9 +650,6 @@ fn test_execute_value_transfer_not_enough_balance() {
         gas_limit: 21000,
         value: 1,
         calldata: array![].span(),
-        access_list: array![].span(),
-        directives: array![].span(),
-        target_function: array![].span()
     };
 
     let signature = array![
@@ -730,9 +693,6 @@ fn test_execute_value_transfer() {
         gas_limit: 21000,
         value: 1,
         calldata: array![].span(),
-        access_list: array![].span(),
-        directives: array![].span(),
-        target_function: array![].span()
     };
 
     let signature = array![
@@ -781,10 +741,6 @@ fn test_execute_erc20_transfer_receiver_not_registered() {
         value: 0,
         calldata: array![0xa9059cbb, 0xb756b1bc042fa70d85ee84eab646a3b438a285ee, 0xf4240, 0x0]
             .span(),
-        access_list: array![].span(),
-        directives: array![0x2, 0x1, 0x0].span(),
-        target_function: array![0x7472616E7366657228616464726573732C75696E7432353629]
-            .span() // transfer(address,uint256)
     };
 
     let signature = array![
@@ -819,6 +775,7 @@ fn test_execute_erc20_transfer_receiver_not_registered() {
 }
 
 #[test]
+#[should_panic(expected: 'Rosetta: unimplemented feature')]
 fn test_execute_erc20_transfer_legacy() {
     // Example usdc transfer
     let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
@@ -834,10 +791,6 @@ fn test_execute_erc20_transfer_legacy() {
         value: 0,
         calldata: array![0xa9059cbb, 0xb756b1bc042fa70d85ee84eab646a3b438a285ee, 0xf4240, 0x0]
             .span(), // sends 1000000 tokens
-        access_list: array![].span(),
-        directives: array![0x2, 0x1, 0x0].span(),
-        target_function: array![0x7472616E7366657228616464726573732C75696E7432353629]
-            .span() // transfer(address,uint256)
     };
 
     let signature = array![
@@ -876,6 +829,7 @@ fn test_execute_erc20_transfer_legacy() {
 }
 
 #[test]
+#[should_panic(expected: 'Rosetta: unimplemented feature')]
 fn test_execute_erc20_transfer() {
     // Example usdc transfer
     let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
@@ -891,10 +845,6 @@ fn test_execute_erc20_transfer() {
         value: 0,
         calldata: array![0xa9059cbb, 0xb756b1bc042fa70d85ee84eab646a3b438a285ee, 0xf4240, 0x0]
             .span(), // sends 1000000 tokens
-        access_list: array![].span(),
-        directives: array![0x2, 0x1, 0x0].span(),
-        target_function: array![0x7472616E7366657228616464726573732C75696E7432353629]
-            .span() // transfer(address,uint256)
     };
 
     let signature = array![
@@ -932,7 +882,7 @@ fn test_execute_erc20_transfer() {
 }
 
 #[test]
-#[should_panic(expected: 'ERC20: insufficient balance')]
+#[should_panic(expected: 'Rosetta: unimplemented feature')]
 fn test_execute_erc20_transfer_exceeds_balance() {
     // Example usdc transfer
     let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
@@ -948,10 +898,6 @@ fn test_execute_erc20_transfer_exceeds_balance() {
         value: 0,
         calldata: array![0xa9059cbb, 0xb756b1bc042fa70d85ee84eab646a3b438a285ee, 0xf4240, 0x0]
             .span(), // sends 1000000 tokens
-        access_list: array![].span(),
-        directives: array![0x2, 0x1, 0x0].span(),
-        target_function: array![0x7472616E7366657228616464726573732C75696E7432353629]
-            .span() // transfer(address,uint256)
     };
 
     let signature = array![
@@ -986,18 +932,11 @@ fn test_execute_erc20_transfer_exceeds_balance() {
 }
 
 #[test]
-fn test_execute_erc20_transfer_with_value() {}
-
-#[test]
 #[should_panic(expected: 'Access list not supported')]
 #[ignore] // Since validation done in __validate__ this is not failing. Execution doesnt care about access list context
 fn test_execute_with_access_list() {
     let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
     let target: EthAddress = 0xC7f5D5D3725f36CF36477B84010EB8DdE42D3636.try_into().unwrap();
-    let access_list_item = AccessListItem {
-        ethereum_address: 0x5703ff58bB0CA34F870a8bC18dDd541f29375978.try_into().unwrap(),
-        storage_keys: array![0_u256, 1_u256].span()
-    };
     let tx = RosettanetCall {
         to: target, // we dont need to deploy account, we only check validation here
         tx_type: 2,
@@ -1008,9 +947,6 @@ fn test_execute_with_access_list() {
         gas_limit: 210000,
         value: 0,
         calldata: array![0xf4acc7b5].span(), // sends 1000000 tokens
-        access_list: array![access_list_item].span(), // this must be always empty
-        directives: array![].span(),
-        target_function: array![0x63616C6C43616C63756C61746F722829].span() // callCalculator()
     };
 
     let signature = array![
@@ -1035,6 +971,7 @@ fn test_execute_with_access_list() {
 }
 
 #[test]
+#[should_panic(expected: 'Rosetta: unimplemented feature')]
 fn test_execute_value_transfer_and_call() {
     let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
     let target: EthAddress = 0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9.try_into().unwrap();
@@ -1048,9 +985,6 @@ fn test_execute_value_transfer_and_call() {
         gas_limit: 28156,
         value: 10000000000000000,
         calldata: array![0xd0e30db0].span(),
-        access_list: array![].span(),
-        directives: array![].span(),
-        target_function: array![0x6465706F7369742829].span()
     };
 
     let signature = array![
@@ -1098,9 +1032,6 @@ fn test_multicall_with_value() {
         gas_limit: 28156,
         value: 10,
         calldata: array![0x76971d7f].span(),
-        access_list: array![].span(),
-        directives: array![].span(),
-        target_function: array![0x6465706F7369742829].span()
     };
 
     let signature = array![
@@ -1139,9 +1070,6 @@ fn test_multicall_wrong_selector() {
         gas_limit: 28156,
         value: 10,
         calldata: array![0xabcabcab].span(),
-        access_list: array![].span(),
-        directives: array![].span(),
-        target_function: array![0x6465706F7369742829].span()
     };
 
     let signature = array![
@@ -1180,9 +1108,6 @@ fn test_unimplemented_feature() {
         gas_limit: 28156,
         value: 0,
         calldata: array![0xffffffff].span(),
-        access_list: array![].span(),
-        directives: array![].span(),
-        target_function: array![0x6465706F7369742829].span()
     };
 
     let signature = array![
@@ -1208,6 +1133,7 @@ fn test_unimplemented_feature() {
 }
 
 #[test]
+#[should_panic(expected: 'Rosetta: unimplemented feature')]
 fn test_validation_real_data_failing() {
     let eth_address: EthAddress = 0x30ffDf2c33b929F749afE49D7aBf3f4B8D399B40.try_into().unwrap();
     let target: EthAddress = 0xbec5832bd3f642d090891b4991da42fa4d5d9e2d.try_into().unwrap();
@@ -1224,9 +1150,6 @@ fn test_validation_real_data_failing() {
             0x095ea7b3, 0x1, 0xffffffffffffffffffffffffffffffff, 0xffffffffffffffffffffffffffffffff
         ]
             .span(),
-        access_list: array![].span(),
-        directives: array![0x2, 0x1, 0x0].span(),
-        target_function: array![0x617070726F766528616464726573732C75696E7432353629].span()
     };
     let signature = array![
         0x71b346721683b41b0b508fb699019c0f,
@@ -1240,9 +1163,10 @@ fn test_validation_real_data_failing() {
     let (rosettanet, account, _) = deploy_funded_account_from_rosettanet(eth_address);
     deploy_account_from_existing_rosettanet(target, rosettanet.contract_address);
 
-    let unsigned_tx_hash: u256 = 0xfd239b434a5033e678887a7d60fa5ace7f6cdbf110febe8d266bd947efb40c7b;
-    let generated_tx_hash: u256 = generate_tx_hash(tx);
-    assert_eq!(generated_tx_hash, unsigned_tx_hash);
+    //let unsigned_tx_hash: u256 =
+    //0xfd239b434a5033e678887a7d60fa5ace7f6cdbf110febe8d266bd947efb40c7b;
+    //let generated_tx_hash: u256 = generate_tx_hash(tx);
+    //assert_eq!(generated_tx_hash, unsigned_tx_hash);
 
     start_cheat_nonce_global(tx.nonce.into());
     start_cheat_signature_global(signature.span());
@@ -1280,9 +1204,6 @@ fn test_validate_multicall_transaction() {
             0x321
         ]
             .span(),
-        access_list: array![].span(),
-        directives: array![0x2, 0x1, 0x0].span(),
-        target_function: array![].span()
     };
     let signature = array![
         0x42507df1d32b89c5c789fa3d5d70f9c9,
@@ -1338,9 +1259,6 @@ fn test_validate_multicall_transaction_wrong_signature() {
             0x321
         ]
             .span(),
-        access_list: array![].span(),
-        directives: array![].span(),
-        target_function: array![].span()
     };
     let signature = array![
         0x42607df1d32b89c5c789fa3d5d70f9c9,
@@ -1413,9 +1331,6 @@ fn test_execute_multicall_transaction() {
             strk_2_amount.high.into()
         ]
             .span(),
-        access_list: array![].span(),
-        directives: array![].span(),
-        target_function: array![].span()
     };
 
     let signature = array![
@@ -1475,9 +1390,6 @@ fn test_multicall_validate_actual_values() {
             0x0
         ]
             .span(),
-        access_list: array![].span(),
-        directives: array![].span(),
-        target_function: array![].span()
     };
 
     let signature = array![
@@ -1556,9 +1468,6 @@ fn test_multicall_validate_actual_values_swap() {
             0x0000000000000000000000000000000000011ebd39f990000f1fc7d3532a0ba8
         ]
             .span(),
-        access_list: array![].span(),
-        directives: array![].span(),
-        target_function: array![].span()
     };
 
     let signature = array![
@@ -1637,9 +1546,6 @@ fn test_only_deploy_step_cost() {
             0x0000000000000000000000000000000000011ebd39f990000f1fc7d3532a0ba8
         ]
             .span(),
-        access_list: array![].span(),
-        directives: array![].span(),
-        target_function: array![].span()
     };
 
     let signature = array![

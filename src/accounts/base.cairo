@@ -56,7 +56,6 @@ pub mod RosettaAccount {
     pub const MULTICALL_SELECTOR: felt252 =
         0x76971d7f; // function multicall((uint256,uint256,uint256[])[])
     pub const UPGRADE_SELECTOR: felt252 = 0x74d0bb9d; // function upgradeRosettanetAccount(uint256)
-    pub const RAW_CALL_SELECTOR: felt252 = 0x2e7fa323; // function rawCall(uint256,uint256,uint256)
 
     #[storage]
     struct Storage {
@@ -85,7 +84,6 @@ pub mod RosettaAccount {
                 contract_address: self.registry.read()
             }
                 .get_starknet_address_with_fallback(eth_target);
-            assert(sn_target != starknet::contract_address_const::<0>(), 'target not registered');
 
             // Multicall or upgrade call
             if (call.to == self.ethereum_address.read()) {
@@ -118,7 +116,7 @@ pub mod RosettaAccount {
                 // Re-check value
                 let value_on_signature = self.get_transaction_value();
                 assert(call.value == value_on_signature, 'value sig-tx mismatch');
-                self.process_native_transfer(value_on_signature, call.to); // sends strk
+                self.process_native_transfer(value_on_signature, sn_target); // sends strk
             }
 
             if (call.calldata.len() == 0) {
@@ -126,26 +124,11 @@ pub mod RosettaAccount {
                 return array![array![].span()];
             }
 
-            // let entrypoint = validate_target_function(call.target_function, call.calldata);
+            // Currently only native transfer support for different targets
+            panic_with_felt252(Errors::UNIMPLEMENTED_FEATURE);
 
-            let mut calldata = call.calldata;
-            let selector = calldata
-                .pop_front()
-                .unwrap(); // Remove first element, it is function selector
-            let entrypoint = IRosettanetDispatcher { contract_address: self.registry.read() }
-                .get_starknet_entrypoint(*selector);
-            assert(entrypoint != 0x0, 'function not registered');
-
-            assert(calldata.len() == call.directives.len(), 'calldata directive len wrong');
-
-            let address_updated_calldata = self
-                .update_addresses(calldata, call.directives); // This function security concerns me
-            let result: Span<felt252> = call_contract_syscall(
-                sn_target, entrypoint, address_updated_calldata
-            )
-                .unwrap();
             // self.nonce.write(self.nonce.read() + 1); // Problem here ???
-            array![result]
+            array![array![].span()]
         }
 
         fn __validate__(self: @ContractState, call: RosettanetCall) -> felt252 {
@@ -234,9 +217,9 @@ pub mod RosettaAccount {
                     ((selector == MULTICALL_SELECTOR) || (selector == UPGRADE_SELECTOR)),
                     'selector is not internal'
                 );
+            } else {
+                assert(call.calldata.len() == 0, Errors::UNIMPLEMENTED_FEATURE);
             }
-
-            // Validate target function removed. It got from trusted registry.
 
             // Validate transaction signature
             let expected_hash = generate_tx_hash(call);
@@ -318,17 +301,13 @@ pub mod RosettaAccount {
 
         // Sends native currency to the receiver address
         fn process_native_transfer(
-            self: @ContractState, value: u256, receiver: EthAddress
+            self: @ContractState, value: u256, receiver: ContractAddress
         ) -> Span<felt252> {
             assert(value > 0, 'value zero');
-            let sn_address = IRosettanetDispatcher { contract_address: self.registry.read() }
-                .get_starknet_address_with_fallback(receiver);
-            assert(
-                sn_address != starknet::contract_address_const::<0>(), 'receiver not registered'
-            );
+            assert(receiver != starknet::contract_address_const::<0>(), 'receiver zero');
 
             let calldata: Span<felt252> = array![
-                sn_address.into(), value.low.into(), value.high.into()
+                receiver.into(), value.low.into(), value.high.into()
             ]
                 .span();
             // tx has to be reverted if not enough balance
