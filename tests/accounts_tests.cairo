@@ -301,7 +301,8 @@ fn test_legacy_transaction_validation_calldata() {
         0x0,
         0x0
     ];
-    //let unsigned_tx_hash: u256 = 0xb2e837d9ee9c8d6e9bb40a9cf18eac862c6b4f9b0bbe5d2437abb9dcade6bab2;
+    //let unsigned_tx_hash: u256 =
+    //0xb2e837d9ee9c8d6e9bb40a9cf18eac862c6b4f9b0bbe5d2437abb9dcade6bab2;
 
     //let generated_tx_hash: u256 = generate_tx_hash(tx);
     //assert_eq!(generated_tx_hash, unsigned_tx_hash);
@@ -347,7 +348,8 @@ fn test_legacy_transaction_validation_calldata_invalid_signature() {
         0x0,
         0x0
     ];
-    //let unsigned_tx_hash: u256 = 0xb2e837d9ee9c8d6e9bb40a9cf18eac862c6b4f9b0bbe5d2437abb9dcade6bab2;
+    //let unsigned_tx_hash: u256 =
+    //0xb2e837d9ee9c8d6e9bb40a9cf18eac862c6b4f9b0bbe5d2437abb9dcade6bab2;
 
     //let generated_tx_hash: u256 = generate_tx_hash(tx);
     //assert_eq!(generated_tx_hash, unsigned_tx_hash);
@@ -393,7 +395,8 @@ fn test_transaction_validation_calldata() {
         0x0,
         0x0
     ];
-    //let unsigned_tx_hash: u256 = 0xdba8cc62e6edeee140d6b73ae141c687f9738e00ad6a954dfbfd509d89aa7428;
+    //let unsigned_tx_hash: u256 =
+    //0xdba8cc62e6edeee140d6b73ae141c687f9738e00ad6a954dfbfd509d89aa7428;
 
     //let generated_tx_hash: u256 = generate_tx_hash(tx);
     //assert_eq!(generated_tx_hash, unsigned_tx_hash);
@@ -1160,7 +1163,8 @@ fn test_validation_real_data_failing() {
     let (rosettanet, account, _) = deploy_funded_account_from_rosettanet(eth_address);
     deploy_account_from_existing_rosettanet(target, rosettanet.contract_address);
 
-    //let unsigned_tx_hash: u256 = 0xfd239b434a5033e678887a7d60fa5ace7f6cdbf110febe8d266bd947efb40c7b;
+    //let unsigned_tx_hash: u256 =
+    //0xfd239b434a5033e678887a7d60fa5ace7f6cdbf110febe8d266bd947efb40c7b;
     //let generated_tx_hash: u256 = generate_tx_hash(tx);
     //assert_eq!(generated_tx_hash, unsigned_tx_hash);
 

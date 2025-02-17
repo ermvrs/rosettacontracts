@@ -304,9 +304,7 @@ pub mod RosettaAccount {
             self: @ContractState, value: u256, receiver: ContractAddress
         ) -> Span<felt252> {
             assert(value > 0, 'value zero');
-            assert(
-                receiver != starknet::contract_address_const::<0>(), 'receiver zero'
-            );
+            assert(receiver != starknet::contract_address_const::<0>(), 'receiver zero');
 
             let calldata: Span<felt252> = array![
                 receiver.into(), value.low.into(), value.high.into()

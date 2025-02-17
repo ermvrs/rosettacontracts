@@ -69,9 +69,7 @@ pub fn deploy_weth() -> IMockWETHDispatcher {
     IMockWETHDispatcher { contract_address }
 }
 
-pub fn register_functions(rosettanet: IRosettanetDispatcher) {
-
-}
+pub fn register_functions(rosettanet: IRosettanetDispatcher) {}
 
 pub fn deploy_rosettanet() -> IRosettanetDispatcher {
     let contract = declare("Rosettanet").unwrap().contract_class();
@@ -189,9 +187,8 @@ fn test_deploy_rosettanet() {
     let rosettanet = deploy_rosettanet();
 
     register_functions(rosettanet);
-
     //let transfer_entrypoint = rosettanet.get_starknet_entrypoint(0xa9059cbb);
-    //assert_eq!(
-    //    transfer_entrypoint, 0x83afd3f4caedc6eebf44246fe54e38c95e3179a5ec9ea81740eca5b482d12e
-    //);
+//assert_eq!(
+//    transfer_entrypoint, 0x83afd3f4caedc6eebf44246fe54e38c95e3179a5ec9ea81740eca5b482d12e
+//);
 }
