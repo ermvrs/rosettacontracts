@@ -61,8 +61,10 @@ fn rosettanet_redeploy_same_account() {
 #[test]
 fn rosettanet_register_contract() {
     let rosettanet = deploy_rosettanet();
-    
-    start_cheat_caller_address(rosettanet.contract_address, starknet::contract_address_const::<1>());
+
+    start_cheat_caller_address(
+        rosettanet.contract_address, starknet::contract_address_const::<1>()
+    );
     rosettanet.register_contract(1.try_into().unwrap());
     stop_cheat_caller_address(rosettanet.contract_address);
 
@@ -76,7 +78,9 @@ fn rosettanet_register_contract() {
 fn rosettanet_register_existing_contract() {
     let rosettanet = deploy_rosettanet();
 
-    start_cheat_caller_address(rosettanet.contract_address, starknet::contract_address_const::<1>());
+    start_cheat_caller_address(
+        rosettanet.contract_address, starknet::contract_address_const::<1>()
+    );
     rosettanet.register_contract(1.try_into().unwrap());
     rosettanet.register_contract(1.try_into().unwrap());
     stop_cheat_caller_address(rosettanet.contract_address);
