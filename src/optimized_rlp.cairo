@@ -8,12 +8,6 @@ pub enum RLPError {
     PayloadTooLong,
 }
 
-#[derive(Drop, Clone, PartialEq)]
-pub enum RLPType {
-    String,
-    List,
-}
-
 #[generate_trait]
 pub impl OptimizedRLPImpl of OptimizedRLPTrait {
     // Store string with length less than 32
