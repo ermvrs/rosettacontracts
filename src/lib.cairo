@@ -7,6 +7,11 @@ pub mod accounts {
     pub mod multicall;
 }
 
+pub mod registry {
+    pub mod registry;
+    pub mod types;
+}
+
 pub mod utils;
 
 pub mod mocks {
