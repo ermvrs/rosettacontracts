@@ -130,7 +130,9 @@ pub mod Rosettanet {
         /// # Arguments
         /// * `address` - Starknet Contract Address that going to be registered
         fn register_contract(ref self: ContractState, address: ContractAddress) {
-            assert(get_caller_address() == self.dev.read(), 'only dev'); // Access controlled for now
+            assert(
+                get_caller_address() == self.dev.read(), 'only dev'
+            ); // Access controlled for now
             let eth_address = self.generate_eth_address(address);
             self.update_registry(address, eth_address);
 
