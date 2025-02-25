@@ -14,10 +14,14 @@ pub trait BytesTrait {
     fn locate(offset: usize) -> (usize, usize);
     fn size(self: @Bytes) -> usize;
     fn data(self: Bytes) -> Array<u128>;
+    fn read_u32(self: @Bytes, offset: usize) -> (usize, u32);
     fn read_u128(self: @Bytes, offset: usize) -> (usize, u128);
     fn read_u256(self: @Bytes, offset: usize) -> (usize, u256);
     fn read_u128_packed(self: @Bytes, offset: usize, size: usize) -> (usize, u128);
     fn read_bytes(self: @Bytes, offset: usize, size: usize) -> (usize, Bytes);
+    fn append_u32(ref self: Bytes, value: u32);
+    fn append_u128(ref self: Bytes, value: u128);
+    fn append_u128_packed(ref self: Bytes, value: u128, size: usize);
 }
 
 impl BytesImpl of BytesTrait {
@@ -61,6 +65,12 @@ impl BytesImpl of BytesTrait {
 
     fn data(self: Bytes) -> Array<u128> {
         self.data
+    }
+
+    #[inline(always)]
+    fn read_u32(self: @Bytes, offset: usize) -> (usize, u32) {
+        let (new_offset, value) = self.read_u128_packed(offset, 4);
+        (new_offset, value.try_into().unwrap())
     }
 
     #[inline(always)]
@@ -141,6 +151,49 @@ impl BytesImpl of BytesTrait {
 
         return (offset, Self::new(size, array));
     }
+
+    #[inline(always)]
+    fn append_u32(ref self: Bytes, value: u32) {
+        self.append_u128_packed(value.into(), 4)
+    }
+
+    #[inline(always)]
+    fn append_u128(ref self: Bytes, value: u128) {
+        self.append_u128_packed(value, 16)
+    }
+
+    fn append_u128_packed(ref self: Bytes, value: u128, size: usize) {
+        assert(size <= 16, 'size must be less than 16');
+
+        let Bytes { size: old_bytes_size, mut data } = self;
+        let (last_data_index, last_element_size) = Self::locate(old_bytes_size);
+
+        if last_element_size == 0 {
+            let padded_value = u128_join(value, 0, BYTES_PER_ELEMENT - size);
+            data.append(padded_value);
+        } else {
+            let (last_element_value, _) = u128_split(*data[last_data_index], 16, last_element_size);
+            data = u128_array_slice(@data, 0, last_data_index);
+            if size + last_element_size > BYTES_PER_ELEMENT {
+                let (left, right) = u128_split(value, size, BYTES_PER_ELEMENT - last_element_size);
+                let value_full = u128_join(
+                    last_element_value, left, BYTES_PER_ELEMENT - last_element_size,
+                );
+                let value_padded = u128_join(
+                    right, 0, 2 * BYTES_PER_ELEMENT - size - last_element_size,
+                );
+                data.append(value_full);
+                data.append(value_padded);
+            } else {
+                let value = u128_join(last_element_value, value, size);
+                let value_padded = u128_join(
+                    value, 0, BYTES_PER_ELEMENT - size - last_element_size,
+                );
+                data.append(value_padded);
+            }
+        }
+        self = Bytes { size: old_bytes_size + size, data }
+    }
 }
 
 pub fn read_sub_u128(value: u128, value_size: usize, offset: usize, size: usize) -> u128 {
@@ -212,4 +265,14 @@ pub fn u128_split(value: u128, value_size: usize, left_size: usize) -> (u128, u1
         let power = pow2((value_size - left_size) * 8);
         DivRem::div_rem(value, power.try_into().expect('Division by 0'))
     }
+}
+
+pub fn u128_array_slice(src: @Array<u128>, mut begin: usize, len: usize) -> Array<u128> {
+    let mut slice = array![];
+    let end = begin + len;
+    while begin < end && begin < src.len() {
+        slice.append(*src[begin]);
+        begin += 1;
+    };
+    slice
 }
