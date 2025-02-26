@@ -1,5 +1,6 @@
 pub mod decoder;
 pub mod bytes;
+pub mod bits;
 
 use core::integer::{u128_byte_reverse};
 
