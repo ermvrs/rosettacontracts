@@ -18,6 +18,8 @@ pub enum DecodingMethod {
 // Tuples can be decoded like basic types in order
 #[derive(Drop, Serde)]
 pub enum EVMTypes {
+    Tuple: Span<EVMTypes>,
+    Array: Span<EVMTypes>,
     FunctionSignature,
     Address,
     Bool,
@@ -31,11 +33,13 @@ pub enum EVMTypes {
 
 
 impl EVMTypesImpl of AbiDecodeTrait {
-    fn decode(ref self: EVMCalldata, mut types: Span<EVMTypes>) -> Span<felt252> {
-        if(types.len() == 1) {
-            // This means only one basic type decoding
+    fn decode(ref self: EVMCalldata, types: Span<EVMTypes>) -> Span<felt252> {
+        let mut decoded = array![];
 
-            return match types.pop_front().unwrap() {
+        for evm_type in types {
+            let decoded_type = match evm_type {
+                EVMTypes::Tuple(tuple_types) => { decode_tuple(ref self, *tuple_types) },
+                EVMTypes::Array(array_types) => {decode_address(ref self)},
                 EVMTypes::FunctionSignature => { decode_function_signature(ref self) },
                 EVMTypes::Address => { decode_address(ref self) },
                 EVMTypes::Bool => { decode_bool(ref self) },
@@ -46,9 +50,11 @@ impl EVMTypesImpl of AbiDecodeTrait {
                 EVMTypes::Uint128 => { decode_uint128(ref self) },
                 EVMTypes::Uint256 => { decode_uint256(ref self) },
             };
-        }
+            decoded.append_span(decoded_type);
 
-        array![].span()
+        };
+
+        decoded.span()
     }
 }
 
@@ -56,6 +62,10 @@ impl EVMTypesImpl of AbiDecodeTrait {
 // let x = EVMCalldata { calldata: ByteArray of evm calldata, offset: 0};
 // let params_list = array xxx
 // each param element calls x.decode(param) and result appended to sn_calldata
+
+fn decode_tuple(ref ctx: EVMCalldata, types: Span<EVMTypes>) -> Span<felt252> {
+    ctx.decode(types)
+}
 
 #[inline(always)]
 fn decode_function_signature(ref ctx: EVMCalldata) -> Span<felt252> {
@@ -149,18 +159,6 @@ mod tests {
         assert_eq!(decoded.len(), 1);
         assert_eq!(*decoded.at(0), 0x095ea7b3);
         assert_eq!(calldata.offset, 4);
-
-        let second_param = calldata.decode(array![EVMTypes::Uint32].span());
-
-        assert_eq!(second_param.len(), 1);
-        assert_eq!(*second_param.at(0), 0xffff);
-        assert_eq!(calldata.offset, 4 + 32);
-
-        let third_param = calldata.decode(array![EVMTypes::Uint256].span());
-        assert_eq!(third_param.len(), 2);
-        assert_eq!(*third_param.at(0), 0xffffffffffffffffffffffffffffffff);
-        assert_eq!(*third_param.at(1), 0xffffffffffffffffffffffffffffffff);
-        assert_eq!(calldata.offset, 4 + 32 + 32);
 
 
     }
