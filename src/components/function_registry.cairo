@@ -1,7 +1,6 @@
 #[starknet::component]
 pub mod function_registry_component {
     use starknet::storage::{Map};
-    use crate::components::types::{EthereumFunction, DecodingDirective};
 
     #[storage]
     pub struct Storage {
