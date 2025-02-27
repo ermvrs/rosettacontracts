@@ -1,5 +1,5 @@
 use core::ops::DivAssign;
-
+use core::num::traits::{OverflowingMul, WideMul };
 
 pub fn get_bit_at<
     T,
@@ -118,4 +118,42 @@ pub fn fast_power<
     };
 
     result.try_into().expect('too large to fit output type')
+}
+
+pub fn pow<T, +Sub<T>, +Mul<T>, +Div<T>, +Rem<T>, +PartialEq<T>, +Into<u8, T>, +Drop<T>, +Copy<T>>(
+    base: T, exp: T,
+) -> T {
+    if exp == 0_u8.into() {
+        1_u8.into()
+    } else if exp == 1_u8.into() {
+        base
+    } else if exp % 2_u8.into() == 0_u8.into() {
+        pow(base * base, exp / 2_u8.into())
+    } else {
+        base * pow(base * base, exp / 2_u8.into())
+    }
+}
+
+
+pub trait BitShift<
+    T, +Sub<T>, +Mul<T>, +Div<T>, +Rem<T>, +PartialEq<T>, +Into<u8, T>, +Drop<T>, +Copy<T>,
+> {
+    // Cannot make SHL generic as u256 doesn't support everything required
+    fn shl(x: T, n: T) -> T;
+    fn shr(x: T, n: T) -> T {
+        x / pow(2_u8.into(), n)
+    }
+}
+
+pub impl U128BitShift of BitShift<u128> {
+    fn shl(x: u128, n: u128) -> u128 {
+        WideMul::wide_mul(x, pow(2, n)).low
+    }
+}
+
+pub impl U256BitShift of BitShift<u256> {
+    fn shl(x: u256, n: u256) -> u256 {
+        let (r, _) = x.overflowing_mul(pow(2, n));
+        r
+    }
 }
