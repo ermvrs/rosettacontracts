@@ -46,6 +46,9 @@ pub enum EVMTypes {
     Int64,
     Int128,
     Int256, // Decoded as i257 Because there is no i256 type in cairo. Closest is i257
+    //String, // Same as bytes
+    //Bytes,
+    // Also fixed bytes too
 }
 
 
