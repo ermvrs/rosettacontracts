@@ -151,8 +151,15 @@ impl EVMTypesImpl of AbiDecodeTrait {
 // each param element calls x.decode(param) and result appended to sn_calldata
 
 fn decode_bytes(ref ctx: EVMCalldata) -> Span<felt252> {
-    let (defer_offset, data_start_offset) = ctx.calldata.read_u256(ctx.offset); // We will move back to defer_offset after complete reading this dynamic type
-    ctx.offset = data_start_offset.try_into().unwrap(); // Data start offset has to be lower than u32 range. TODO: Add check?
+    let (defer_offset, data_start_offset) = ctx
+        .calldata
+        .read_u256(
+            ctx.offset
+        ); // We will move back to defer_offset after complete reading this dynamic type
+    ctx
+        .offset = data_start_offset
+        .try_into()
+        .unwrap(); // Data start offset has to be lower than u32 range. TODO: Add check?
     let (new_offset, items_length) = ctx.calldata.read_u256(ctx.offset); // length of bytes
     ctx.offset = new_offset;
 
@@ -172,12 +179,15 @@ fn decode_bytes(ref ctx: EVMCalldata) -> Span<felt252> {
     };
 
     // Append last bytes
-    if(last_slot_bytes > 0) {
+    if (last_slot_bytes > 0) {
         let (new_offset, last_slot) = ctx.calldata.read_u256(ctx.offset);
         ctx.offset = new_offset;
-    
+
         let last_word = U256BitShift::shr(last_slot, 256 - (last_slot_bytes * 8));
-        ba.append_word(last_word.try_into().unwrap(), last_slot_bytes.try_into().unwrap()); // We can assume try_into is safe because we shifted bits line above.
+        ba
+            .append_word(
+                last_word.try_into().unwrap(), last_slot_bytes.try_into().unwrap()
+            ); // We can assume try_into is safe because we shifted bits line above.
     }
     ctx.offset = defer_offset;
 
@@ -406,7 +416,9 @@ mod tests {
 
         let decoded = calldata.decode(array![EVMTypes::Bytes].span());
         assert_eq!(*decoded.at(0), 0x1);
-        assert_eq!(*decoded.at(1), 0xffffffffffffffffffaaaaaaaaaaaaaaaaaaafffffffffffffffffafafafaf);
+        assert_eq!(
+            *decoded.at(1), 0xffffffffffffffffffaaaaaaaaaaaaaaaaaaafffffffffffffffffafafafaf
+        );
         assert_eq!(*decoded.at(2), 0xfa);
         assert_eq!(*decoded.at(3), 0x1);
     }
@@ -438,7 +450,9 @@ mod tests {
 
         let decoded = calldata.decode(array![EVMTypes::Bytes].span());
         assert_eq!(*decoded.at(0), 0x1);
-        assert_eq!(*decoded.at(1), 0xffaabbffaabbffaabbffaabbffaabbffaabbffaabbffaabbffaabbffaabbff);
+        assert_eq!(
+            *decoded.at(1), 0xffaabbffaabbffaabbffaabbffaabbffaabbffaabbffaabbffaabbffaabbff
+        );
         assert_eq!(*decoded.at(2), 0xaabbffaabbffaabbffaabbffaabbffaabbffaabbffaabbffaabb);
         assert_eq!(*decoded.at(3), 0x1a);
     }
