@@ -21,6 +21,7 @@ pub trait BytesTrait {
     fn read_bytes(self: @Bytes, offset: usize, size: usize) -> (usize, Bytes);
     fn append_u32(ref self: Bytes, value: u32);
     fn append_u128(ref self: Bytes, value: u128);
+    fn append_u256(ref self: Bytes, value: u256);
     fn append_u128_packed(ref self: Bytes, value: u128, size: usize);
 }
 
@@ -160,6 +161,12 @@ impl BytesImpl of BytesTrait {
     #[inline(always)]
     fn append_u128(ref self: Bytes, value: u128) {
         self.append_u128_packed(value, 16)
+    }
+
+    #[inline(always)]
+    fn append_u256(ref self: Bytes, value: u256) {
+        self.append_u128(value.high);
+        self.append_u128(value.low);
     }
 
     fn append_u128_packed(ref self: Bytes, value: u128, size: usize) {
