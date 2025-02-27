@@ -1,5 +1,5 @@
 use core::ops::DivAssign;
-use core::num::traits::{OverflowingMul, WideMul };
+use core::num::traits::{OverflowingMul, WideMul};
 
 pub fn get_bit_at<
     T,

@@ -74,8 +74,8 @@ pub enum EVMTypes {
     Bytes31,
     Bytes32, // Decoded as serialized ByteArray
     //String, // Same as bytes
-    //Bytes,
-    // Also fixed bytes too
+//Bytes,
+// Also fixed bytes too
 
 }
 
@@ -134,7 +134,7 @@ impl EVMTypesImpl of AbiDecodeTrait {
                 EVMTypes::Bytes29 => { decode_fixed_bytes(ref self, 29_usize) },
                 EVMTypes::Bytes30 => { decode_fixed_bytes(ref self, 30_usize) },
                 EVMTypes::Bytes31 => { decode_fixed_bytes(ref self, 31_usize) },
-                EVMTypes::Bytes32 => { decode_bytes_32(ref self) }, 
+                EVMTypes::Bytes32 => { decode_bytes_32(ref self) },
             };
             decoded.append_span(decoded_type);
         };
@@ -380,7 +380,9 @@ mod tests {
 
         let decoded = calldata.decode(array![EVMTypes::Bytes32].span());
         assert_eq!(*decoded.at(0), 0x1);
-        assert_eq!(*decoded.at(1), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
+        assert_eq!(
+            *decoded.at(1), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+        );
         assert_eq!(*decoded.at(2), 0xff);
         assert_eq!(*decoded.at(3), 0x1);
     }
@@ -404,7 +406,9 @@ mod tests {
         let mut calldata = cd(data);
 
         let decoded = calldata.decode(array![EVMTypes::Bytes31].span());
-        assert_eq!(*decoded.at(0), 0xff220000000000000000000000000000000000000000000000000000000000);
+        assert_eq!(
+            *decoded.at(0), 0xff220000000000000000000000000000000000000000000000000000000000
+        );
     }
 
     #[test]
