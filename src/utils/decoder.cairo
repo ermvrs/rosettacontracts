@@ -75,7 +75,7 @@ pub enum EVMTypes {
     Bytes31,
     Bytes32, // Decoded as serialized ByteArray
     Bytes,
-    //String, // Same as bytes
+    String, // Same as bytes
 // Also fixed bytes too
 
 }
@@ -137,6 +137,7 @@ impl EVMTypesImpl of AbiDecodeTrait {
                 EVMTypes::Bytes31 => { decode_fixed_bytes(ref self, 31_usize) },
                 EVMTypes::Bytes32 => { decode_bytes_32(ref self) },
                 EVMTypes::Bytes => { decode_bytes(ref self) },
+                EVMTypes::String => { decode_bytes(ref self) },
             };
             decoded.append_span(decoded_type);
         };
