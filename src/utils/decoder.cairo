@@ -2,6 +2,7 @@ use crate::utils::bytes::{Bytes, BytesTrait};
 use crate::utils::bits::{get_bit_at, U256BitShift};
 use crate::constants::{FELT252_MAX};
 use core::num::traits::Bounded;
+use core::traits::{DivRem};
 
 #[derive(Serde, Copy, Drop)]
 pub struct i257 {
@@ -73,8 +74,8 @@ pub enum EVMTypes {
     Bytes30,
     Bytes31,
     Bytes32, // Decoded as serialized ByteArray
+    Bytes,
     //String, // Same as bytes
-//Bytes,
 // Also fixed bytes too
 
 }
@@ -135,6 +136,7 @@ impl EVMTypesImpl of AbiDecodeTrait {
                 EVMTypes::Bytes30 => { decode_fixed_bytes(ref self, 30_usize) },
                 EVMTypes::Bytes31 => { decode_fixed_bytes(ref self, 31_usize) },
                 EVMTypes::Bytes32 => { decode_bytes_32(ref self) },
+                EVMTypes::Bytes => { decode_bytes(ref self) },
             };
             decoded.append_span(decoded_type);
         };
@@ -147,6 +149,42 @@ impl EVMTypesImpl of AbiDecodeTrait {
 // let x = EVMCalldata { calldata: ByteArray of evm calldata, offset: 0};
 // let params_list = array xxx
 // each param element calls x.decode(param) and result appended to sn_calldata
+
+fn decode_bytes(ref ctx: EVMCalldata) -> Span<felt252> {
+    let (defer_offset, data_start_offset) = ctx.calldata.read_u256(ctx.offset); // We will move back to defer_offset after complete reading this dynamic type
+    ctx.offset = data_start_offset.try_into().unwrap(); // Data start offset has to be lower than u32 range. TODO: Add check?
+    let (new_offset, items_length) = ctx.calldata.read_u256(ctx.offset); // length of bytes
+    ctx.offset = new_offset;
+
+    let mut ba: ByteArray = Default::default();
+
+    let (slot_count, last_slot_bytes) = DivRem::<u256>::div_rem(items_length, 32);
+
+    let mut curr_slot_idx = 0;
+    while curr_slot_idx < slot_count {
+        let (new_offset, current_slot) = ctx.calldata.read_u256(ctx.offset);
+        ctx.offset = new_offset;
+
+        ba.append_word(current_slot.high.into(), 16);
+        ba.append_word(current_slot.low.into(), 16);
+
+        curr_slot_idx += 1;
+    };
+
+    // Append last bytes
+    if(last_slot_bytes > 0) {
+        let (new_offset, last_slot) = ctx.calldata.read_u256(ctx.offset);
+        ctx.offset = new_offset;
+    
+        let last_word = U256BitShift::shr(last_slot, 256 - (last_slot_bytes * 8));
+        ba.append_word(last_word.try_into().unwrap(), last_slot_bytes.try_into().unwrap()); // We can assume try_into is safe because we shifted bits line above.
+    }
+    ctx.offset = defer_offset;
+
+    let mut serialized = array![];
+    ba.serialize(ref serialized);
+    serialized.span()
+}
 
 #[inline(always)]
 fn decode_bytes_32(ref ctx: EVMCalldata) -> Span<felt252> {
@@ -355,6 +393,54 @@ mod tests {
 
     fn cd(mut data: Bytes) -> EVMCalldata {
         EVMCalldata { offset: 0_usize, calldata: data }
+    }
+
+    #[test]
+    fn test_decode_bytes_one_full_slot() {
+        let mut data: Bytes = BytesTrait::blank();
+
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000020);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000020);
+        data.append_u256(0xffffffffffffffffffaaaaaaaaaaaaaaaaaaafffffffffffffffffafafafaffa);
+        let mut calldata = cd(data);
+
+        let decoded = calldata.decode(array![EVMTypes::Bytes].span());
+        assert_eq!(*decoded.at(0), 0x1);
+        assert_eq!(*decoded.at(1), 0xffffffffffffffffffaaaaaaaaaaaaaaaaaaafffffffffffffffffafafafaf);
+        assert_eq!(*decoded.at(2), 0xfa);
+        assert_eq!(*decoded.at(3), 0x1);
+    }
+
+    #[test]
+    fn test_decode_bytes_one_slot() {
+        let mut data: Bytes = BytesTrait::blank();
+
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000020);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000003);
+        data.append_u256(0xffaabb0000000000000000000000000000000000000000000000000000000000);
+        let mut calldata = cd(data);
+
+        let decoded = calldata.decode(array![EVMTypes::Bytes].span());
+        assert_eq!(*decoded.at(0), 0x0);
+        assert_eq!(*decoded.at(1), 0xffaabb);
+        assert_eq!(*decoded.at(2), 0x3);
+    }
+
+    #[test]
+    fn test_decode_bytes() {
+        let mut data: Bytes = BytesTrait::blank();
+
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000020);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000039);
+        data.append_u256(0xffaabbffaabbffaabbffaabbffaabbffaabbffaabbffaabbffaabbffaabbffaa);
+        data.append_u256(0xbbffaabbffaabbffaabbffaabbffaabbffaabbffaabbffaabb00000000000000);
+        let mut calldata = cd(data);
+
+        let decoded = calldata.decode(array![EVMTypes::Bytes].span());
+        assert_eq!(*decoded.at(0), 0x1);
+        assert_eq!(*decoded.at(1), 0xffaabbffaabbffaabbffaabbffaabbffaabbffaabbffaabbffaabbffaabbff);
+        assert_eq!(*decoded.at(2), 0xaabbffaabbffaabbffaabbffaabbffaabbffaabbffaabbffaabb);
+        assert_eq!(*decoded.at(3), 0x1a);
     }
 
     #[test]
