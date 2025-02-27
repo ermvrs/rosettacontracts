@@ -16,7 +16,9 @@ pub struct EVMCalldata {
 }
 
 pub trait AbiDecodeTrait {
-    fn decode(ref self: EVMCalldata, types: Span<EVMTypes>) -> Span<felt252>; // Returns span of felt252 which directly will be passed to call_syscall
+    fn decode(
+        ref self: EVMCalldata, types: Span<EVMTypes>
+    ) -> Span<felt252>; // Returns span of felt252 which directly will be passed to call_syscall
 }
 
 pub enum DecodingMethod {
@@ -32,7 +34,7 @@ pub enum EVMTypes {
     FunctionSignature,
     Address,
     Bool,
-    Uint8, 
+    Uint8,
     Uint16,
     Uint32,
     Uint64,
@@ -72,7 +74,6 @@ impl EVMTypesImpl of AbiDecodeTrait {
                 EVMTypes::Int256 => { decode_int256(ref self) }
             };
             decoded.append_span(decoded_type);
-
         };
 
         decoded.span()
@@ -158,10 +159,10 @@ fn decode_int8(ref ctx: EVMCalldata) -> Span<felt252> {
     ctx.offset = new_offset;
 
     let msb: bool = get_bit_at(value, 255);
-    if(msb) {
+    if (msb) {
         let u256_max: u256 = Bounded::MAX;
         let value = (u256_max - value) + 1; // Absolute value
-    
+
         let sn_value = FELT252_MAX.into() - value + 1;
 
         array![sn_value.try_into().unwrap()].span()
@@ -176,10 +177,10 @@ fn decode_int16(ref ctx: EVMCalldata) -> Span<felt252> {
     ctx.offset = new_offset;
 
     let msb: bool = get_bit_at(value, 255);
-    if(msb) {
+    if (msb) {
         let u256_max: u256 = Bounded::MAX;
         let value = (u256_max - value) + 1; // Absolute value
-    
+
         let sn_value = FELT252_MAX.into() - value + 1;
 
         array![sn_value.try_into().unwrap()].span()
@@ -194,10 +195,10 @@ fn decode_int32(ref ctx: EVMCalldata) -> Span<felt252> {
     ctx.offset = new_offset;
 
     let msb: bool = get_bit_at(value, 255);
-    if(msb) {
+    if (msb) {
         let u256_max: u256 = Bounded::MAX;
         let value = (u256_max - value) + 1; // Absolute value
-    
+
         let sn_value = FELT252_MAX.into() - value + 1;
 
         array![sn_value.try_into().unwrap()].span()
@@ -212,10 +213,10 @@ fn decode_int64(ref ctx: EVMCalldata) -> Span<felt252> {
     ctx.offset = new_offset;
 
     let msb: bool = get_bit_at(value, 255);
-    if(msb) {
+    if (msb) {
         let u256_max: u256 = Bounded::MAX;
         let value = (u256_max - value) + 1; // Absolute value
-    
+
         let sn_value = FELT252_MAX.into() - value + 1;
 
         array![sn_value.try_into().unwrap()].span()
@@ -230,10 +231,10 @@ fn decode_int128(ref ctx: EVMCalldata) -> Span<felt252> {
     ctx.offset = new_offset;
 
     let msb: bool = get_bit_at(value, 255);
-    if(msb) {
+    if (msb) {
         let u256_max: u256 = Bounded::MAX;
         let value = (u256_max - value) + 1; // Absolute value
-    
+
         let sn_value = FELT252_MAX.into() - value + 1;
 
         array![sn_value.try_into().unwrap()].span()
@@ -247,12 +248,12 @@ fn decode_int256(ref ctx: EVMCalldata) -> Span<felt252> {
     let (new_offset, value) = ctx.calldata.read_u256(ctx.offset);
     ctx.offset = new_offset;
 
-    if(value == 0) {
+    if (value == 0) {
         return array![0x0, 0x0, 0x0].span();
     }
     let msb: bool = get_bit_at(value, 255); // TBD
 
-    if(msb) {
+    if (msb) {
         let u256_max: u256 = Bounded::MAX;
         let value = (u256_max - value) + 1; // Because zero is msb == false
         return array![value.low.into(), value.high.into(), msb.into()].span();
@@ -262,17 +263,13 @@ fn decode_int256(ref ctx: EVMCalldata) -> Span<felt252> {
 }
 
 
-
 #[cfg(test)]
-mod tests { 
+mod tests {
     use crate::utils::decoder::{EVMCalldata, EVMTypesImpl, EVMTypes};
     use crate::utils::bytes::{Bytes, BytesTrait};
 
     fn cd(mut data: Bytes) -> EVMCalldata {
-        EVMCalldata {
-            offset: 0_usize,
-            calldata: data
-        }
+        EVMCalldata { offset: 0_usize, calldata: data }
     }
 
     #[test]
