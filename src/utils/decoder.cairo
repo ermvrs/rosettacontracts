@@ -23,12 +23,12 @@ pub trait AbiDecodeTrait {
 }
 
 // Tuples can be decoded like basic types in order
-#[derive(Drop, Serde)]
+#[derive(Copy, Drop, Serde)]
 pub enum EVMTypes {
-    //Tuple: Span<EVMTypes>,
-    //Array: Span<EVMTypes>,
-    FunctionSignature,
-    Address,
+    Tuple: Span<EVMTypes>,
+    Array: Span<EVMTypes>,
+    FunctionSignature, // RM bytes4 can be used
+    Address, // TODO
     Bool,
     Uint8,
     Uint16,
@@ -76,7 +76,7 @@ pub enum EVMTypes {
     Bytes32, // Decoded as serialized ByteArray
     Bytes,
     String, // Same as bytes
-// Also fixed bytes too
+    // Also fixed bytes too
 
 }
 // calldata.decode(array![EVMTypes::Address, EVMTypes::Address, EVMTypes::Uint256])
@@ -87,8 +87,8 @@ impl EVMTypesImpl of AbiDecodeTrait {
 
         for evm_type in types {
             let decoded_type = match evm_type {
-                //EVMTypes::Tuple(tuple_types) => { self.decode(*tuple_types) },
-                //EVMTypes::Array(array_types) => {decode_address(ref self)},
+                EVMTypes::Tuple(tuple_types) => { self.decode(*tuple_types) },
+                EVMTypes::Array(array_types) => { decode_array(ref self, *array_types) },
                 EVMTypes::FunctionSignature => { decode_function_signature(ref self) },
                 EVMTypes::Address => { decode_address(ref self) },
                 EVMTypes::Bool => { decode_bool(ref self) },
@@ -150,6 +150,24 @@ impl EVMTypesImpl of AbiDecodeTrait {
 // let x = EVMCalldata { calldata: ByteArray of evm calldata, offset: 0};
 // let params_list = array xxx
 // each param element calls x.decode(param) and result appended to sn_calldata
+
+fn decode_array(ref ctx: EVMCalldata, types: Span<EVMTypes>) -> Span<felt252> {
+    let (defer_offset, data_start_offset) = ctx.calldata.read_u256(ctx.offset);
+    ctx.offset = data_start_offset.try_into().unwrap(); // Move to where array length begins
+
+    let (new_offset, items_length) = ctx.calldata.read_u256(ctx.offset);
+    ctx.offset = new_offset;
+
+    let mut decoded = array![items_length.try_into().unwrap()];
+    let mut item_idx = 0;
+    while item_idx < items_length {
+        let decoded_inner_type = ctx.decode(types);
+        decoded.append_span(decoded_inner_type);
+        item_idx += 1;
+    };
+    ctx.offset = defer_offset;
+    decoded.span()
+}
 
 fn decode_bytes(ref ctx: EVMCalldata) -> Span<felt252> {
     let (defer_offset, data_start_offset) = ctx
@@ -217,10 +235,6 @@ fn decode_fixed_bytes(ref ctx: EVMCalldata, size: usize) -> Span<felt252> {
     let value = U256BitShift::shr(value, ((32_usize - size) * 8).into());
 
     array![value.try_into().unwrap()].span()
-}
-
-fn decode_tuple(ref ctx: EVMCalldata, types: Span<EVMTypes>) -> Span<felt252> {
-    ctx.decode(types)
 }
 
 #[inline(always)]
@@ -407,8 +421,145 @@ mod tests {
     }
 
     #[test]
-    fn test_int128_neg() {
-        
+    fn test_decode_complex() {
+        let mut data: Bytes = BytesTrait::blank();
+
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000080);
+        data.append_u256(0x0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
+        data.append_u256(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff40e5);
+        data.append_u256(0x00000000000000000000000000000000000000000000000000000000000000c0);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000005);
+        data.append_u256(0x00bbffaa00000000000000000000000000000000000000000000000000000000);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000002);
+        data.append_u256(0x000000000000000000000000000000000000000000000000000000000000006f);
+        data.append_u256(0x00000000000000000000000000000000000000000000000000000000000000de);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000309);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000378);
+
+        let mut calldata = cd(data);
+
+        let decoded = calldata
+            .decode(
+                array![
+                    EVMTypes::Bytes,
+                    EVMTypes::Uint256,
+                    EVMTypes::Int128,
+                    EVMTypes::Array(
+                        array![EVMTypes::Tuple(array![EVMTypes::Uint128, EVMTypes::Uint128].span())]
+                            .span()
+                    )
+                ]
+                    .span()
+            );
+
+        assert_eq!(*decoded.at(0), 0x0);
+        assert_eq!(*decoded.at(1), 0x00bbffaa00);
+        assert_eq!(*decoded.at(2), 0x5); // Bytes len
+        assert_eq!(*decoded.at(3), 0xffffffffffffffffffffffffffffffff); // Uint256
+        assert_eq!(*decoded.at(4), 0xffffffffffffffffffffffffffff);
+        assert_eq!(*decoded.at(5), -48923); // Int128
+        assert_eq!(*decoded.at(6), 0x2); // Arr len
+        assert_eq!(*decoded.at(7), 111);
+        assert_eq!(*decoded.at(8), 222);
+        assert_eq!(*decoded.at(9), 777);
+        assert_eq!(*decoded.at(10), 888);
+    }
+
+    #[test]
+    fn test_decode_array_of_struct() {
+        let mut data: Bytes = BytesTrait::blank();
+
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000020);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000003);
+        data.append_u256(0x000000000000000000000000000000000000000000000000000000000000000b);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000016);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000001618);
+        data.append_u256(0x000000000000000000000000000000000000000000000000000000000000036f);
+        data.append_u256(0x000000000000000000000000000000000000000000000000000000e8d4a50fff);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000989680);
+
+        let mut calldata = cd(data);
+
+        let decoded = calldata
+            .decode(
+                array![
+                    EVMTypes::Array(
+                        array![EVMTypes::Tuple(array![EVMTypes::Uint128, EVMTypes::Uint128].span())]
+                            .span()
+                    )
+                ]
+                    .span()
+            );
+        assert_eq!(*decoded.at(0), 0x3);
+        assert_eq!(*decoded.at(1), 0xb);
+        assert_eq!(*decoded.at(2), 0x16);
+        assert_eq!(*decoded.at(3), 0x1618);
+        assert_eq!(*decoded.at(4), 0x36f);
+        assert_eq!(*decoded.at(5), 0xe8d4a50fff);
+        assert_eq!(*decoded.at(6), 0x989680);
+    }
+
+    #[test]
+    fn test_decode_array_uint128s() {
+        let mut data: Bytes = BytesTrait::blank();
+
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000020);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000003);
+        data.append_u256(0x00000000000000000000000000000000000000000000000000000000000001bd);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000016462);
+        data.append_u256(0x000000000000000000000000000000000000000000000000000000001a6e41e3);
+
+        let mut calldata = cd(data);
+
+        let decoded = calldata
+            .decode(array![EVMTypes::Array(array![EVMTypes::Uint128].span())].span());
+
+        assert_eq!(*decoded.at(0), 0x3);
+        assert_eq!(*decoded.at(1), 0x1bd);
+        assert_eq!(*decoded.at(2), 0x16462);
+        assert_eq!(*decoded.at(3), 0x1a6e41e3);
+    }
+
+    #[test]
+    fn test_decode_tuple_of_two() {
+        let mut data: Bytes = BytesTrait::blank();
+
+        data.append_u256(0x000000000000000000000000000000000000000000000000000000000000007b);
+        data.append_u256(0x000000000000000000000000000000000000000000000000000000000000022b);
+
+        let mut calldata = cd(data);
+
+        let decoded = calldata
+            .decode(
+                array![EVMTypes::Tuple(array![EVMTypes::Uint128, EVMTypes::Uint128].span())].span()
+            );
+
+        assert_eq!(*decoded.at(0), 0x7b);
+        assert_eq!(*decoded.at(1), 0x22b);
+    }
+
+    #[test]
+    fn test_decode_tuple_of_two_uint256() {
+        let mut data: Bytes = BytesTrait::blank();
+
+        data.append_u256(0x000000000000000000000000000000000000000000000000000000000000007b);
+        data.append_u256(0x000000000000000000000000000000000000000000000000000000000000022b);
+
+        let mut calldata = cd(data);
+
+        let decoded = calldata
+            .decode(
+                array![EVMTypes::Tuple(array![EVMTypes::Uint256, EVMTypes::Uint256].span())].span()
+            );
+
+        assert_eq!(*decoded.at(0), 0x7b);
+        assert_eq!(*decoded.at(1), 0x0);
+        assert_eq!(*decoded.at(2), 0x22b);
+        assert_eq!(*decoded.at(3), 0x0);
+    }
+
+    #[test]
+    fn test_decode_int128_neg() {
         let mut data: Bytes = BytesTrait::blank();
 
         data.append_u256(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff80);
@@ -419,7 +570,7 @@ mod tests {
     }
 
     #[test]
-    fn test_multi_uint256() {
+    fn test_decode_multi_uint256() {
         let mut data: Bytes = BytesTrait::blank();
 
         data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000020);
@@ -433,7 +584,7 @@ mod tests {
     }
 
     #[test]
-    fn test_multi_uint128() {
+    fn test_decode_multi_uint128() {
         let mut data: Bytes = BytesTrait::blank();
 
         data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000020);
