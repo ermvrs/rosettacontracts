@@ -79,7 +79,7 @@ pub enum EVMTypes {
 // Also fixed bytes too
 
 }
-
+// calldata.decode(array![EVMTypes::Address, EVMTypes::Address, EVMTypes::Uint256])
 
 impl EVMTypesImpl of AbiDecodeTrait {
     fn decode(ref self: EVMCalldata, types: Span<EVMTypes>) -> Span<felt252> {
@@ -404,6 +404,45 @@ mod tests {
 
     fn cd(mut data: Bytes) -> EVMCalldata {
         EVMCalldata { offset: 0_usize, calldata: data }
+    }
+
+    #[test]
+    fn test_int128_neg() {
+        
+        let mut data: Bytes = BytesTrait::blank();
+
+        data.append_u256(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff80);
+        let mut calldata = cd(data);
+
+        let decoded = calldata.decode(array![EVMTypes::Int128].span());
+        assert_eq!(*decoded.at(0), -128);
+    }
+
+    #[test]
+    fn test_multi_uint256() {
+        let mut data: Bytes = BytesTrait::blank();
+
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000020);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000044);
+        let mut calldata = cd(data);
+
+        let decoded = calldata.decode(array![EVMTypes::Uint256, EVMTypes::Uint128].span());
+        assert_eq!(*decoded.at(0), 0x20);
+        assert_eq!(*decoded.at(1), 0x0);
+        assert_eq!(*decoded.at(2), 0x44);
+    }
+
+    #[test]
+    fn test_multi_uint128() {
+        let mut data: Bytes = BytesTrait::blank();
+
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000020);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000044);
+        let mut calldata = cd(data);
+
+        let decoded = calldata.decode(array![EVMTypes::Uint128, EVMTypes::Uint128].span());
+        assert_eq!(*decoded.at(0), 0x20);
+        assert_eq!(*decoded.at(1), 0x44);
     }
 
     #[test]
