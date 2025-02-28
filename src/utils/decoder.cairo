@@ -252,17 +252,16 @@ impl EVMTypesImpl of AbiDecodeTrait {
 // let x = EVMCalldata { calldata: ByteArray of evm calldata, offset: 0};
 // let params_list = array xxx
 // each param element calls x.decode(param) and result appended to sn_calldata
-
+// Array -> Tuple -> Array -> Uint128
+// ctx: 0, 0x40 -> no chg -> read(0x40) = 0x40
 fn decode_array(ref ctx: EVMCalldata, types: Span<EVMTypes>) -> Span<felt252> {
     let (defer_offset, data_start_offset) = ctx.calldata.read_u256(ctx.offset);
     ctx.offset = data_start_offset.try_into().unwrap(); // Move to where array length begins
-    ctx.relative_offset = ctx.relative_offset + data_start_offset.try_into().unwrap();
 
-    println!("Relative offset: {}", ctx.relative_offset);
-
-    let (new_offset, items_length) = ctx.calldata.read_u256(ctx.relative_offset);
+    let (new_offset, items_length) = ctx.calldata.read_u256(ctx.offset);
     ctx.offset = new_offset;
-
+    // Todo: We may check if type is dynamic or not??
+    // Dynamic types points to new data start point instead of length
     let mut decoded = array![items_length.try_into().unwrap()];
     let mut item_idx = 0;
     while item_idx < items_length {
