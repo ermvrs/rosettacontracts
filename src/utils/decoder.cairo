@@ -32,15 +32,67 @@ pub enum EVMTypes {
     Bool,
     Uint8,
     Uint16,
+    Uint24,
     Uint32,
+    Uint40,
+    Uint48,
+    Uint56,
     Uint64,
+    Uint72,
+    Uint80,
+    Uint88,
+    Uint96,
+    Uint104,
+    Uint112,
+    Uint120,
     Uint128,
+    Uint136,
+    Uint144,
+    Uint152,
+    Uint160,
+    Uint168,
+    Uint176,
+    Uint184,
+    Uint192,
+    Uint200,
+    Uint208,
+    Uint216,
+    Uint224,
+    Uint232,
+    Uint240,
+    Uint248,
     Uint256,
     Int8,
     Int16,
+    Int24,
     Int32,
+    Int40,
+    Int48,
+    Int56,
     Int64,
+    Int72,
+    Int80,
+    Int88,
+    Int96,
+    Int104,
+    Int112,
+    Int120,
     Int128,
+    Int136,
+    Int144,
+    Int152,
+    Int160,
+    Int168,
+    Int176,
+    Int184,
+    Int192,
+    Int200,
+    Int208,
+    Int216,
+    Int224,
+    Int232,
+    Int240,
+    Int248,
     Int256, // Decoded as i257 Because there is no i256 type in cairo. Closest is i257
     Bytes1,
     Bytes2,
@@ -76,10 +128,7 @@ pub enum EVMTypes {
     Bytes32, // Decoded as serialized ByteArray
     Bytes,
     String, // Same as bytes
-    // Also fixed bytes too
-
 }
-// calldata.decode(array![EVMTypes::Address, EVMTypes::Address, EVMTypes::Uint256])
 
 impl EVMTypesImpl of AbiDecodeTrait {
     fn decode(ref self: EVMCalldata, types: Span<EVMTypes>) -> Span<felt252> {
@@ -92,17 +141,69 @@ impl EVMTypesImpl of AbiDecodeTrait {
                 EVMTypes::FunctionSignature => { decode_function_signature(ref self) },
                 EVMTypes::Address => { decode_address(ref self) },
                 EVMTypes::Bool => { decode_bool(ref self) },
-                EVMTypes::Uint8 => { decode_uint8(ref self) },
-                EVMTypes::Uint16 => { decode_uint16(ref self) },
-                EVMTypes::Uint32 => { decode_uint32(ref self) },
-                EVMTypes::Uint64 => { decode_uint64(ref self) },
-                EVMTypes::Uint128 => { decode_uint128(ref self) },
+                EVMTypes::Uint8 => { decode_uint(ref self, 8_u32) },
+                EVMTypes::Uint16 => { decode_uint(ref self, 16_u32) },
+                EVMTypes::Uint24 => { decode_uint(ref self, 24_u32) },
+                EVMTypes::Uint32 => { decode_uint(ref self, 32_u32) },
+                EVMTypes::Uint40 => { decode_uint(ref self, 40_u32) },
+                EVMTypes::Uint48 => { decode_uint(ref self, 48_u32) },
+                EVMTypes::Uint56 => { decode_uint(ref self, 56_u32) },
+                EVMTypes::Uint64 => { decode_uint(ref self, 64_u32) },
+                EVMTypes::Uint72 => { decode_uint(ref self, 72_u32) },
+                EVMTypes::Uint80 => { decode_uint(ref self, 80_u32) },
+                EVMTypes::Uint88 => { decode_uint(ref self, 88_u32) },
+                EVMTypes::Uint96 => { decode_uint(ref self, 96_u32) },
+                EVMTypes::Uint104 => { decode_uint(ref self, 104_u32) },
+                EVMTypes::Uint112 => { decode_uint(ref self, 112_u32) },
+                EVMTypes::Uint120 => { decode_uint(ref self, 120_u32) },
+                EVMTypes::Uint128 => { decode_uint(ref self, 128_u32) },
+                EVMTypes::Uint136 => { decode_uint(ref self, 136_u32) },
+                EVMTypes::Uint144 => { decode_uint(ref self, 144_u32) },
+                EVMTypes::Uint152 => { decode_uint(ref self, 152_u32) },
+                EVMTypes::Uint160 => { decode_uint(ref self, 160_u32) },
+                EVMTypes::Uint168 => { decode_uint(ref self, 168_u32) },
+                EVMTypes::Uint176 => { decode_uint(ref self, 176_u32) },
+                EVMTypes::Uint184 => { decode_uint(ref self, 184_u32) },
+                EVMTypes::Uint192 => { decode_uint(ref self, 192_u32) },
+                EVMTypes::Uint200 => { decode_uint(ref self, 200_u32) },
+                EVMTypes::Uint208 => { decode_uint(ref self, 208_u32) },
+                EVMTypes::Uint216 => { decode_uint(ref self, 216_u32) },
+                EVMTypes::Uint224 => { decode_uint(ref self, 224_u32) },
+                EVMTypes::Uint232 => { decode_uint(ref self, 232_u32) },
+                EVMTypes::Uint240 => { decode_uint(ref self, 240_u32) },
+                EVMTypes::Uint248 => { decode_uint(ref self, 248_u32) },
                 EVMTypes::Uint256 => { decode_uint256(ref self) },
-                EVMTypes::Int8 => { decode_int8(ref self) },
-                EVMTypes::Int16 => { decode_int16(ref self) },
-                EVMTypes::Int32 => { decode_int32(ref self) },
-                EVMTypes::Int64 => { decode_int64(ref self) },
-                EVMTypes::Int128 => { decode_int128(ref self) },
+                EVMTypes::Int8 => { decode_int(ref self, 8_u32) },
+                EVMTypes::Int16 => { decode_int(ref self, 16_u32) },
+                EVMTypes::Int24 => { decode_int(ref self, 24_u32) },
+                EVMTypes::Int32 => { decode_int(ref self, 32_u32) },
+                EVMTypes::Int40 => { decode_int(ref self, 40_u32) },
+                EVMTypes::Int48 => { decode_int(ref self, 48_u32) },
+                EVMTypes::Int56 => { decode_int(ref self, 56_u32) },
+                EVMTypes::Int64 => { decode_int(ref self, 64_u32) },
+                EVMTypes::Int72 => { decode_int(ref self, 72_u32) },
+                EVMTypes::Int80 => { decode_int(ref self, 80_u32) },
+                EVMTypes::Int88 => { decode_int(ref self, 88_u32) },
+                EVMTypes::Int96 => { decode_int(ref self, 96_u32) },
+                EVMTypes::Int104 => { decode_int(ref self, 104_u32) },
+                EVMTypes::Int112 => { decode_int(ref self, 112_u32) },
+                EVMTypes::Int120 => { decode_int(ref self, 120_u32) },
+                EVMTypes::Int128 => { decode_int(ref self, 128_u32) },
+                EVMTypes::Int136 => { decode_int(ref self, 136_u32) },
+                EVMTypes::Int144 => { decode_int(ref self, 144_u32) },
+                EVMTypes::Int152 => { decode_int(ref self, 152_u32) },
+                EVMTypes::Int160 => { decode_int(ref self, 160_u32) },
+                EVMTypes::Int168 => { decode_int(ref self, 168_u32) },
+                EVMTypes::Int176 => { decode_int(ref self, 176_u32) },
+                EVMTypes::Int184 => { decode_int(ref self, 184_u32) },
+                EVMTypes::Int192 => { decode_int(ref self, 192_u32) },
+                EVMTypes::Int200 => { decode_int(ref self, 200_u32) },
+                EVMTypes::Int208 => { decode_int(ref self, 208_u32) },
+                EVMTypes::Int216 => { decode_int(ref self, 216_u32) },
+                EVMTypes::Int224 => { decode_int(ref self, 224_u32) },
+                EVMTypes::Int232 => { decode_int(ref self, 232_u32) },
+                EVMTypes::Int240 => { decode_int(ref self, 240_u32) },
+                EVMTypes::Int248 => { decode_int(ref self, 248_u32) },
                 EVMTypes::Int256 => { decode_int256(ref self) },
                 EVMTypes::Bytes1 => { decode_fixed_bytes(ref self, 1_usize) },
                 EVMTypes::Bytes2 => { decode_fixed_bytes(ref self, 2_usize) },
@@ -258,38 +359,30 @@ fn decode_bool(ref ctx: EVMCalldata) -> Span<felt252> {
 }
 
 #[inline(always)]
-fn decode_uint8(ref ctx: EVMCalldata) -> Span<felt252> {
+fn decode_uint(ref ctx: EVMCalldata, size: u32) -> Span<felt252> {
+    // TODO: maybe range check with size?
     let (new_offset, value) = ctx.calldata.read_u256(ctx.offset);
     ctx.offset = new_offset;
     array![value.try_into().unwrap()].span()
 }
 
 #[inline(always)]
-fn decode_uint16(ref ctx: EVMCalldata) -> Span<felt252> {
+fn decode_int(ref ctx: EVMCalldata, size: u32) -> Span<felt252> {
+    // Todo: add range checks maybe??
     let (new_offset, value) = ctx.calldata.read_u256(ctx.offset);
     ctx.offset = new_offset;
-    array![value.try_into().unwrap()].span()
-}
 
-#[inline(always)]
-fn decode_uint32(ref ctx: EVMCalldata) -> Span<felt252> {
-    let (new_offset, value) = ctx.calldata.read_u256(ctx.offset);
-    ctx.offset = new_offset;
-    array![value.try_into().unwrap()].span()
-}
+    let msb: bool = get_bit_at(value, 255);
+    if (msb) {
+        let u256_max: u256 = Bounded::MAX;
+        let value = (u256_max - value) + 1; // Absolute value
 
-#[inline(always)]
-fn decode_uint64(ref ctx: EVMCalldata) -> Span<felt252> {
-    let (new_offset, value) = ctx.calldata.read_u256(ctx.offset);
-    ctx.offset = new_offset;
-    array![value.try_into().unwrap()].span()
-}
+        let sn_value = FELT252_MAX.into() - value + 1;
 
-#[inline(always)]
-fn decode_uint128(ref ctx: EVMCalldata) -> Span<felt252> {
-    let (new_offset, value) = ctx.calldata.read_u256(ctx.offset);
-    ctx.offset = new_offset;
-    array![value.try_into().unwrap()].span()
+        array![sn_value.try_into().unwrap()].span()
+    } else {
+        array![value.try_into().unwrap()].span()
+    }
 }
 
 #[inline(always)]
@@ -297,98 +390,6 @@ fn decode_uint256(ref ctx: EVMCalldata) -> Span<felt252> {
     let (new_offset, value) = ctx.calldata.read_u256(ctx.offset);
     ctx.offset = new_offset;
     array![value.low.into(), value.high.into()].span()
-}
-
-//TODO: int8 to int 128 functions have same functionility. But they are seperated
-// Because we may add range checks later
-#[inline(always)]
-fn decode_int8(ref ctx: EVMCalldata) -> Span<felt252> {
-    let (new_offset, value) = ctx.calldata.read_u256(ctx.offset);
-    ctx.offset = new_offset;
-
-    let msb: bool = get_bit_at(value, 255);
-    if (msb) {
-        let u256_max: u256 = Bounded::MAX;
-        let value = (u256_max - value) + 1; // Absolute value
-
-        let sn_value = FELT252_MAX.into() - value + 1;
-
-        array![sn_value.try_into().unwrap()].span()
-    } else {
-        array![value.try_into().unwrap()].span()
-    }
-}
-
-#[inline(always)]
-fn decode_int16(ref ctx: EVMCalldata) -> Span<felt252> {
-    let (new_offset, value) = ctx.calldata.read_u256(ctx.offset);
-    ctx.offset = new_offset;
-
-    let msb: bool = get_bit_at(value, 255);
-    if (msb) {
-        let u256_max: u256 = Bounded::MAX;
-        let value = (u256_max - value) + 1; // Absolute value
-
-        let sn_value = FELT252_MAX.into() - value + 1;
-
-        array![sn_value.try_into().unwrap()].span()
-    } else {
-        array![value.try_into().unwrap()].span()
-    }
-}
-
-#[inline(always)]
-fn decode_int32(ref ctx: EVMCalldata) -> Span<felt252> {
-    let (new_offset, value) = ctx.calldata.read_u256(ctx.offset);
-    ctx.offset = new_offset;
-
-    let msb: bool = get_bit_at(value, 255);
-    if (msb) {
-        let u256_max: u256 = Bounded::MAX;
-        let value = (u256_max - value) + 1; // Absolute value
-
-        let sn_value = FELT252_MAX.into() - value + 1;
-
-        array![sn_value.try_into().unwrap()].span()
-    } else {
-        array![value.try_into().unwrap()].span()
-    }
-}
-
-#[inline(always)]
-fn decode_int64(ref ctx: EVMCalldata) -> Span<felt252> {
-    let (new_offset, value) = ctx.calldata.read_u256(ctx.offset);
-    ctx.offset = new_offset;
-
-    let msb: bool = get_bit_at(value, 255);
-    if (msb) {
-        let u256_max: u256 = Bounded::MAX;
-        let value = (u256_max - value) + 1; // Absolute value
-
-        let sn_value = FELT252_MAX.into() - value + 1;
-
-        array![sn_value.try_into().unwrap()].span()
-    } else {
-        array![value.try_into().unwrap()].span()
-    }
-}
-
-#[inline(always)]
-fn decode_int128(ref ctx: EVMCalldata) -> Span<felt252> {
-    let (new_offset, value) = ctx.calldata.read_u256(ctx.offset);
-    ctx.offset = new_offset;
-
-    let msb: bool = get_bit_at(value, 255);
-    if (msb) {
-        let u256_max: u256 = Bounded::MAX;
-        let value = (u256_max - value) + 1; // Absolute value
-
-        let sn_value = FELT252_MAX.into() - value + 1;
-
-        array![sn_value.try_into().unwrap()].span()
-    } else {
-        array![value.try_into().unwrap()].span()
-    }
 }
 
 #[inline(always)]
