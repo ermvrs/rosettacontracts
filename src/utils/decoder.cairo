@@ -13,7 +13,8 @@ pub struct i257 {
 #[derive(Drop, Serde)]
 pub struct EVMCalldata {
     calldata: Bytes,
-    offset: usize
+    offset: usize,
+    relative_offset: usize
 }
 
 pub trait AbiDecodeTrait {
@@ -255,8 +256,11 @@ impl EVMTypesImpl of AbiDecodeTrait {
 fn decode_array(ref ctx: EVMCalldata, types: Span<EVMTypes>) -> Span<felt252> {
     let (defer_offset, data_start_offset) = ctx.calldata.read_u256(ctx.offset);
     ctx.offset = data_start_offset.try_into().unwrap(); // Move to where array length begins
+    ctx.relative_offset = ctx.relative_offset + data_start_offset.try_into().unwrap();
 
-    let (new_offset, items_length) = ctx.calldata.read_u256(ctx.offset);
+    println!("Relative offset: {}", ctx.relative_offset);
+
+    let (new_offset, items_length) = ctx.calldata.read_u256(ctx.relative_offset);
     ctx.offset = new_offset;
 
     let mut decoded = array![items_length.try_into().unwrap()];
@@ -418,7 +422,7 @@ mod tests {
     use crate::utils::bytes::{Bytes, BytesTrait};
 
     fn cd(mut data: Bytes) -> EVMCalldata {
-        EVMCalldata { offset: 0_usize, calldata: data }
+        EVMCalldata { relative_offset: 0_usize, offset: 0_usize, calldata: data }
     }
 
     #[test]
