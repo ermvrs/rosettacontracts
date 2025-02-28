@@ -82,6 +82,7 @@ impl BytesImpl of BytesTrait {
     #[inline(always)]
     fn read_u256(self: @Bytes, offset: usize) -> (usize, u256) {
         // check
+        println!("{:}", offset);
         assert(offset + 32 <= self.size(), 'out of bound');
 
         let (new_offset, high) = self.read_u128(offset);
