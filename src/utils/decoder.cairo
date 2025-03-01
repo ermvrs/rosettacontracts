@@ -10,7 +10,7 @@ pub struct i257 {
     is_negative: bool,
 }
 
-#[derive(Drop, Serde)]
+#[derive(Clone, Drop, Serde)]
 pub struct EVMCalldata {
     calldata: Bytes,
     offset: usize,
@@ -248,24 +248,52 @@ impl EVMTypesImpl of AbiDecodeTrait {
     }
 }
 
-// Usage will be
-// let x = EVMCalldata { calldata: ByteArray of evm calldata, offset: 0};
-// let params_list = array xxx
-// each param element calls x.decode(param) and result appended to sn_calldata
-// Array -> Tuple -> Array -> Uint128
-// ctx: 0, 0x40 -> no chg -> read(0x40) = 0x40
+// read(0x0) -> 0x20
+// read(0x20) -> 0x2
+// read(0x40) -> 0x40
+// read(0x80) -> 0x2
+// read(0xa0) -> 123
+// read(0xc0) -> 444
+// read(0x60) -> 0xa0
+// read(0xe0) -> 0x2
+// read(0x100) -> 555
+// read(0x120) -> 32
 fn decode_array(ref ctx: EVMCalldata, types: Span<EVMTypes>) -> Span<felt252> {
-    let (defer_offset, data_start_offset) = ctx.calldata.read_u256(ctx.offset);
+    // ctx.relative_offset = ctx.offset;
+    // 2. array başladığında burası defer offset olduğu için bir sonraki slot geliyor
+    
+    println!("Relative offset init: {}", ctx.relative_offset);
+    let (defer_offset, data_start_offset) = ctx.calldata.read_u256(ctx.relative_offset + ctx.offset);
+    if(data_start_offset % 32 != 0) {
+        println!("Readed at: {}, Returned wrong offset: {}", ctx.relative_offset, data_start_offset);
+        println!("ctx.offset: {}, ctx.relative_offset: {}", ctx.offset, ctx.relative_offset);
+        panic!("Wrong offset read");
+    }
+    
     ctx.offset = data_start_offset.try_into().unwrap(); // Move to where array length begins
+    
 
-    let (new_offset, items_length) = ctx.calldata.read_u256(ctx.offset);
+    let (new_offset, items_length) = ctx.calldata.read_u256(ctx.relative_offset + ctx.offset);
+
     ctx.offset = new_offset;
 
     let mut decoded = array![items_length.try_into().unwrap()];
     let mut item_idx = 0;
     while item_idx < items_length {
-        let decoded_inner_type = ctx.decode(types);
-        decoded.append_span(decoded_inner_type);
+        // Loopun dışında array içi elemanlar dynamic mi check edilmeli
+        // Eğer dynamicse yeni context açılıp offset sıfırlanabilir
+        if(has_dynamic_type(types)) {
+            let mut cloned_context = ctx.clone();
+            cloned_context.relative_offset = ctx.offset;
+            cloned_context.offset = 0;
+            println!("Relative offset set: {}", cloned_context.relative_offset);
+            let decoded_inner_type = cloned_context.decode(types);
+            decoded.append_span(decoded_inner_type);
+        } else {
+            let decoded_inner_type = ctx.decode(types);
+            decoded.append_span(decoded_inner_type);
+        }
+
         item_idx += 1;
     };
     ctx.offset = defer_offset;
@@ -425,6 +453,33 @@ mod tests {
 
     #[test]
     fn test_decode_array_of_array() {
+        let mut data: Bytes = BytesTrait::blank();
+        
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000020); // 0:20
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000002); // 20:40
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000040); // 40:60
+        data.append_u256(0x00000000000000000000000000000000000000000000000000000000000000a0); // 60:80
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000002); // 80:a0
+        data.append_u256(0x000000000000000000000000000000000000000000000000000000000000007b); // a0:c0
+        data.append_u256(0x00000000000000000000000000000000000000000000000000000000000001bc); // c0:e0
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000002); // e0:100
+        data.append_u256(0x000000000000000000000000000000000000000000000000000000000000022b); // 100:120
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000021); // 120:140
+
+        let mut calldata = cd(data);
+        let decoded = calldata.decode(array![EVMTypes::Array(array![EVMTypes::Array(array![EVMTypes::Uint128].span())].span())].span());
+
+        assert_eq!(*decoded.at(0), 0x2);
+        assert_eq!(*decoded.at(1), 0x2);
+        assert_eq!(*decoded.at(2), 123);
+        assert_eq!(*decoded.at(3), 444);
+        assert_eq!(*decoded.at(4), 0x2);
+        assert_eq!(*decoded.at(5), 555);
+        assert_eq!(*decoded.at(6), 33);
+    }
+
+    #[test]
+    fn test_decode_array_of_tuple_with_array() {
         let mut data: Bytes = BytesTrait::blank();
 
         data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000020);
