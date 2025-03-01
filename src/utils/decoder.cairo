@@ -260,8 +260,7 @@ fn decode_array(ref ctx: EVMCalldata, types: Span<EVMTypes>) -> Span<felt252> {
 
     let (new_offset, items_length) = ctx.calldata.read_u256(ctx.offset);
     ctx.offset = new_offset;
-    // Todo: We may check if type is dynamic or not??
-    // Dynamic types points to new data start point instead of length
+
     let mut decoded = array![items_length.try_into().unwrap()];
     let mut item_idx = 0;
     while item_idx < items_length {
