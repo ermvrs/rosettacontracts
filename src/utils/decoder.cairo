@@ -1,6 +1,8 @@
 use crate::utils::bytes::{Bytes, BytesTrait};
 use crate::utils::bits::{get_bit_at, U256BitShift};
 use crate::constants::{FELT252_MAX};
+use crate::rosettanet::{IRosettanetDispatcher, IRosettanetDispatcherTrait};
+use core::starknet::ContractAddress;
 use core::num::traits::Bounded;
 use core::traits::{DivRem};
 
@@ -12,6 +14,7 @@ pub struct i257 {
 
 #[derive(Clone, Drop, Serde)]
 pub struct EVMCalldata {
+    registry: ContractAddress,
     calldata: Bytes,
     offset: usize,
     relative_offset: usize
@@ -395,10 +398,15 @@ fn decode_function_signature(ref ctx: EVMCalldata) -> Span<felt252> {
     array![value.into()].span()
 }
 
+// Address decoding tests has to be in integration_tests part
 #[inline(always)]
 fn decode_address(ref ctx: EVMCalldata) -> Span<felt252> {
-    // TODO
-    array![].span()
+    let registry = IRosettanetDispatcher { contract_address: ctx.registry };
+    let (new_offset, value) = ctx.calldata.read_u256(ctx.offset);
+    ctx.offset = new_offset;
+
+    let sn_address: felt252 = registry.get_starknet_address_with_fallback(value.try_into().unwrap()).into();
+    array![sn_address].span()
 }
 
 #[inline(always)]
@@ -468,7 +476,7 @@ mod tests {
     use crate::utils::bytes::{Bytes, BytesTrait};
 
     fn cd(mut data: Bytes) -> EVMCalldata {
-        EVMCalldata { relative_offset: 0_usize, offset: 0_usize, calldata: data }
+        EVMCalldata { relative_offset: 0_usize, offset: 0_usize, calldata: data, registry: starknet::contract_address_const::<0>() }
     }
 
     #[test]
