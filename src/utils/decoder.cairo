@@ -269,10 +269,9 @@ impl EVMTypesImpl of AbiDecodeTrait {
 // read(relative + 0x40 = 0x80) -> 0x20
 // set relative =  
 fn decode_tuple(ref ctx: EVMCalldata, types: Span<EVMTypes>) -> Span<felt252> {
-    println!("Decoding tuple");
-    println!("Offset: {}, Relative Offset: {}", ctx.offset, ctx.relative_offset);
+
     if(has_dynamic(types)) {
-        println!("Dynamic type in tuple");
+
         // If dynamic type, tuple is dynamic so move to that offset
         //ctx.decode(types)
         // rel: 0x40
@@ -290,25 +289,10 @@ fn decode_tuple(ref ctx: EVMCalldata, types: Span<EVMTypes>) -> Span<felt252> {
     }
 }
 
-// read(0x0) -> 0x20
-// read(0x20) -> 0x2
-// read(0x40) -> 0x40
-// read(0x80) -> 0x2
-// read(0xa0) -> 123
-// read(0xc0) -> 444
-// read(0x60) -> 0xa0
-// read(0xe0) -> 0x2
-// read(0x100) -> 555
-// read(0x120) -> 32
+
 fn decode_array(ref ctx: EVMCalldata, types: Span<EVMTypes>) -> Span<felt252> {
-    // ctx.relative_offset = ctx.offset;
-    // 2. array başladığında burası defer offset olduğu için bir sonraki slot geliyor
-    println!("Array data start read offset: {}", ctx.offset);
+
     let (defer_offset, data_start_offset) = ctx.calldata.read_u256(ctx.offset);
-    println!("Array data start offset: {}", data_start_offset);
-    println!("Array data start offset will be readed (rel + datastart): {}", ctx.relative_offset + data_start_offset.try_into().unwrap());
-    // Move to where array length begins
-    //ctx.offset = data_start_offset.try_into().unwrap();
 
     let (new_offset, items_length) = ctx.calldata.read_u256(ctx.relative_offset + data_start_offset.try_into().unwrap());
 
@@ -316,12 +300,10 @@ fn decode_array(ref ctx: EVMCalldata, types: Span<EVMTypes>) -> Span<felt252> {
 
     let mut decoded = array![items_length.try_into().unwrap()];
     let mut item_idx = 0;
-    //println!("Items Length: {}", items_length);
+
     let mut cloned_context = ctx.clone();
     cloned_context.relative_offset = ctx.relative_offset + ctx.offset; // 0x40 + 0x0 in first iter
-    //println!("Relative offset set: {}", cloned_context.relative_offset);
 
-    println!("Array length: {}", items_length);
     while item_idx < items_length {
         // Loopun dışında array içi elemanlar dynamic mi check edilmeli
         // Eğer dynamicse yeni context açılıp offset sıfırlanabilir
@@ -490,8 +472,147 @@ mod tests {
     }
 
     #[test]
-    fn test_decode_array_with_bytes() {
-        
+    fn test_decode_array_tuple_with_multi_arrays() {
+        let mut data: Bytes = BytesTrait::blank();
+
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000020);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000003);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000060);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000200);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000340);
+        data.append_u256(0x000000000000000000000000000000000000000000000000000000000000007b);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000080);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000001dfc);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000160);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000006);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000001);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000002);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000003);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000004);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000005);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000006);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000001);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000054cf8);
+        data.append_u256(0x000000000000000000000000000000000000000000000000000000000000014d);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000080);
+        data.append_u256(0x000000000000000000000000000000000000000000000000000000000000002b);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000100);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000003);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000000);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000005);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000006);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000001);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000053d9f);
+        data.append_u256(0x00000000000000000000000000000000000000000000000000000000000001bc);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000080);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000021);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000100);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000003);
+        data.append_u256(0x000000000000000000000000000000000000000000000000000000000000000a);
+        data.append_u256(0x000000000000000000000000000000000000000000000000000000000000000a);
+        data.append_u256(0x000000000000000000000000000000000000000000000000000000000000000a);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000005);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000016);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000021);
+        data.append_u256(0x000000000000000000000000000000000000000000000000000000000000002c);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000037);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000042);
+
+        let mut calldata = cd(data);
+        let decoded = calldata.decode(array![EVMTypes::Array(array![EVMTypes::Tuple(array![EVMTypes::Uint128, EVMTypes::Array(array![EVMTypes::Uint128].span()), EVMTypes::Uint256, EVMTypes::Array(array![EVMTypes::Uint256].span())].span())].span())].span());
+        // [[123, [1,2,3,4,5,6], 7676, [347384]], [333, [0,5,6], 43, [343455]], [444, [10,10,10], 33, [22,33,44,55,66]]]
+        assert_eq!(*decoded.at(0), 0x3);
+        assert_eq!(*decoded.at(1), 123);
+        assert_eq!(*decoded.at(2), 0x6);
+        assert_eq!(*decoded.at(3), 1);
+        assert_eq!(*decoded.at(4), 2);
+        assert_eq!(*decoded.at(5), 3);
+        assert_eq!(*decoded.at(6), 4);
+        assert_eq!(*decoded.at(7), 5);
+        assert_eq!(*decoded.at(8), 6);
+        assert_eq!(*decoded.at(9), 7676);
+        assert_eq!(*decoded.at(10), 0);
+        assert_eq!(*decoded.at(11), 0x1);
+        assert_eq!(*decoded.at(12), 347384);
+        assert_eq!(*decoded.at(13), 0);
+        assert_eq!(*decoded.at(14), 333);
+        assert_eq!(*decoded.at(15), 3);
+        assert_eq!(*decoded.at(16), 0);
+        assert_eq!(*decoded.at(17), 5);
+        assert_eq!(*decoded.at(18), 6);
+        assert_eq!(*decoded.at(19), 43);
+        assert_eq!(*decoded.at(20), 0);
+        assert_eq!(*decoded.at(21), 1);
+        assert_eq!(*decoded.at(22), 343455);
+        assert_eq!(*decoded.at(23), 0);
+        assert_eq!(*decoded.at(24), 444);
+        assert_eq!(*decoded.at(25), 3);
+        assert_eq!(*decoded.at(26), 10);
+        assert_eq!(*decoded.at(27), 10);
+        assert_eq!(*decoded.at(28), 10);
+        assert_eq!(*decoded.at(29), 33);
+        assert_eq!(*decoded.at(30), 0);
+        assert_eq!(*decoded.at(31), 5);
+        assert_eq!(*decoded.at(32), 22);
+        assert_eq!(*decoded.at(33), 0);
+        assert_eq!(*decoded.at(34), 33);
+        assert_eq!(*decoded.at(35), 0);
+        assert_eq!(*decoded.at(36), 44);
+        assert_eq!(*decoded.at(37), 0);
+        assert_eq!(*decoded.at(38), 55);
+        assert_eq!(*decoded.at(39), 0);
+        assert_eq!(*decoded.at(40), 66);
+        assert_eq!(*decoded.at(41), 0);
+    }
+
+    #[test]
+    fn test_decode_array_tuple_statics_dynamic_on_middle() {
+        // [[123, [5,6,7], 9999], [876, [1,1,1,1], 34334] ]
+        //     struct arr1 {
+        //    uint128 b;
+        //   uint128[] a;
+        //    uint256 c; }
+
+        let mut data: Bytes = BytesTrait::blank();
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000020);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000002);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000040);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000120);
+        data.append_u256(0x000000000000000000000000000000000000000000000000000000000000007b);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000060);
+        data.append_u256(0x000000000000000000000000000000000000000000000000000000000000270f);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000003);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000005);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000006);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000007);
+        data.append_u256(0x000000000000000000000000000000000000000000000000000000000000036c);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000060);
+        data.append_u256(0x000000000000000000000000000000000000000000000000000000000000861e);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000004);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000001);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000001);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000001);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000001);
+
+        let mut calldata = cd(data);
+        let decoded = calldata.decode(array![EVMTypes::Array(array![EVMTypes::Tuple(array![EVMTypes::Uint128, EVMTypes::Array(array![EVMTypes::Uint128].span()), EVMTypes::Uint256].span())].span())].span());
+
+        assert_eq!(*decoded.at(0), 0x2);
+        assert_eq!(*decoded.at(1), 123);
+        assert_eq!(*decoded.at(2), 0x3);
+        assert_eq!(*decoded.at(3), 5);
+        assert_eq!(*decoded.at(4), 6);
+        assert_eq!(*decoded.at(5), 7);
+        assert_eq!(*decoded.at(6), 9999);
+        assert_eq!(*decoded.at(7), 0);
+        assert_eq!(*decoded.at(8), 876);
+        assert_eq!(*decoded.at(9), 0x4);
+        assert_eq!(*decoded.at(10), 1);
+        assert_eq!(*decoded.at(11), 1);
+        assert_eq!(*decoded.at(12), 1);
+        assert_eq!(*decoded.at(13), 1);
+        assert_eq!(*decoded.at(14), 34334);
+        assert_eq!(*decoded.at(15), 0);
     }
 
     #[test]
