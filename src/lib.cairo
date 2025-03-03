@@ -9,7 +9,6 @@ pub mod accounts {
 
 pub mod components {
     pub mod function_registry;
-    pub mod types;
 }
 
 pub mod utils;
