@@ -373,7 +373,8 @@ fn decode_bytes(ref ctx: EVMCalldata) -> Span<felt252> {
 fn decode_bytes_32(ref ctx: EVMCalldata) -> Span<felt252> {
     let (new_offset, value) = ctx.calldata.read_u256(ctx.offset);
     ctx.offset = new_offset;
-
+    // TODO: Belki byte sirasini yanlis cekiyor olabiliriz?
+    // Pendingde kalan byte hangisi olmali first mi son mu ?
     let complete_word = U256BitShift::shr(value, 8); // This is 31 byte
     let pending_byte = U256BitShift::shr(value, 248); // This is first byte
     array![0x1, complete_word.try_into().unwrap(), pending_byte.try_into().unwrap(), 0x1].span()
@@ -383,6 +384,7 @@ fn decode_bytes_32(ref ctx: EVMCalldata) -> Span<felt252> {
 
 #[inline(always)]
 fn decode_fixed_bytes(ref ctx: EVMCalldata, size: usize) -> Span<felt252> {
+    
     let (new_offset, value) = ctx.calldata.read_u256(ctx.offset);
     ctx.offset = new_offset;
 
@@ -477,6 +479,70 @@ mod tests {
 
     fn cd(mut data: Bytes) -> EVMCalldata {
         EVMCalldata { relative_offset: 0_usize, offset: 0_usize, calldata: data, registry: starknet::contract_address_const::<0>() }
+    }
+
+    #[test]
+    fn test_decode_array_of_strings_long_elements() {
+        let mut data: Bytes = BytesTrait::blank();
+
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000020);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000004);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000080);
+        data.append_u256(0x00000000000000000000000000000000000000000000000000000000000000c0);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000100);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000160);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000003);
+        data.append_u256(0x414c490000000000000000000000000000000000000000000000000000000000);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000004);
+        data.append_u256(0x56454c4900000000000000000000000000000000000000000000000000000000);
+        data.append_u256(0x000000000000000000000000000000000000000000000000000000000000002f);
+        data.append_u256(0x4c4f4e47535452494e474c4f4e4745525448414e313233313233313233313233);
+        data.append_u256(0x3132334153415344415344414441440000000000000000000000000000000000);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000009);
+        data.append_u256(0x73686f72746261636b0000000000000000000000000000000000000000000000);
+
+        let mut calldata = cd(data);
+        let decoded = calldata.decode(array![EVMTypes::Array(array![EVMTypes::String].span())].span());
+        assert_eq!(*decoded.at(0), 0x4);
+        
+        assert_eq!(*decoded.at(1), 0x0);
+        assert_eq!(*decoded.at(2), 0x414C49); // ALI
+        assert_eq!(*decoded.at(3), 0x3);
+        assert_eq!(*decoded.at(4), 0x0);
+        assert_eq!(*decoded.at(5), 0x56454C49); // VELI
+        assert_eq!(*decoded.at(6), 0x4);
+        assert_eq!(*decoded.at(7), 0x1);
+        assert_eq!(*decoded.at(8), 0x4C4F4E47535452494E474C4F4E4745525448414E3132333132333132333132); // LONGSTRINGLONGERTHAN12312312312
+        assert_eq!(*decoded.at(9), 0x33313233415341534441534441444144); // 3123ASASDASDADAD
+        assert_eq!(*decoded.at(10), 16);
+        assert_eq!(*decoded.at(11), 0x0);
+        assert_eq!(*decoded.at(12), 0x73686F72746261636B); // shortback
+        assert_eq!(*decoded.at(13), 0x9);
+    }
+
+    #[test]
+    fn test_decode_array_of_strings() {
+        let mut data: Bytes = BytesTrait::blank();
+
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000020);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000002);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000040);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000080);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000003);
+        data.append_u256(0x414c490000000000000000000000000000000000000000000000000000000000);
+        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000004);
+        data.append_u256(0x56454c4900000000000000000000000000000000000000000000000000000000);
+
+        let mut calldata = cd(data);
+        let decoded = calldata.decode(array![EVMTypes::Array(array![EVMTypes::String].span())].span());
+        assert_eq!(*decoded.at(0), 0x2);
+
+        assert_eq!(*decoded.at(1), 0x0);
+        assert_eq!(*decoded.at(2), 0x414C49); // ALI
+        assert_eq!(*decoded.at(3), 0x3);
+        assert_eq!(*decoded.at(4), 0x0);
+        assert_eq!(*decoded.at(5), 0x56454C49); // VELI
+        assert_eq!(*decoded.at(6), 0x4);
     }
 
     #[test]
