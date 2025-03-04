@@ -44,6 +44,12 @@ pub mod Rosettanet {
         IRosettaAccountDispatcher, IRosettaAccountDispatcherTrait
     };
     use rosettacontracts::utils::{calculate_sn_entrypoint, eth_function_signature_from_felts};
+    use rosettacontracts::components::function_registry::{FunctionRegistryComponent};
+
+    component!(path: FunctionRegistryComponent, storage: function_registry, event: FunctionRegistryEvent);
+
+    #[abi(embed_v0)]
+    impl FunctionRegistryImpl = FunctionRegistryComponent::FunctionRegistryImpl<ContractState>;
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -53,7 +59,8 @@ pub mod Rosettanet {
         AccountClassChanged: AccountClassChanged,
         Upgraded: Upgraded,
         PredeployedAccountRegistered: PredeployedAccountRegistered,
-        DevAddressUpdated: DevAddressUpdated
+        DevAddressUpdated: DevAddressUpdated,
+        FunctionRegistryEvent: FunctionRegistryComponent::Event
     }
 
     #[derive(Drop, starknet::Event)]
@@ -97,6 +104,8 @@ pub mod Rosettanet {
 
     #[storage]
     struct Storage {
+        #[substorage(v0)]
+        function_registry: FunctionRegistryComponent::Storage,
         sn_to_eth: Map<ContractAddress, EthAddress>,
         eth_to_sn: Map<EthAddress, ContractAddress>,
         latest_class: ClassHash,
