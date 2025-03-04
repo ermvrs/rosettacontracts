@@ -10,7 +10,7 @@ pub trait IFunctionRegistry<TState> {
 
 #[starknet::component]
 pub mod FunctionRegistryComponent {
-    use starknet::{ContractAddress, get_caller_address};
+    use starknet::{ContractAddress};
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess, Map, StoragePathEntry, Vec, VecTrait, MutableVecTrait};
     use crate::utils::decoder::{EVMTypes};
     use crate::components::utils::{calculate_function_selectors};
