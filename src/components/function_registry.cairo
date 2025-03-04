@@ -4,6 +4,7 @@ use starknet::ContractAddress;
 #[starknet::interface]
 pub trait IFunctionRegistry<TState> {
     fn register_function(ref self: TState, fn_name: Span<felt252>, inputs: Span<EVMTypes>);
+    fn get_function_decoding(self: @TState, eth_selector: u32) -> (felt252, Span<EVMTypes>);
     fn is_dev(self: @TState, dev: ContractAddress) -> bool;
 }
 
@@ -28,8 +29,8 @@ pub mod FunctionRegistryComponent {
     #[storage]
     pub struct Storage {
         developers: Map<ContractAddress, bool>, // isDev?
-        entrypoints: Map<u32, felt252> // Ethereum function selector -> 
-        // TODO: felt252 to Ethereum function mapping
+        entrypoints: Map<u32, felt252>, // Ethereum function selector -> 
+        //directives: Map<u32, Vec<EVMTypes>>
     }
 
     #[embeddable_as(FunctionRegistryImpl)]
@@ -37,6 +38,14 @@ pub mod FunctionRegistryComponent {
         fn register_function(ref self: ComponentState<TContractState>, fn_name: Span<felt252>, inputs: Span<EVMTypes>) {
 
             self.emit(FunctionRegistered { eth_selector: 0_u32, entrypoint: 0x0 });
+        }
+        // Returns function entrypoint and decoding directives
+        fn get_function_decoding(self: @ComponentState<TContractState>, eth_selector: u32) -> (felt252, Span<EVMTypes>) {
+            let entrypoint = self.entrypoints.read(eth_selector);
+            //let mut serialized_directives: Span<felt252> = self.directives.read(eth_selector);
+            //let directives: Span<EVMTypes> = Serde::deserialize(ref serialized_directives).unwrap();
+
+            (entrypoint, array![].span())
         }
 
         fn is_dev(self: @ComponentState<TContractState>, dev: ContractAddress) -> bool {
