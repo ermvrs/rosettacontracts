@@ -3,16 +3,17 @@ use starknet::ContractAddress;
 
 #[starknet::interface]
 pub trait IFunctionRegistry<TState> {
-    fn register_function(ref self: TState, fn_name: Span<felt252>, inputs: Span<EVMTypes>);
+    fn register_function(ref self: TState, fn_name: ByteArray, inputs: Span<EVMTypes>);
     fn get_function_decoding(self: @TState, eth_selector: u32) -> (felt252, Span<EVMTypes>);
     fn is_dev(self: @TState, dev: ContractAddress) -> bool;
 }
 
 #[starknet::component]
 pub mod FunctionRegistryComponent {
-    use crate::utils::decoder::{EVMTypes};
     use starknet::{ContractAddress, get_caller_address};
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess, Map, StoragePathEntry, Vec, VecTrait, MutableVecTrait};
+    use crate::utils::decoder::{EVMTypes};
+    use crate::components::utils::{calculate_function_selectors};
 
 
     #[event]
@@ -36,18 +37,21 @@ pub mod FunctionRegistryComponent {
 
     #[embeddable_as(FunctionRegistryImpl)]
     impl FunctionRegistry<TContractState, +HasComponent<TContractState>> of super::IFunctionRegistry<ComponentState<TContractState>> {
-        fn register_function(ref self: ComponentState<TContractState>, fn_name: Span<felt252>, inputs: Span<EVMTypes>) {
-            assert(self.is_dev(get_caller_address()), 'only dev');
+        fn register_function(ref self: ComponentState<TContractState>, fn_name: ByteArray, inputs: Span<EVMTypes>) {
+            // TODO: add access control
+            let (sn_entrypoint, eth_selector) = calculate_function_selectors(@fn_name);
+            self.entrypoints.write(eth_selector, sn_entrypoint);
+
             let mut inputs_serialized = array![];
             inputs.serialize(ref inputs_serialized);
 
-            let vector_serialized_directives = self.directives.entry(0_u32);
+            let vector_serialized_directives = self.directives.entry(eth_selector);
             for i in 0..inputs_serialized.len() {
                 vector_serialized_directives.append().write(*inputs_serialized.at(i));
             };
 
 
-            self.emit(FunctionRegistered { eth_selector: 0_u32, entrypoint: 0x0 });
+            self.emit(FunctionRegistered { eth_selector, entrypoint: sn_entrypoint });
         }
         // Returns function entrypoint and decoding directives
         fn get_function_decoding(self: @ComponentState<TContractState>, eth_selector: u32) -> (felt252, Span<EVMTypes>) {
@@ -79,6 +83,5 @@ pub mod FunctionRegistryComponent {
         fn initialize(ref self: ComponentState<TContractState>) {
 
         }
-
     }
 }

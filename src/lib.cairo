@@ -9,6 +9,7 @@ pub mod accounts {
 
 pub mod components {
     pub mod function_registry;
+    pub mod utils;
 }
 
 pub mod utils;
