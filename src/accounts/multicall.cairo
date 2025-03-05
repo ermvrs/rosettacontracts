@@ -26,8 +26,9 @@ pub fn prepare_multicall_context(calldata: Span<u128>) -> Span<RosettanetMultica
         }
 
         let to: felt252 = u256 {
-                low: *calldata.pop_front().unwrap(),
-                high: *calldata.pop_front().unwrap()
+                high: *calldata.pop_front().unwrap(),
+                low: *calldata.pop_front().unwrap()
+
             }.try_into().unwrap();
 
 
@@ -36,8 +37,8 @@ pub fn prepare_multicall_context(calldata: Span<u128>) -> Span<RosettanetMultica
         }
 
         let entrypoint: felt252 = u256 {
-                low: *calldata.pop_front().unwrap(),
-                high: *calldata.pop_front().unwrap()
+                high: *calldata.pop_front().unwrap(),
+                low: *calldata.pop_front().unwrap()
             }.try_into().unwrap();
 
 
@@ -46,8 +47,8 @@ pub fn prepare_multicall_context(calldata: Span<u128>) -> Span<RosettanetMultica
         }
 
         let calldata_length: u64 = u256 {
-            low: *calldata.pop_front().unwrap(),
-            high: *calldata.pop_front().unwrap()
+            high: *calldata.pop_front().unwrap(),
+            low: *calldata.pop_front().unwrap()
         }.try_into().unwrap();
 
         let mut inner_calldata: Array<felt252> = array![];
@@ -58,8 +59,8 @@ pub fn prepare_multicall_context(calldata: Span<u128>) -> Span<RosettanetMultica
             }
 
             let value: felt252 = u256 {
-                low: *calldata.pop_front().unwrap(),
-                high: *calldata.pop_front().unwrap()
+                high: *calldata.pop_front().unwrap(),
+                low: *calldata.pop_front().unwrap()
             }.try_into().unwrap();
 
             inner_calldata.append(value);

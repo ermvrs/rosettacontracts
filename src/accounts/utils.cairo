@@ -3,7 +3,6 @@ use starknet::eth_signature::{verify_eth_signature};
 use starknet::{EthAddress};
 
 use crate::constants::{CHAIN_ID};
-use crate::accounts::base::RosettaAccount::{MULTICALL_SELECTOR};
 use crate::accounts::types::{RosettanetCall, RosettanetSignature};
 use crate::optimized_rlp::{OptimizedRLPTrait, OptimizedRLPImpl, compute_keccak, u256_to_rlp_input};
 
@@ -117,44 +116,13 @@ fn convert_calldata(
     if (calldata.len() == 0) {
         return OptimizedRLPTrait::encode_bytearray(@"").unwrap();
     }
-    if ((*calldata.at(0)).try_into().unwrap() == MULTICALL_SELECTOR) {
-        // Multicall
-        return OptimizedRLPTrait::encode_bytearray(
-            convert_internal_call_calldata_to_bytearray(calldata, with_signature)
-        )
-            .unwrap();
-    } else {
-        return OptimizedRLPTrait::encode_bytearray(
-            convert_calldata_to_bytearray(calldata, with_signature)
-        )
-            .unwrap();
-    }
+    return OptimizedRLPTrait::encode_bytearray(
+        convert_calldata_to_bytearray(calldata, with_signature)
+    )
+        .unwrap();
+    
 }
 
-fn convert_internal_call_calldata_to_bytearray(
-    mut calldata: Span<u128>, with_signature: bool
-) -> @ByteArray {
-    if calldata.len() == 0 {
-        return @Default::default();
-    }
-
-    let mut ba: ByteArray = Default::default();
-    if with_signature {
-        let function_signature: felt252 = (*calldata
-            .pop_front()
-            .unwrap()).into(); // Safe bcs length is not zero
-
-        ba.append_word(function_signature, 4);
-    }
-
-    for i in 0..calldata.len() {
-        ba.append_word((*calldata.at(i)).into(), 16);
-    };
-
-    @ba
-}
-
-// Directives and calldata sanity has to be checked before
 fn convert_calldata_to_bytearray(
     mut calldata: Span<u128>, with_signature: bool
 ) -> @ByteArray {
@@ -290,7 +258,7 @@ mod tests {
 
         let result = convert_calldata_to_bytearray(calldata, true);
 
-        assert_eq!(result.len(), 100);
+        assert_eq!(result.len(), (4*32) + 4);
     }
 
     #[test]
@@ -301,20 +269,15 @@ mod tests {
             0x456456,0x0,
             0x0,0x0,
             0x666,0x0,
-            0xfff,0x0,
-            0xff,0x0,
+            0x123123,0x0,
+            0x456456,0x0,
             0x0,0x0,
-            0x123,0x0,
-            0xbb,0x0,
-            0xccccc,0x0,
-            0xabc,0x0,
-            0xfff,0x0,
-            0x123123123,0x0
+            0x666,0x0,
         ]
             .span();
 
         let result = convert_calldata_to_bytearray(calldata, true);
 
-        assert_eq!(result.len(), 292);
+        assert_eq!(result.len(), (8*32) + 4);
     }
 }

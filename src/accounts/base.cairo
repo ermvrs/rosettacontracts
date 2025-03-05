@@ -127,8 +127,6 @@ pub mod RosettaAccount {
                 return array![array![].span()];
             }
 
-            // Currently only native transfer support for different targets
-            //panic_with_felt252(Errors::UNIMPLEMENTED_FEATURE);
             let mut calldata = call.calldata;
 
             self.execute_call(sn_target, calldata);
@@ -223,8 +221,6 @@ pub mod RosettaAccount {
                     ((selector == MULTICALL_SELECTOR) || (selector == UPGRADE_SELECTOR)),
                     'selector is not internal'
                 );
-            } else {
-                assert(call.calldata.len() == 0, Errors::UNIMPLEMENTED_FEATURE);
             }
 
             // Validate transaction signature
