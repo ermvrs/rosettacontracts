@@ -14,10 +14,10 @@ pub struct i257 {
 
 #[derive(Clone, Drop, Serde)]
 pub struct EVMCalldata {
-    registry: ContractAddress,
-    calldata: Bytes,
-    offset: usize,
-    relative_offset: usize
+    pub registry: ContractAddress,
+    pub calldata: Bytes,
+    pub offset: usize,
+    pub relative_offset: usize
 }
 
 pub trait AbiDecodeTrait {
@@ -27,7 +27,7 @@ pub trait AbiDecodeTrait {
 }
 
 // Tuples can be decoded like basic types in order
-#[derive(Copy, Drop, Serde)]
+#[derive(Copy, Drop, Serde, Debug, PartialEq)]
 pub enum EVMTypes {
     Tuple: Span<EVMTypes>,
     Array: Span<EVMTypes>,
@@ -148,7 +148,7 @@ fn has_dynamic(types: Span<EVMTypes>) -> bool {
     result
 }
 
-impl EVMTypesImpl of AbiDecodeTrait {
+pub impl EVMTypesImpl of AbiDecodeTrait {
     fn decode(ref self: EVMCalldata, types: Span<EVMTypes>) -> Span<felt252> {
         let mut decoded = array![];
 

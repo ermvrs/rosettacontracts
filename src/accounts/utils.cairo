@@ -3,7 +3,6 @@ use starknet::eth_signature::{verify_eth_signature};
 use starknet::{EthAddress};
 
 use crate::constants::{CHAIN_ID};
-use crate::accounts::base::RosettaAccount::{MULTICALL_SELECTOR};
 use crate::accounts::types::{RosettanetCall, RosettanetSignature};
 use crate::optimized_rlp::{OptimizedRLPTrait, OptimizedRLPImpl, compute_keccak, u256_to_rlp_input};
 
@@ -39,7 +38,7 @@ fn rlp_encode_tx(call: RosettanetCall) -> @ByteArray {
         //get_byte_size(call.value.low) + get_byte_size(call.value.high)).unwrap();
         let empty = OptimizedRLPTrait::encode_short_string(0x0, 0).unwrap();
 
-        let calldata = convert_calldata(call.calldata, array![].span(), true);
+        let calldata = convert_calldata(call.calldata, true);
 
         let total_len = nonce.len()
             + gas_price.len()
@@ -79,7 +78,7 @@ fn rlp_encode_tx(call: RosettanetCall) -> @ByteArray {
         let chain_id = OptimizedRLPTrait::encode_short_string(CHAIN_ID.into(), 4).unwrap();
         let access_list = OptimizedRLPTrait::encode_as_list(array![].span(), 0, 0);
 
-        let calldata = convert_calldata(call.calldata, array![].span(), true);
+        let calldata = convert_calldata(call.calldata, true);
 
         let total_len = nonce.len()
             + max_priority_fee_per_gas.len()
@@ -112,56 +111,20 @@ fn rlp_encode_tx(call: RosettanetCall) -> @ByteArray {
 }
 
 fn convert_calldata(
-    mut calldata: Span<felt252>, directives: Span<u8>, with_signature: bool
+    mut calldata: Span<u128>, with_signature: bool
 ) -> @ByteArray {
     if (calldata.len() == 0) {
         return OptimizedRLPTrait::encode_bytearray(@"").unwrap();
     }
-    if (*calldata.at(0) == MULTICALL_SELECTOR) {
-        // Multicall
-        return OptimizedRLPTrait::encode_bytearray(
-            convert_internal_call_calldata_to_bytearray(calldata, with_signature)
-        )
-            .unwrap();
-    } else {
-        return OptimizedRLPTrait::encode_bytearray(
-            convert_calldata_to_bytearray(calldata, directives, with_signature)
-        )
-            .unwrap();
-    }
+    return OptimizedRLPTrait::encode_bytearray(
+        convert_calldata_to_bytearray(calldata, with_signature)
+    )
+        .unwrap();
+    
 }
 
-fn convert_internal_call_calldata_to_bytearray(
-    mut calldata: Span<felt252>, with_signature: bool
-) -> @ByteArray {
-    if calldata.len() == 0 {
-        return @Default::default();
-    }
-
-    let mut ba: ByteArray = Default::default();
-    if with_signature {
-        let function_signature: felt252 = *calldata
-            .pop_front()
-            .unwrap(); // Safe bcs length is not zero
-
-        ba.append_word(function_signature, 4);
-    }
-
-    let mut i = 0; // Signature already removed 
-    while i < calldata.len() {
-        let elem: u256 = (*calldata.at(i)).into();
-        ba.append_word(elem.high.into(), 16);
-        ba.append_word(elem.low.into(), 16);
-
-        i += 1;
-    };
-
-    @ba
-}
-
-// Directives and calldata sanity has to be checked before
 fn convert_calldata_to_bytearray(
-    mut calldata: Span<felt252>, directives: Span<u8>, with_signature: bool
+    mut calldata: Span<u128>, with_signature: bool
 ) -> @ByteArray {
     if calldata.len() == 0 {
         return @Default::default();
@@ -169,31 +132,15 @@ fn convert_calldata_to_bytearray(
 
     let mut ba: ByteArray = Default::default();
     if with_signature {
-        let function_signature: felt252 = *calldata
+        let function_signature: felt252 = (*calldata
             .pop_front()
-            .unwrap(); // Safe bcs length is not zero
+            .unwrap()).into(); // Safe bcs length is not zero
 
         ba.append_word(function_signature, 4);
     }
 
-    let mut i = 0; // Signature already removed 
-    while i < calldata.len() {
-        let current_directive = *directives.at(i);
-        if (current_directive == 1) {
-            let elem = u256 {
-                low: (*calldata.at(i)).try_into().unwrap(),
-                high: (*calldata.at(i + 1)).try_into().unwrap()
-            };
-            ba.append_word(elem.high.into(), 16);
-            ba.append_word(elem.low.into(), 16);
-            i += 1;
-        } else {
-            let elem: u256 = (*calldata.at(i)).into();
-            ba.append_word(elem.high.into(), 16);
-            ba.append_word(elem.low.into(), 16);
-        }
-
-        i += 1;
+    for i in 0..calldata.len() {
+        ba.append_word((*calldata.at(i)).into(), 16);
     };
 
     @ba
@@ -212,6 +159,16 @@ fn get_byte_size(mut value: u128) -> u32 {
     };
 
     bytes
+}
+
+pub fn span_to_array(span: Span<u128>) -> Array<u128> {
+    let mut arr = array![];
+    let len = span.len();
+    
+    for i in 0..len {
+        arr.append(*span[i]);
+    };
+    arr
 }
 
 pub fn is_valid_eth_signature(
@@ -296,37 +253,31 @@ mod tests {
 
     #[test]
     fn test_calldata_conversion() {
-        let mut calldata = array![0x23b872dd, 0x123123, 0x456456, 0x0, 0x666].span();
-        let directives = array![0, 1, 0, 0].span();
+        let mut calldata = array![0x23b872dd, 0x123123, 0x0, 0x456456, 0x0, 0x0, 0x0, 0x666, 0x0].span();
+        //let directives = array![0, 1, 0, 0].span();
 
-        let result = convert_calldata_to_bytearray(calldata, directives, true);
+        let result = convert_calldata_to_bytearray(calldata, true);
 
-        assert_eq!(result.len(), 100);
+        assert_eq!(result.len(), (4*32) + 4);
     }
 
     #[test]
     fn test_calldata_conversion_long() {
         let mut calldata = array![
             0x23b872dd,
-            0x123123,
-            0x456456,
-            0x0,
-            0x666,
-            0xfff,
-            0xff,
-            0x0,
-            0x123,
-            0xbb,
-            0xccccc,
-            0xabc,
-            0xfff,
-            0x123123123
+            0x123123,0x0,
+            0x456456,0x0,
+            0x0,0x0,
+            0x666,0x0,
+            0x123123,0x0,
+            0x456456,0x0,
+            0x0,0x0,
+            0x666,0x0,
         ]
             .span();
-        let directives = array![0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0].span();
 
-        let result = convert_calldata_to_bytearray(calldata, directives, true);
+        let result = convert_calldata_to_bytearray(calldata, true);
 
-        assert_eq!(result.len(), 292);
+        assert_eq!(result.len(), (8*32) + 4);
     }
 }
