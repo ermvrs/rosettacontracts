@@ -12,6 +12,7 @@ fn calculate_sn_entrypoint(func: @ByteArray) -> felt252 {
     let keccak_hash: u256 = compute_keccak(name);
 
     let (_, sn_keccak) =  DivRem::div_rem(keccak_hash, POW_2_250.try_into().unwrap());
+    // TODO: maybe can be done with bitshifting? IDK is it worth to do it or no
 
     sn_keccak.try_into().unwrap()
 }
@@ -24,8 +25,9 @@ fn parse_function_name(func: @ByteArray) -> @ByteArray {
             Option::None => { break; },
             Option::Some(val) => {
                 if(val == 0x28) {
-                    name.append_byte(val);
+                    break;
                 }
+                name.append_byte(val);
             }
         };
     };
