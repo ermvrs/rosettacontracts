@@ -2,10 +2,10 @@ use core::panic_with_felt252;
 
 use crate::accounts::types::{RosettanetMulticall};
 
-pub fn prepare_multicall_context(calldata: Span<felt252>) -> Span<RosettanetMulticall> {
+pub fn prepare_multicall_context(calldata: Span<u128>) -> Span<RosettanetMulticall> {
     let mut calldata = calldata;
     // Remove function selector.
-    let _: felt252 = match calldata.pop_front() {
+    let _: u128 = match calldata.pop_front() {
         Option::None => { 0 },
         Option::Some(val) => { *val }
     };
@@ -25,26 +25,30 @@ pub fn prepare_multicall_context(calldata: Span<felt252>) -> Span<RosettanetMult
             break;
         }
 
-        let to: felt252 = match calldata.pop_front() {
-            Option::None => { 0x0 }, // TODO: panic
-            Option::Some(val) => { (*val) }
-        };
+        let to: felt252 = u256 {
+                low: *calldata.pop_front().unwrap(),
+                high: *calldata.pop_front().unwrap()
+            }.try_into().unwrap();
+
+
         if (to == 0x0) {
             panic_with_felt252('multicall to wrong');
         }
-        let entrypoint: felt252 = match calldata.pop_front() {
-            Option::None => { 0x0 }, // TODO: panic
-            Option::Some(val) => { (*val) }
-        };
+
+        let entrypoint: felt252 = u256 {
+                low: *calldata.pop_front().unwrap(),
+                high: *calldata.pop_front().unwrap()
+            }.try_into().unwrap();
+
 
         if (entrypoint == 0x0) {
             panic_with_felt252('multicall entry wrong');
         }
 
-        let calldata_length: u64 = match calldata.pop_front() {
-            Option::None => { 0 },
-            Option::Some(val) => { (*val).try_into().unwrap() }
-        };
+        let calldata_length: u64 = u256 {
+            low: *calldata.pop_front().unwrap(),
+            high: *calldata.pop_front().unwrap()
+        }.try_into().unwrap();
 
         let mut inner_calldata: Array<felt252> = array![];
         let mut j = 0;
@@ -53,10 +57,10 @@ pub fn prepare_multicall_context(calldata: Span<felt252>) -> Span<RosettanetMult
                 break;
             }
 
-            let value: felt252 = match calldata.pop_front() {
-                Option::None => { break; }, // TODO: panic
-                Option::Some(val) => { (*val) }
-            };
+            let value: felt252 = u256 {
+                low: *calldata.pop_front().unwrap(),
+                high: *calldata.pop_front().unwrap()
+            }.try_into().unwrap();
 
             inner_calldata.append(value);
 
