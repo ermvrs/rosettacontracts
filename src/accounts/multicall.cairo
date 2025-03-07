@@ -10,12 +10,11 @@ pub fn prepare_multicall_context(calldata: Span<u128>) -> Span<RosettanetMultica
         Option::Some(val) => { *val }
     };
 
-    let call_count: u64 = match calldata.pop_front() {
-        Option::None => {
-            0_u64
-        }, // We may remove that panic or change the logic, since native eth transfer has empty calldata
-        Option::Some(val) => { (*val).try_into().unwrap() }
-    };
+    let call_count: felt252 = u256 {
+        high: *calldata.pop_front().unwrap(),
+        low: *calldata.pop_front().unwrap()
+
+    }.try_into().unwrap();
 
     let mut calls = ArrayTrait::<RosettanetMulticall>::new();
 
@@ -73,4 +72,53 @@ pub fn prepare_multicall_context(calldata: Span<u128>) -> Span<RosettanetMultica
     };
 
     calls.span()
+}
+
+
+#[cfg(test)]
+mod tests { 
+    use crate::accounts::multicall::{prepare_multicall_context};
+
+    #[test]
+    fn test_prepare_multicall_context() {
+        let calldata: Span<u128> = array![
+            0x76971d7f,
+            0x0,
+            0x2,
+            0x0,
+            0x123123,
+            0x0,
+            0x456456,
+            0x0,
+            0x2,
+            0x0,
+            0x111,
+            0x0,
+            0x222,
+            0x0,
+            0x888888,
+            0x0,
+            0x999999,
+            0x0,
+            0x2,
+            0x0,
+            0x654,
+            0x0,
+            0x321
+        ].span();
+
+        let context = prepare_multicall_context(calldata);
+
+        assert_eq!(context.len(), 2);
+        assert_eq!((*context.at(0)).to, 0x123123);
+        assert_eq!((*context.at(0)).entrypoint, 0x456456);
+        assert_eq!((*context.at(0)).calldata.len(), 0x2);
+        assert_eq!(*(*context.at(0)).calldata.at(0), 0x111);
+        assert_eq!(*(*context.at(0)).calldata.at(1), 0x222);
+        assert_eq!((*context.at(1)).to, 0x888888);
+        assert_eq!((*context.at(1)).entrypoint, 0x999999);
+        assert_eq!((*context.at(1)).calldata.len(), 0x2);
+        assert_eq!(*(*context.at(1)).calldata.at(0), 0x654);
+        assert_eq!(*(*context.at(1)).calldata.at(1), 0x321);
+    }
 }

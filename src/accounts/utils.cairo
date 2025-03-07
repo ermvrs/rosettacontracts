@@ -14,7 +14,7 @@ pub fn generate_tx_hash(call: RosettanetCall) -> u256 {
 }
 
 fn rlp_encode_tx(call: RosettanetCall) -> @ByteArray {
-    if call.tx_type != 0 && call.tx_type != 2 && call.tx_type != 8 {
+    if call.tx_type != 0 && call.tx_type != 2 {
         panic!("Unsupported tx type");
     }
     if call.tx_type == 0 {

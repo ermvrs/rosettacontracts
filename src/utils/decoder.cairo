@@ -132,6 +132,7 @@ pub enum EVMTypes {
     Bytes32, // Decoded as serialized ByteArray
     Bytes,
     String, // Same as bytes
+    Felt252, // It has to be encoded as uint256 on EVM
 }
 
 fn has_dynamic(types: Span<EVMTypes>) -> bool {
@@ -257,6 +258,7 @@ pub impl EVMTypesImpl of AbiDecodeTrait {
                 EVMTypes::Bytes32 => { decode_bytes_32(ref self) },
                 EVMTypes::Bytes => { decode_bytes(ref self) },
                 EVMTypes::String => { decode_bytes(ref self) },
+                EVMTypes::Felt252 => { decode_felt252(ref self) }
             };
             decoded.append_span(decoded_type);
         };
@@ -446,6 +448,14 @@ fn decode_int(ref ctx: EVMCalldata, size: u32) -> Span<felt252> {
 }
 
 #[inline(always)]
+fn decode_felt252(ref ctx: EVMCalldata) -> Span<felt252> {
+    let (new_offset, value) = ctx.calldata.read_u256(ctx.offset);
+    ctx.offset = new_offset;
+    let value: felt252 = value.try_into().expect('value higher than felt252 limit');
+    array![value].span()
+}
+
+#[inline(always)]
 fn decode_uint256(ref ctx: EVMCalldata) -> Span<felt252> {
     let (new_offset, value) = ctx.calldata.read_u256(ctx.offset);
     ctx.offset = new_offset;
@@ -479,6 +489,36 @@ mod tests {
 
     fn cd(mut data: Bytes) -> EVMCalldata {
         EVMCalldata { relative_offset: 0_usize, offset: 0_usize, calldata: data, registry: starknet::contract_address_const::<0>() }
+    }
+
+    #[test]
+    fn test_decode_felt252() {
+        let mut data: Bytes = BytesTrait::blank();
+        data.append_u256(0x0000000000000ffff00000000000000000000000000000000000000000000020);
+
+        let mut calldata = cd(data);
+        let decoded = calldata.decode(array![EVMTypes::Felt252].span());
+        assert_eq!(*decoded.at(0), 0x0000000000000ffff00000000000000000000000000000000000000000000020);
+    }
+
+    #[test]
+    fn test_decode_felt252_max() {
+        let mut data: Bytes = BytesTrait::blank();
+        data.append_u256(0x0800000000000011000000000000000000000000000000000000000000000000);
+
+        let mut calldata = cd(data);
+        let decoded = calldata.decode(array![EVMTypes::Felt252].span());
+        assert_eq!(*decoded.at(0), 0x800000000000011000000000000000000000000000000000000000000000000);
+    }
+
+    #[test]
+    #[should_panic(expected: 'value higher than felt252 limit')]
+    fn test_decode_felt252_max_higher() {
+        let mut data: Bytes = BytesTrait::blank();
+        data.append_u256(0xF800000000000011000000000000000000000000000000000000000000000000);
+
+        let mut calldata = cd(data);
+        let decoded = calldata.decode(array![EVMTypes::Felt252].span());
     }
 
     #[test]

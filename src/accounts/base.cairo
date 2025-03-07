@@ -129,10 +129,9 @@ pub mod RosettaAccount {
 
             let mut calldata = call.calldata;
 
-            self.execute_call(sn_target, calldata);
+            self.execute_call(sn_target, calldata)
 
             // self.nonce.write(self.nonce.read() + 1); // Problem here ???
-            array![array![].span()]
         }
 
         fn __validate__(self: @ContractState, call: RosettanetCall) -> felt252 {
