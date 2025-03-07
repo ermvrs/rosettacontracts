@@ -33,7 +33,9 @@ pub mod RosettaAccount {
         ContractAddress, EthAddress, ClassHash, get_contract_address, get_caller_address,
         get_tx_info,
     };
-    use starknet::syscalls::{call_contract_syscall, replace_class_syscall};
+    use starknet::syscalls::{
+        call_contract_syscall, replace_class_syscall, get_class_hash_at_syscall,
+    };
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use rosettacontracts::accounts::types::{
         RosettanetSignature, RosettanetCall, RosettanetMulticall,
@@ -109,10 +111,10 @@ pub mod RosettaAccount {
                         contract_address: self.registry.read(),
                     }
                         .latest_class();
-                    // let current_hash: ClassHash =
-                    // get_class_hash_at_syscall(get_contract_address()).unwrap();
-                    // assert(current_hash != latest_hash, 'no new upgrades');
-                    // TODO: Add class hash check after it is available on starknet
+                    let current_hash: ClassHash = get_class_hash_at_syscall(get_contract_address())
+                        .unwrap();
+                    assert(current_hash != latest_hash, 'no new upgrades');
+
                     replace_class_syscall(latest_hash).unwrap();
                     return array![array![latest_hash.into()].span()];
                 } else {
