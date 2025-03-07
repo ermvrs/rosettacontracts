@@ -40,9 +40,13 @@ pub mod RosettaAccount {
     };
     use rosettacontracts::utils::decoder::{EVMCalldata, EVMTypesImpl};
     use crate::utils::bytes::{BytesTrait};
-    use rosettacontracts::accounts::utils::{generate_tx_hash, is_valid_eth_signature, span_to_array};
+    use rosettacontracts::accounts::utils::{
+        generate_tx_hash, is_valid_eth_signature, span_to_array
+    };
     use rosettacontracts::accounts::multicall::{prepare_multicall_context};
-    use rosettacontracts::components::function_registry::{IFunctionRegistryDispatcherTrait, IFunctionRegistryDispatcher};
+    use rosettacontracts::components::function_registry::{
+        IFunctionRegistryDispatcherTrait, IFunctionRegistryDispatcher
+    };
     use crate::rosettanet::{IRosettanetDispatcher, IRosettanetDispatcherTrait};
     use openzeppelin::utils::deployments::{calculate_contract_address_from_deploy_syscall};
 
@@ -97,8 +101,7 @@ pub mod RosettaAccount {
                 if (selector == MULTICALL_SELECTOR) {
                     assert(call.value == 0, 'multicall value not zero');
                     let context = prepare_multicall_context(
-                        self.registry.read(),
-                        calldata
+                        self.registry.read(), calldata
                     ); // First calldata element removed inside this function
                     return self.execute_multicall(context);
                 } else if (selector == UPGRADE_SELECTOR) {
@@ -133,7 +136,6 @@ pub mod RosettaAccount {
             let mut calldata = call.calldata;
 
             self.execute_call(sn_target, calldata)
-
             // self.nonce.write(self.nonce.read() + 1); // Problem here ???
         }
 
@@ -217,7 +219,7 @@ pub mod RosettaAccount {
             // TODO: Tx version check
 
             if (call.to == self_eth_address) {
-                let selector:u32 = (*call.calldata.at(0)).try_into().unwrap();
+                let selector: u32 = (*call.calldata.at(0)).try_into().unwrap();
 
                 assert(
                     ((selector == MULTICALL_SELECTOR) || (selector == UPGRADE_SELECTOR)),
@@ -289,22 +291,27 @@ pub mod RosettaAccount {
                 .expect('native transfer fails')
         }
 
-        fn execute_call(self: @ContractState, target: ContractAddress, mut calldata: Span<u128>) -> Array<Span<felt252>> {
+        fn execute_call(
+            self: @ContractState, target: ContractAddress, mut calldata: Span<u128>
+        ) -> Array<Span<felt252>> {
             let registry = self.registry.read();
             let selector: u32 = (*calldata.pop_front().unwrap()).try_into().unwrap();
-            let (entrypoint, directives) = IFunctionRegistryDispatcher { contract_address: registry }.get_function_decoding(selector);
+            let (entrypoint, directives) = IFunctionRegistryDispatcher {
+                contract_address: registry
+            }
+                .get_function_decoding(selector);
             assert(entrypoint != 0x0, 'entrypoint not registered');
             let mut evm_calldata = EVMCalldata {
                 registry: registry,
                 offset: 0,
                 relative_offset: 0,
-                calldata: BytesTrait::new(calldata.len() * 16, span_to_array(calldata)) // DOES IT CONSUMES TOO MUCH GAS??
+                calldata: BytesTrait::new(
+                    calldata.len() * 16, span_to_array(calldata)
+                ) // DOES IT CONSUMES TOO MUCH GAS??
             };
 
             let decoded_calldata = evm_calldata.decode(directives);
-            let result: Span<felt252> = call_contract_syscall(
-                target, entrypoint, decoded_calldata
-            )
+            let result: Span<felt252> = call_contract_syscall(target, entrypoint, decoded_calldata)
                 .unwrap();
             // self.nonce.write(self.nonce.read() + 1); // Problem here ???
             array![result]

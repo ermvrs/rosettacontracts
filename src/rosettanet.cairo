@@ -46,10 +46,13 @@ pub mod Rosettanet {
     use rosettacontracts::utils::{calculate_sn_entrypoint, eth_function_signature_from_felts};
     use rosettacontracts::components::function_registry::{FunctionRegistryComponent};
 
-    component!(path: FunctionRegistryComponent, storage: function_registry, event: FunctionRegistryEvent);
+    component!(
+        path: FunctionRegistryComponent, storage: function_registry, event: FunctionRegistryEvent
+    );
 
     #[abi(embed_v0)]
-    impl FunctionRegistryImpl = FunctionRegistryComponent::FunctionRegistryImpl<ContractState>;
+    impl FunctionRegistryImpl =
+        FunctionRegistryComponent::FunctionRegistryImpl<ContractState>;
 
     #[event]
     #[derive(Drop, starknet::Event)]

@@ -7,12 +7,16 @@ use core::pedersen::PedersenTrait;
 use core::hash::{HashStateExTrait, HashStateTrait};
 use rosettacontracts::rosettanet::{IRosettanetDispatcher, IRosettanetDispatcherTrait};
 use rosettacontracts::accounts::base::{IRosettaAccountDispatcher};
-use rosettacontracts::components::function_registry::{IFunctionRegistryDispatcherTrait, IFunctionRegistryDispatcher};
+use rosettacontracts::components::function_registry::{
+    IFunctionRegistryDispatcherTrait, IFunctionRegistryDispatcher
+};
 use rosettacontracts::utils::decoder::{EVMTypes};
 use rosettacontracts::mocks::erc20::{IMockERC20Dispatcher, IMockERC20DispatcherTrait};
 use rosettacontracts::mocks::weth::{IMockWETHDispatcher};
 
-pub fn register_function(rosettanet: IRosettanetDispatcher, function: ByteArray, inputs: Span<EVMTypes>) {
+pub fn register_function(
+    rosettanet: IRosettanetDispatcher, function: ByteArray, inputs: Span<EVMTypes>
+) {
     let fn_registry = IFunctionRegistryDispatcher { contract_address: rosettanet.contract_address };
 
     fn_registry.register_function(function, inputs);

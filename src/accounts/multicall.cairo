@@ -7,7 +7,9 @@ use starknet::ContractAddress;
 use crate::utils::bytes::{BytesTrait};
 
 // Pass calldata without function selector
-pub fn prepare_multicall_context(registry: ContractAddress, calldata: Span<u128>) -> Span<RosettanetMulticall> {
+pub fn prepare_multicall_context(
+    registry: ContractAddress, calldata: Span<u128>
+) -> Span<RosettanetMulticall> {
     let mut evm_calldata = EVMCalldata {
         registry: registry,
         offset: 0,
@@ -15,13 +17,30 @@ pub fn prepare_multicall_context(registry: ContractAddress, calldata: Span<u128>
         calldata: BytesTrait::new(calldata.len() * 16, span_to_array(calldata))
     };
 
-    let directives = array![EVMTypes::Array(array![EVMTypes::Tuple(array![EVMTypes::Felt252, EVMTypes::Felt252, EVMTypes::Array(array![EVMTypes::Felt252].span())].span())].span())].span();
+    let directives = array![
+        EVMTypes::Array(
+            array![
+                EVMTypes::Tuple(
+                    array![
+                        EVMTypes::Felt252,
+                        EVMTypes::Felt252,
+                        EVMTypes::Array(array![EVMTypes::Felt252].span())
+                    ]
+                        .span()
+                )
+            ]
+                .span()
+        )
+    ]
+        .span();
     let decoded_calldata = evm_calldata.decode(directives);
 
     prepare_multicall_context_from_serialized_calldata(decoded_calldata)
 }
 
-fn prepare_multicall_context_from_serialized_calldata(calldata: Span<felt252>) -> Span<RosettanetMulticall> {
+fn prepare_multicall_context_from_serialized_calldata(
+    calldata: Span<felt252>
+) -> Span<RosettanetMulticall> {
     let mut calldata = calldata;
 
     let call_count: u64 = match calldata.pop_front() {
@@ -86,47 +105,8 @@ fn prepare_multicall_context_from_serialized_calldata(calldata: Span<felt252>) -
 
 
 #[cfg(test)]
-mod tests { 
+mod tests {
     use crate::accounts::multicall::{prepare_multicall_context};
-
-    #[test]
-    fn test_prepare_multicall_context_actual() {
-        let calldata = array![
-            0x00000000000000000000000000000000,
-            0x00000000000000000000000000000020,
-            0x00000000000000000000000000000000,
-            0x00000000000000000000000000000002,
-            0x00000000000000000000000000000000,
-            0x00000000000000000000000000000040,
-            0x00000000000000000000000000000000,
-            0x00000000000000000000000000000100,
-            0x00a551825f2e7d5313ee03b1dfe40e2a,
-            0x7b78b27a7fed40fa17aec27e010bfa96,
-            0x0083afd3f4caedc6eebf44246fe54e38,
-            0xc95e3179a5ec9ea81740eca5b482d12e,
-            0x00000000000000000000000000000000,
-            0x00000000000000000000000000000060,
-            0x00000000000000000000000000000000,
-            0x00000000000000000000000000000002,
-            0x00000000000000000000000000000000,
-            0x00000000000000000000000000555666,
-            0x00000000000000000000000000000000,
-            0x000000000000000000000000000005dc,
-            0x00a551825f2e7d5313ee03b1dfe40e2a,
-            0x7b78b27a7fed40fa17aec27e010bfa96,
-            0x0083afd3f4caedc6eebf44246fe54e38,
-            0xc95e3179a5ec9ea81740eca5b482d12e,
-            0x00000000000000000000000000000000,
-            0x00000000000000000000000000000060,
-            0x00000000000000000000000000000000,
-            0x00000000000000000000000000000002,
-            0x00000000000000000000000000000000,
-            0x00000000000000000000000000111222,
-            0x00000000000000000000000000000000,
-            0x00000000000000000000000000000bb8
-        ].span();
-        let context = prepare_multicall_context(starknet::contract_address_const::<0>(), calldata);
-    }
 
     #[test]
     fn test_prepare_multicall_context() {
@@ -177,8 +157,8 @@ mod tests {
             0x00000000000000000000000000000bbb,
             0x00000000000000000000000000000000,
             0x00000000000000000000000000000ccc
-        ].span();
-
+        ]
+            .span();
 
         let context = prepare_multicall_context(starknet::contract_address_const::<0>(), calldata);
 
@@ -197,6 +177,6 @@ mod tests {
         assert_eq!((*context.at(2)).calldata.len(), 0x3);
         assert_eq!(*(*context.at(2)).calldata.at(0), 0xfff);
         assert_eq!(*(*context.at(2)).calldata.at(1), 0xbbb);
-        assert_eq!(*(*context.at(2)).calldata.at(2), 0xccc);        
+        assert_eq!(*(*context.at(2)).calldata.at(2), 0xccc);
     }
 }

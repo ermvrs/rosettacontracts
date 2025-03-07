@@ -139,10 +139,8 @@ fn has_dynamic(types: Span<EVMTypes>) -> bool {
     let mut result = false;
     for evm_type in types {
         match evm_type {
-            EVMTypes::Array => {
-                result = true;
-            },
-            _ => {continue;}
+            EVMTypes::Array => { result = true; },
+            _ => { continue; }
         };
     };
 
@@ -272,20 +270,22 @@ pub impl EVMTypesImpl of AbiDecodeTrait {
 // set relative = 0x40
 // read(0x40 = 0x40) -> 0x40
 // read(relative + 0x40 = 0x80) -> 0x20
-// set relative =  
+// set relative =
 fn decode_tuple(ref ctx: EVMCalldata, types: Span<EVMTypes>) -> Span<felt252> {
-
-    if(has_dynamic(types)) {
-
+    if (has_dynamic(types)) {
         // If dynamic type, tuple is dynamic so move to that offset
         //ctx.decode(types)
         // rel: 0x40
         // offset: 0x40
         let (new_offset, data_start_offset) = ctx.calldata.read_u256(ctx.offset);
         let mut cloned_context = ctx.clone();
-        //cloned_context.offset =  ctx.offset + ctx.relative_offset + data_start_offset.try_into().unwrap();
+        //cloned_context.offset =  ctx.offset + ctx.relative_offset +
+        //data_start_offset.try_into().unwrap();
         // This has to be 0x80 for first array
-        cloned_context.relative_offset = ctx.relative_offset + data_start_offset.try_into().unwrap(); // 0x40 + 0x40 = 0x80 .. 0x40 + 0x100 = 0x140 second iter
+        cloned_context.relative_offset = ctx.relative_offset
+            + data_start_offset
+                .try_into()
+                .unwrap(); // 0x40 + 0x40 = 0x80 .. 0x40 + 0x100 = 0x140 second iter
         cloned_context.offset = ctx.relative_offset + data_start_offset.try_into().unwrap();
         ctx.offset = new_offset;
         return cloned_context.decode(types);
@@ -296,10 +296,11 @@ fn decode_tuple(ref ctx: EVMCalldata, types: Span<EVMTypes>) -> Span<felt252> {
 
 
 fn decode_array(ref ctx: EVMCalldata, types: Span<EVMTypes>) -> Span<felt252> {
-
     let (defer_offset, data_start_offset) = ctx.calldata.read_u256(ctx.offset);
 
-    let (new_offset, items_length) = ctx.calldata.read_u256(ctx.relative_offset + data_start_offset.try_into().unwrap());
+    let (new_offset, items_length) = ctx
+        .calldata
+        .read_u256(ctx.relative_offset + data_start_offset.try_into().unwrap());
 
     ctx.offset = new_offset;
 
@@ -313,10 +314,9 @@ fn decode_array(ref ctx: EVMCalldata, types: Span<EVMTypes>) -> Span<felt252> {
         // Loopun dışında array içi elemanlar dynamic mi check edilmeli
         // Eğer dynamicse yeni context açılıp offset sıfırlanabilir
 
-        
         let decoded_inner_type = cloned_context.decode(types);
         decoded.append_span(decoded_inner_type);
-        
+
         //let decoded_inner_type = ctx.decode(types);
         //decoded.append_span(decoded_inner_type);
         item_idx += 1;
@@ -335,7 +335,9 @@ fn decode_bytes(ref ctx: EVMCalldata) -> Span<felt252> {
         .offset = data_start_offset
         .try_into()
         .unwrap(); // Data start offset has to be lower than u32 range. TODO: Add check?
-    let (new_offset, items_length) = ctx.calldata.read_u256(ctx.relative_offset + ctx.offset); // length of bytes
+    let (new_offset, items_length) = ctx
+        .calldata
+        .read_u256(ctx.relative_offset + ctx.offset); // length of bytes
     ctx.offset = new_offset;
 
     let mut ba: ByteArray = Default::default();
@@ -386,7 +388,6 @@ fn decode_bytes_32(ref ctx: EVMCalldata) -> Span<felt252> {
 
 #[inline(always)]
 fn decode_fixed_bytes(ref ctx: EVMCalldata, size: usize) -> Span<felt252> {
-    
     let (new_offset, value) = ctx.calldata.read_u256(ctx.offset);
     ctx.offset = new_offset;
 
@@ -409,7 +410,9 @@ fn decode_address(ref ctx: EVMCalldata) -> Span<felt252> {
     let (new_offset, value) = ctx.calldata.read_u256(ctx.offset);
     ctx.offset = new_offset;
 
-    let sn_address: felt252 = registry.get_starknet_address_with_fallback(value.try_into().unwrap()).into();
+    let sn_address: felt252 = registry
+        .get_starknet_address_with_fallback(value.try_into().unwrap())
+        .into();
     array![sn_address].span()
 }
 
@@ -488,7 +491,12 @@ mod tests {
     use crate::utils::bytes::{Bytes, BytesTrait};
 
     fn cd(mut data: Bytes) -> EVMCalldata {
-        EVMCalldata { relative_offset: 0_usize, offset: 0_usize, calldata: data, registry: starknet::contract_address_const::<0>() }
+        EVMCalldata {
+            relative_offset: 0_usize,
+            offset: 0_usize,
+            calldata: data,
+            registry: starknet::contract_address_const::<0>()
+        }
     }
 
     #[test]
@@ -498,7 +506,9 @@ mod tests {
 
         let mut calldata = cd(data);
         let decoded = calldata.decode(array![EVMTypes::Felt252].span());
-        assert_eq!(*decoded.at(0), 0x0000000000000ffff00000000000000000000000000000000000000000000020);
+        assert_eq!(
+            *decoded.at(0), 0x0000000000000ffff00000000000000000000000000000000000000000000020
+        );
     }
 
     #[test]
@@ -508,7 +518,9 @@ mod tests {
 
         let mut calldata = cd(data);
         let decoded = calldata.decode(array![EVMTypes::Felt252].span());
-        assert_eq!(*decoded.at(0), 0x800000000000011000000000000000000000000000000000000000000000000);
+        assert_eq!(
+            *decoded.at(0), 0x800000000000011000000000000000000000000000000000000000000000000
+        );
     }
 
     #[test]
@@ -518,7 +530,7 @@ mod tests {
         data.append_u256(0xF800000000000011000000000000000000000000000000000000000000000000);
 
         let mut calldata = cd(data);
-        let decoded = calldata.decode(array![EVMTypes::Felt252].span());
+        calldata.decode(array![EVMTypes::Felt252].span());
     }
 
     #[test]
@@ -542,9 +554,10 @@ mod tests {
         data.append_u256(0x73686f72746261636b0000000000000000000000000000000000000000000000);
 
         let mut calldata = cd(data);
-        let decoded = calldata.decode(array![EVMTypes::Array(array![EVMTypes::String].span())].span());
+        let decoded = calldata
+            .decode(array![EVMTypes::Array(array![EVMTypes::String].span())].span());
         assert_eq!(*decoded.at(0), 0x4);
-        
+
         assert_eq!(*decoded.at(1), 0x0);
         assert_eq!(*decoded.at(2), 0x414C49); // ALI
         assert_eq!(*decoded.at(3), 0x3);
@@ -552,7 +565,9 @@ mod tests {
         assert_eq!(*decoded.at(5), 0x56454C49); // VELI
         assert_eq!(*decoded.at(6), 0x4);
         assert_eq!(*decoded.at(7), 0x1);
-        assert_eq!(*decoded.at(8), 0x4C4F4E47535452494E474C4F4E4745525448414E3132333132333132333132); // LONGSTRINGLONGERTHAN12312312312
+        assert_eq!(
+            *decoded.at(8), 0x4C4F4E47535452494E474C4F4E4745525448414E3132333132333132333132
+        ); // LONGSTRINGLONGERTHAN12312312312
         assert_eq!(*decoded.at(9), 0x33313233415341534441534441444144); // 3123ASASDASDADAD
         assert_eq!(*decoded.at(10), 16);
         assert_eq!(*decoded.at(11), 0x0);
@@ -574,7 +589,8 @@ mod tests {
         data.append_u256(0x56454c4900000000000000000000000000000000000000000000000000000000);
 
         let mut calldata = cd(data);
-        let decoded = calldata.decode(array![EVMTypes::Array(array![EVMTypes::String].span())].span());
+        let decoded = calldata
+            .decode(array![EVMTypes::Array(array![EVMTypes::String].span())].span());
         assert_eq!(*decoded.at(0), 0x2);
 
         assert_eq!(*decoded.at(1), 0x0);
@@ -633,8 +649,28 @@ mod tests {
         data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000042);
 
         let mut calldata = cd(data);
-        let decoded = calldata.decode(array![EVMTypes::Array(array![EVMTypes::Tuple(array![EVMTypes::Uint128, EVMTypes::Array(array![EVMTypes::Uint128].span()), EVMTypes::Uint256, EVMTypes::Array(array![EVMTypes::Uint256].span())].span())].span())].span());
-        // [[123, [1,2,3,4,5,6], 7676, [347384]], [333, [0,5,6], 43, [343455]], [444, [10,10,10], 33, [22,33,44,55,66]]]
+        let decoded = calldata
+            .decode(
+                array![
+                    EVMTypes::Array(
+                        array![
+                            EVMTypes::Tuple(
+                                array![
+                                    EVMTypes::Uint128,
+                                    EVMTypes::Array(array![EVMTypes::Uint128].span()),
+                                    EVMTypes::Uint256,
+                                    EVMTypes::Array(array![EVMTypes::Uint256].span())
+                                ]
+                                    .span()
+                            )
+                        ]
+                            .span()
+                    )
+                ]
+                    .span()
+            );
+        // [[123, [1,2,3,4,5,6], 7676, [347384]], [333, [0,5,6], 43, [343455]], [444, [10,10,10],
+        // 33, [22,33,44,55,66]]]
         assert_eq!(*decoded.at(0), 0x3);
         assert_eq!(*decoded.at(1), 123);
         assert_eq!(*decoded.at(2), 0x6);
@@ -709,7 +745,25 @@ mod tests {
         data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000001);
 
         let mut calldata = cd(data);
-        let decoded = calldata.decode(array![EVMTypes::Array(array![EVMTypes::Tuple(array![EVMTypes::Uint128, EVMTypes::Array(array![EVMTypes::Uint128].span()), EVMTypes::Uint256].span())].span())].span());
+        let decoded = calldata
+            .decode(
+                array![
+                    EVMTypes::Array(
+                        array![
+                            EVMTypes::Tuple(
+                                array![
+                                    EVMTypes::Uint128,
+                                    EVMTypes::Array(array![EVMTypes::Uint128].span()),
+                                    EVMTypes::Uint256
+                                ]
+                                    .span()
+                            )
+                        ]
+                            .span()
+                    )
+                ]
+                    .span()
+            );
 
         assert_eq!(*decoded.at(0), 0x2);
         assert_eq!(*decoded.at(1), 123);
@@ -755,8 +809,25 @@ mod tests {
         data.append_u256(0x000000000000000000000000000000000000000000000000000000000000029a);
 
         let mut calldata = cd(data);
-        let decoded = calldata.decode(array![EVMTypes::Array(array![EVMTypes::Tuple(array![EVMTypes::Uint128, EVMTypes::Array(array![EVMTypes::Uint128].span())].span())].span())].span());
-    
+        let decoded = calldata
+            .decode(
+                array![
+                    EVMTypes::Array(
+                        array![
+                            EVMTypes::Tuple(
+                                array![
+                                    EVMTypes::Uint128,
+                                    EVMTypes::Array(array![EVMTypes::Uint128].span())
+                                ]
+                                    .span()
+                            )
+                        ]
+                            .span()
+                    )
+                ]
+                    .span()
+            );
+
         assert_eq!(*decoded.at(0), 0x2);
         assert_eq!(*decoded.at(1), 123);
         assert_eq!(*decoded.at(2), 0x3);
@@ -767,7 +838,6 @@ mod tests {
         assert_eq!(*decoded.at(7), 0x2);
         assert_eq!(*decoded.at(8), 555);
         assert_eq!(*decoded.at(9), 666);
-
     }
 
     #[test]
@@ -779,25 +849,81 @@ mod tests {
         //  arr1[] memory)
         let mut data: Bytes = BytesTrait::blank();
 
-        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000020); // 0x0 Array start offset
-        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000002); // 0x20 Array length outer
-        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000040); // 0x40 first element - tuple start offset
-        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000100); // 0x60 second element - tuple start offset
-        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000040); // 0x80 tuples inner dynamic data start offset
-        data.append_u256(0x000000000000000000000000000000000000000000000000000000000000007b); // 0xa0 static uint128 (b)
-        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000003); // 0xc0 inner array length
-        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000001); // 0xe0 inner array first elem
+        data
+            .append_u256(
+                0x0000000000000000000000000000000000000000000000000000000000000020
+            ); // 0x0 Array start offset
+        data
+            .append_u256(
+                0x0000000000000000000000000000000000000000000000000000000000000002
+            ); // 0x20 Array length outer
+        data
+            .append_u256(
+                0x0000000000000000000000000000000000000000000000000000000000000040
+            ); // 0x40 first element - tuple start offset
+        data
+            .append_u256(
+                0x0000000000000000000000000000000000000000000000000000000000000100
+            ); // 0x60 second element - tuple start offset
+        data
+            .append_u256(
+                0x0000000000000000000000000000000000000000000000000000000000000040
+            ); // 0x80 tuples inner dynamic data start offset
+        data
+            .append_u256(
+                0x000000000000000000000000000000000000000000000000000000000000007b
+            ); // 0xa0 static uint128 (b)
+        data
+            .append_u256(
+                0x0000000000000000000000000000000000000000000000000000000000000003
+            ); // 0xc0 inner array length
+        data
+            .append_u256(
+                0x0000000000000000000000000000000000000000000000000000000000000001
+            ); // 0xe0 inner array first elem
         data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000002); // ...
         data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000004); // ...
-        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000040); // second tuples inner dynamic data start offset
-        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000309); // second tuples static uint128(b)
-        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000002); // second tuple inner array length
-        data.append_u256(0x000000000000000000000000000000000000000000000000000000000000022b); // elem
-        data.append_u256(0x000000000000000000000000000000000000000000000000000000000000029a); // elem
+        data
+            .append_u256(
+                0x0000000000000000000000000000000000000000000000000000000000000040
+            ); // second tuples inner dynamic data start offset
+        data
+            .append_u256(
+                0x0000000000000000000000000000000000000000000000000000000000000309
+            ); // second tuples static uint128(b)
+        data
+            .append_u256(
+                0x0000000000000000000000000000000000000000000000000000000000000002
+            ); // second tuple inner array length
+        data
+            .append_u256(
+                0x000000000000000000000000000000000000000000000000000000000000022b
+            ); // elem
+        data
+            .append_u256(
+                0x000000000000000000000000000000000000000000000000000000000000029a
+            ); // elem
 
         let mut calldata = cd(data);
-        let decoded = calldata.decode(array![EVMTypes::Array(array![EVMTypes::Tuple(array![EVMTypes::Array(array![EVMTypes::Uint128].span()), EVMTypes::Uint128].span())].span())].span());
-    
+        let decoded = calldata
+            .decode(
+                array![
+                    EVMTypes::Array(
+                        array![
+                            EVMTypes::Tuple(
+                                array![
+                                    EVMTypes::Array(array![EVMTypes::Uint128].span()),
+                                    EVMTypes::Uint128
+                                ]
+                                    .span()
+                            )
+                        ]
+                            .span()
+                    )
+                ]
+                    .span()
+            );
+
         // [ [ [1,2,4], 123], [ [555,666], 777] ]
         assert_eq!(*decoded.at(0), 0x2);
         assert_eq!(*decoded.at(1), 0x3);
@@ -814,20 +940,58 @@ mod tests {
     #[test]
     fn test_decode_array_of_array() {
         let mut data: Bytes = BytesTrait::blank();
-        
-        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000020); // 0:20
-        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000002); // 20:40
-        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000040); // 40:60
-        data.append_u256(0x00000000000000000000000000000000000000000000000000000000000000a0); // 60:80
-        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000002); // 80:a0
-        data.append_u256(0x000000000000000000000000000000000000000000000000000000000000007b); // a0:c0
-        data.append_u256(0x00000000000000000000000000000000000000000000000000000000000001bc); // c0:e0
-        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000002); // e0:100
-        data.append_u256(0x000000000000000000000000000000000000000000000000000000000000022b); // 100:120
-        data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000021); // 120:140
+
+        data
+            .append_u256(
+                0x0000000000000000000000000000000000000000000000000000000000000020
+            ); // 0:20
+        data
+            .append_u256(
+                0x0000000000000000000000000000000000000000000000000000000000000002
+            ); // 20:40
+        data
+            .append_u256(
+                0x0000000000000000000000000000000000000000000000000000000000000040
+            ); // 40:60
+        data
+            .append_u256(
+                0x00000000000000000000000000000000000000000000000000000000000000a0
+            ); // 60:80
+        data
+            .append_u256(
+                0x0000000000000000000000000000000000000000000000000000000000000002
+            ); // 80:a0
+        data
+            .append_u256(
+                0x000000000000000000000000000000000000000000000000000000000000007b
+            ); // a0:c0
+        data
+            .append_u256(
+                0x00000000000000000000000000000000000000000000000000000000000001bc
+            ); // c0:e0
+        data
+            .append_u256(
+                0x0000000000000000000000000000000000000000000000000000000000000002
+            ); // e0:100
+        data
+            .append_u256(
+                0x000000000000000000000000000000000000000000000000000000000000022b
+            ); // 100:120
+        data
+            .append_u256(
+                0x0000000000000000000000000000000000000000000000000000000000000021
+            ); // 120:140
 
         let mut calldata = cd(data);
-        let decoded = calldata.decode(array![EVMTypes::Array(array![EVMTypes::Array(array![EVMTypes::Uint128].span())].span())].span());
+        let decoded = calldata
+            .decode(
+                array![
+                    EVMTypes::Array(
+                        array![EVMTypes::Array(array![EVMTypes::Uint128].span())].span()
+                    )
+                ]
+                    .span()
+            );
 
         assert_eq!(*decoded.at(0), 0x2);
         assert_eq!(*decoded.at(1), 0x2);

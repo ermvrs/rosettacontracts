@@ -110,9 +110,7 @@ fn rlp_encode_tx(call: RosettanetCall) -> @ByteArray {
     }
 }
 
-fn convert_calldata(
-    mut calldata: Span<u128>, with_signature: bool
-) -> @ByteArray {
+fn convert_calldata(mut calldata: Span<u128>, with_signature: bool) -> @ByteArray {
     if (calldata.len() == 0) {
         return OptimizedRLPTrait::encode_bytearray(@"").unwrap();
     }
@@ -120,21 +118,17 @@ fn convert_calldata(
         convert_calldata_to_bytearray(calldata, with_signature)
     )
         .unwrap();
-    
 }
 
-fn convert_calldata_to_bytearray(
-    mut calldata: Span<u128>, with_signature: bool
-) -> @ByteArray {
+fn convert_calldata_to_bytearray(mut calldata: Span<u128>, with_signature: bool) -> @ByteArray {
     if calldata.len() == 0 {
         return @Default::default();
     }
 
     let mut ba: ByteArray = Default::default();
     if with_signature {
-        let function_signature: felt252 = (*calldata
-            .pop_front()
-            .unwrap()).into(); // Safe bcs length is not zero
+        let function_signature: felt252 = (*calldata.pop_front().unwrap())
+            .into(); // Safe bcs length is not zero
 
         ba.append_word(function_signature, 4);
     }
@@ -164,7 +158,7 @@ fn get_byte_size(mut value: u128) -> u32 {
 pub fn span_to_array(span: Span<u128>) -> Array<u128> {
     let mut arr = array![];
     let len = span.len();
-    
+
     for i in 0..len {
         arr.append(*span[i]);
     };
@@ -253,31 +247,40 @@ mod tests {
 
     #[test]
     fn test_calldata_conversion() {
-        let mut calldata = array![0x23b872dd, 0x123123, 0x0, 0x456456, 0x0, 0x0, 0x0, 0x666, 0x0].span();
+        let mut calldata = array![0x23b872dd, 0x123123, 0x0, 0x456456, 0x0, 0x0, 0x0, 0x666, 0x0]
+            .span();
         //let directives = array![0, 1, 0, 0].span();
 
         let result = convert_calldata_to_bytearray(calldata, true);
 
-        assert_eq!(result.len(), (4*32) + 4);
+        assert_eq!(result.len(), (4 * 32) + 4);
     }
 
     #[test]
     fn test_calldata_conversion_long() {
         let mut calldata = array![
             0x23b872dd,
-            0x123123,0x0,
-            0x456456,0x0,
-            0x0,0x0,
-            0x666,0x0,
-            0x123123,0x0,
-            0x456456,0x0,
-            0x0,0x0,
-            0x666,0x0,
+            0x123123,
+            0x0,
+            0x456456,
+            0x0,
+            0x0,
+            0x0,
+            0x666,
+            0x0,
+            0x123123,
+            0x0,
+            0x456456,
+            0x0,
+            0x0,
+            0x0,
+            0x666,
+            0x0,
         ]
             .span();
 
         let result = convert_calldata_to_bytearray(calldata, true);
 
-        assert_eq!(result.len(), (8*32) + 4);
+        assert_eq!(result.len(), (8 * 32) + 4);
     }
 }
