@@ -1050,33 +1050,51 @@ fn test_execute_multicall_transaction() {
         value: 0,
         calldata: array![
             0x76971d7f,
-            0x0, 0x2,
-            strk_address.high, strk_address.low,
-            transfer_entrypoint.high, transfer_entrypoint.low,
-            0x0, 0x3,
-            strk_receiver_1.high, strk_receiver_1.low,
-            0x0,strk_1_amount.high,0x0,strk_1_amount.low,
-            strk_address.high, strk_address.low,
-            transfer_entrypoint.high,transfer_entrypoint.low,
-            0x0, 0x3,
-            strk_receiver_2.high, strk_receiver_2.low,
-            0x0, strk_2_amount.high,
-            0x0, strk_2_amount.low
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000020,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000002,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000040,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000120,
+            0x00a551825f2e7d5313ee03b1dfe40e2a,
+            0x7b78b27a7fed40fa17aec27e010bfa96,
+            0x0083afd3f4caedc6eebf44246fe54e38,
+            0xc95e3179a5ec9ea81740eca5b482d12e,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000060,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000003,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000555666,
+            0x00000000000000000000000000000000,
+            0x000000000000000000000000000005dc,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000000,
+            0x00a551825f2e7d5313ee03b1dfe40e2a,
+            0x7b78b27a7fed40fa17aec27e010bfa96,
+            0x0083afd3f4caedc6eebf44246fe54e38,
+            0xc95e3179a5ec9ea81740eca5b482d12e,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000060,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000003,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000111222,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000bb8,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000000
         ]
             .span(),
     };
 
     let signature = array![
-        0x56df07af96d2ec1992ab5c5ba1577260,
-        0xdf6e5f3347e5f26e03eecb3c6fa6569b,
-        0x830eb63af9949d06ef4e6c096f5806,
-        0x680c7672f0b3a18c902a68350cf19b60,
-        0x1b,
-        0x0,
-        0x0
+        0xd03d6316a9c7a356fe828ff6f480e13,0x67a799adb268ebc0a3a0341d630e75a5, 0xa67278e4452483d2a00060209eb90af5,0x6e815045d6e8dba8cfca66127f36410c, 0x1b, 0x0,0x0
     ];
 
-    let unsigned_tx_hash: u256 = 0x0f979b268363cd98b085532a6b1163d73bccb5b1acf58ad0a05d9537c81b297d;
+    let unsigned_tx_hash: u256 = 0x942981158784d2e2f45f187022e9112fd987d666276d74b76ce656c9cbad80da;
     let generated_tx_hash: u256 = generate_tx_hash(tx);
     assert_eq!(generated_tx_hash, unsigned_tx_hash);
 

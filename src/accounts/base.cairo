@@ -91,11 +91,14 @@ pub mod RosettaAccount {
             // Multicall or upgrade call
             if (call.to == self.ethereum_address.read()) {
                 // This is multicall
-                let selector: u32 = (*call.calldata.at(0)).try_into().unwrap();
+                let mut calldata = call.calldata;
+                let selector: u32 = (*calldata.pop_front().unwrap()).try_into().unwrap();
+                //let selector: u32 = (*call.calldata.at(0)).try_into().unwrap();
                 if (selector == MULTICALL_SELECTOR) {
                     assert(call.value == 0, 'multicall value not zero');
                     let context = prepare_multicall_context(
-                        call.calldata
+                        self.registry.read(),
+                        calldata
                     ); // First calldata element removed inside this function
                     return self.execute_multicall(context);
                 } else if (selector == UPGRADE_SELECTOR) {
