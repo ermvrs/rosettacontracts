@@ -1,3 +1,7 @@
+pub mod decoder;
+pub mod bytes;
+pub mod bits;
+
 use core::integer::{u128_byte_reverse};
 
 use crate::constants::{POW_2_250, POW_2_8, POW_2_16, POW_2_24};

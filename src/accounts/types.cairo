@@ -17,7 +17,7 @@ pub struct RosettanetCall {
     pub gas_price: u128, // On legacy transactions
     pub gas_limit: u64,
     pub value: u256, // To be used future
-    pub calldata: Span<felt252>, // Calldata len must be +1 directive len
+    pub calldata: Span<u128>, // Calldata len must be +1 directive len
 }
 
 #[derive(Copy, Drop, Clone, Serde)]
