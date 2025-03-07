@@ -8,13 +8,13 @@ use crate::utils::bytes::{BytesTrait};
 
 // Pass calldata without function selector
 pub fn prepare_multicall_context(
-    registry: ContractAddress, calldata: Span<u128>
+    registry: ContractAddress, calldata: Span<u128>,
 ) -> Span<RosettanetMulticall> {
     let mut evm_calldata = EVMCalldata {
         registry: registry,
         offset: 0,
         relative_offset: 0,
-        calldata: BytesTrait::new(calldata.len() * 16, span_to_array(calldata))
+        calldata: BytesTrait::new(calldata.len() * 16, span_to_array(calldata)),
     };
 
     let directives = array![
@@ -24,13 +24,13 @@ pub fn prepare_multicall_context(
                     array![
                         EVMTypes::Felt252,
                         EVMTypes::Felt252,
-                        EVMTypes::Array(array![EVMTypes::Felt252].span())
+                        EVMTypes::Array(array![EVMTypes::Felt252].span()),
                     ]
-                        .span()
-                )
+                        .span(),
+                ),
             ]
-                .span()
-        )
+                .span(),
+        ),
     ]
         .span();
     let decoded_calldata = evm_calldata.decode(directives);
@@ -39,7 +39,7 @@ pub fn prepare_multicall_context(
 }
 
 fn prepare_multicall_context_from_serialized_calldata(
-    calldata: Span<felt252>
+    calldata: Span<felt252>,
 ) -> Span<RosettanetMulticall> {
     let mut calldata = calldata;
 
@@ -47,7 +47,7 @@ fn prepare_multicall_context_from_serialized_calldata(
         Option::None => {
             0_u64
         }, // We may remove that panic or change the logic, since native eth transfer has empty calldata
-        Option::Some(val) => { (*val).try_into().unwrap() }
+        Option::Some(val) => { (*val).try_into().unwrap() },
     };
 
     let mut calls = ArrayTrait::<RosettanetMulticall>::new();
@@ -60,14 +60,14 @@ fn prepare_multicall_context_from_serialized_calldata(
 
         let to: felt252 = match calldata.pop_front() {
             Option::None => { 0x0 }, // TODO: panic
-            Option::Some(val) => { (*val) }
+            Option::Some(val) => { (*val) },
         };
         if (to == 0x0) {
             panic_with_felt252('multicall to wrong');
         }
         let entrypoint: felt252 = match calldata.pop_front() {
             Option::None => { 0x0 }, // TODO: panic
-            Option::Some(val) => { (*val) }
+            Option::Some(val) => { (*val) },
         };
 
         if (entrypoint == 0x0) {
@@ -76,7 +76,7 @@ fn prepare_multicall_context_from_serialized_calldata(
 
         let calldata_length: u64 = match calldata.pop_front() {
             Option::None => { 0 },
-            Option::Some(val) => { (*val).try_into().unwrap() }
+            Option::Some(val) => { (*val).try_into().unwrap() },
         };
 
         let mut inner_calldata: Array<felt252> = array![];
@@ -88,7 +88,7 @@ fn prepare_multicall_context_from_serialized_calldata(
 
             let value: felt252 = match calldata.pop_front() {
                 Option::None => { break; }, // TODO: panic
-                Option::Some(val) => { (*val) }
+                Option::Some(val) => { (*val) },
             };
 
             inner_calldata.append(value);
@@ -156,7 +156,7 @@ mod tests {
             0x00000000000000000000000000000000,
             0x00000000000000000000000000000bbb,
             0x00000000000000000000000000000000,
-            0x00000000000000000000000000000ccc
+            0x00000000000000000000000000000ccc,
         ]
             .span();
 

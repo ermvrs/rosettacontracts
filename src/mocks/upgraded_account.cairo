@@ -6,9 +6,9 @@ pub trait IMockUpgradedAccount<TState> {
     fn supports_interface(self: @TState, interface_id: felt252) -> bool;
     fn __validate_declare__(self: @TState, class_hash: felt252) -> felt252;
     fn __validate_deploy__(
-        self: @TState, class_hash: felt252, contract_address_salt: felt252
+        self: @TState, class_hash: felt252, contract_address_salt: felt252,
     ) -> felt252;
-    fn upgraded(self: @TState,) -> felt252;
+    fn upgraded(self: @TState) -> felt252;
 }
 
 #[starknet::contract(account)]
@@ -17,7 +17,7 @@ pub mod MockUpgradedAccount {
     struct Storage {}
 
     #[constructor]
-    fn constructor(ref self: ContractState,) {}
+    fn constructor(ref self: ContractState) {}
     #[abi(embed_v0)]
     impl AccountImpl of super::IMockUpgradedAccount<ContractState> {
         // Instead of Array<Call> we use Array<felt252> since we pass different values to the
@@ -34,7 +34,7 @@ pub mod MockUpgradedAccount {
         }
 
         fn is_valid_signature(
-            self: @ContractState, hash: u256, signature: Array<felt252>
+            self: @ContractState, hash: u256, signature: Array<felt252>,
         ) -> felt252 {
             starknet::VALIDATED
         }

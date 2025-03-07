@@ -21,7 +21,7 @@ pub fn get_bit_at<
     +Drop<T>,
     +Copy<T>,
 >(
-    x: T, i: u8
+    x: T, i: u8,
 ) -> bool {
     let mask: T = fast_power(2_u8.into(), i.into());
     x & mask == mask
@@ -46,7 +46,7 @@ pub fn most_significant_bit<
     +Drop<T>,
     +Copy<T>,
 >(
-    x: T
+    x: T,
 ) -> Option<u8> {
     let mut x: u256 = x.into();
     if x == 0_u8.into() {

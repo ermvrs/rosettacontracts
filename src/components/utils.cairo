@@ -20,19 +20,17 @@ fn calculate_sn_entrypoint(func: @ByteArray) -> felt252 {
 fn parse_function_name(func: @ByteArray) -> @ByteArray {
     let mut name: ByteArray = Default::default();
 
-    for i in 0
-        ..func
-            .len() {
-                match func.at(i) {
-                    Option::None => { break; },
-                    Option::Some(val) => {
-                        if (val == 0x28) {
-                            break;
-                        }
-                        name.append_byte(val);
-                    }
-                };
-            };
+    for i in 0..func.len() {
+        match func.at(i) {
+            Option::None => { break; },
+            Option::Some(val) => {
+                if (val == 0x28) {
+                    break;
+                }
+                name.append_byte(val);
+            },
+        };
+    };
 
     @name
 }

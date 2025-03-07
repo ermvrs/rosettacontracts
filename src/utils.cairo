@@ -9,7 +9,7 @@ use crate::optimized_rlp::{compute_keccak, get_byte_size_u128};
 
 pub fn u128_split(input: u128) -> (u64, u64) {
     let (high, low) = core::integer::u128_safe_divmod(
-        input, 0x10000000000000000_u128.try_into().unwrap()
+        input, 0x10000000000000000_u128.try_into().unwrap(),
     );
 
     (high.try_into().unwrap(), low.try_into().unwrap())
@@ -45,7 +45,7 @@ fn function_signature_from_felt_span(fn_name: Span<felt252>) -> @ByteArray {
                 } else {
                     output.append_word(elem.low.into(), get_byte_size_u128(elem.low).into());
                 }
-            }
+            },
         };
     };
 
@@ -81,7 +81,7 @@ pub fn eth_function_signature_from_felts(func: Span<felt252>) -> felt252 {
     ba.append_word(keccak_hash.high.into(), 16);
 
     eth_selector_from_span(
-        array![ba.at(0).unwrap(), ba.at(1).unwrap(), ba.at(2).unwrap(), ba.at(3).unwrap()].span()
+        array![ba.at(0).unwrap(), ba.at(1).unwrap(), ba.at(2).unwrap(), ba.at(3).unwrap()].span(),
     )
 }
 

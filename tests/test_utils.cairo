@@ -1,6 +1,6 @@
 use snforge_std::{
     declare, ContractClassTrait, DeclareResultTrait, start_cheat_caller_address,
-    stop_cheat_caller_address
+    stop_cheat_caller_address,
 };
 use starknet::{ClassHash, ContractAddress, EthAddress};
 use core::pedersen::PedersenTrait;
@@ -8,14 +8,14 @@ use core::hash::{HashStateExTrait, HashStateTrait};
 use rosettacontracts::rosettanet::{IRosettanetDispatcher, IRosettanetDispatcherTrait};
 use rosettacontracts::accounts::base::{IRosettaAccountDispatcher};
 use rosettacontracts::components::function_registry::{
-    IFunctionRegistryDispatcherTrait, IFunctionRegistryDispatcher
+    IFunctionRegistryDispatcherTrait, IFunctionRegistryDispatcher,
 };
 use rosettacontracts::utils::decoder::{EVMTypes};
 use rosettacontracts::mocks::erc20::{IMockERC20Dispatcher, IMockERC20DispatcherTrait};
 use rosettacontracts::mocks::weth::{IMockWETHDispatcher};
 
 pub fn register_function(
-    rosettanet: IRosettanetDispatcher, function: ByteArray, inputs: Span<EVMTypes>
+    rosettanet: IRosettanetDispatcher, function: ByteArray, inputs: Span<EVMTypes>,
 ) {
     let fn_registry = IFunctionRegistryDispatcher { contract_address: rosettanet.contract_address };
 
@@ -48,8 +48,8 @@ pub fn deploy_and_set_account() -> IRosettanetDispatcher {
     let (contract_address, _) = contract
         .deploy(
             @array![
-                account_class.into(), developer().into(), native_currency.contract_address.into()
-            ]
+                account_class.into(), developer().into(), native_currency.contract_address.into(),
+            ],
         )
         .unwrap();
     let dispatcher = IRosettanetDispatcher { contract_address };
@@ -90,8 +90,8 @@ pub fn deploy_rosettanet() -> IRosettanetDispatcher {
     let (contract_address, _) = contract
         .deploy(
             @array![
-                account_class.into(), developer().into(), native_currency.contract_address.into()
-            ]
+                account_class.into(), developer().into(), native_currency.contract_address.into(),
+            ],
         )
         .unwrap();
     let rosettanet = IRosettanetDispatcher { contract_address };
@@ -100,7 +100,7 @@ pub fn deploy_rosettanet() -> IRosettanetDispatcher {
 }
 
 pub fn deploy_account_from_rosettanet(
-    eth_address: EthAddress
+    eth_address: EthAddress,
 ) -> (IRosettanetDispatcher, IRosettaAccountDispatcher) {
     let account_class = declare_account();
 
@@ -116,7 +116,7 @@ pub fn deploy_account_from_rosettanet(
 }
 
 pub fn deploy_account_from_existing_rosettanet(
-    eth_address: EthAddress, rosettanet_contract: ContractAddress
+    eth_address: EthAddress, rosettanet_contract: ContractAddress,
 ) -> IRosettaAccountDispatcher {
     let rosettanet = IRosettanetDispatcher { contract_address: rosettanet_contract };
 
@@ -142,7 +142,7 @@ pub fn deploy_funded_account_from_rosettanet(
 }
 
 pub fn deploy_specificly_funded_account_from_rosettanet(
-    eth_address: EthAddress, amount: u256
+    eth_address: EthAddress, amount: u256,
 ) -> (IRosettanetDispatcher, IRosettaAccountDispatcher, IMockERC20Dispatcher) {
     let (rosettanet, account) = deploy_account_from_rosettanet(eth_address);
 
@@ -167,7 +167,7 @@ pub fn change_current_account_class(rosettanet_contract: ContractAddress, new_ha
 
 // Forcely matches these addresses
 pub fn manipulate_rosettanet_registry(
-    rosettanet_contract: ContractAddress, sn_address: ContractAddress, eth_address: EthAddress
+    rosettanet_contract: ContractAddress, sn_address: ContractAddress, eth_address: EthAddress,
 ) {
     // Currently we use function in registry
     // After alpha version, we have to remove that function. So this function also needs to be

@@ -8,7 +8,7 @@ pub trait IMockERC20<TState> {
     fn allowance(self: @TState, owner: ContractAddress, spender: ContractAddress) -> u256;
     fn transfer(self: @TState, recipient: ContractAddress, amount: u256) -> bool;
     fn transfer_from(
-        self: @TState, sender: ContractAddress, recipient: ContractAddress, amount: u256
+        self: @TState, sender: ContractAddress, recipient: ContractAddress, amount: u256,
     ) -> bool;
     fn approve(self: @TState, spender: ContractAddress, amount: u256) -> bool;
     fn mint(ref self: TState, receiver: ContractAddress, amount: u256);
@@ -22,7 +22,7 @@ pub trait IMockERC20<TState> {
     fn totalSupply(self: @TState) -> u256;
     fn balanceOf(self: @TState, account: ContractAddress) -> u256;
     fn transferFrom(
-        self: @TState, sender: ContractAddress, recipient: ContractAddress, amount: u256
+        self: @TState, sender: ContractAddress, recipient: ContractAddress, amount: u256,
     ) -> bool;
 }
 
@@ -40,18 +40,18 @@ pub mod MockERC20 {
     #[storage]
     struct Storage {
         #[substorage(v0)]
-        erc20: ERC20Component::Storage
+        erc20: ERC20Component::Storage,
     }
 
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
         #[flat]
-        ERC20Event: ERC20Component::Event
+        ERC20Event: ERC20Component::Event,
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState,) {
+    fn constructor(ref self: ContractState) {
         let name = "MyToken";
         let symbol = "MTK";
 

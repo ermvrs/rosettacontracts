@@ -3,7 +3,7 @@
 mod account_tests {
     use snforge_std::{
         start_cheat_signature_global, stop_cheat_signature_global, start_cheat_nonce_global,
-        stop_cheat_nonce_global, start_cheat_caller_address, stop_cheat_caller_address
+        stop_cheat_nonce_global, start_cheat_caller_address, stop_cheat_caller_address,
     };
 
     use rosettacontracts::accounts::types::{RosettanetCall};
@@ -18,7 +18,7 @@ mod account_tests {
         deploy_weth, eth_account, deploy_account_from_rosettanet,
         deploy_funded_account_from_rosettanet, deploy_specificly_funded_account_from_rosettanet,
         deploy_account_from_existing_rosettanet, manipulate_rosettanet_registry, deploy_erc20,
-        register_functions
+        register_functions,
     };
     // TODO: test deploying account from its own
     #[test]
@@ -44,7 +44,7 @@ mod account_tests {
             0x0739cb3999ae6842528ce5d8ec01a7fc,
             0x1b,
             0x0,
-            0x0
+            0x0,
         ]; // r.low, r.high, s.low, s.high, v
 
         let (_, account) = deploy_account_from_rosettanet(eth_address);
@@ -67,7 +67,7 @@ mod account_tests {
             0x57f669dd35be2b984cd4ab48c0a0c588,
             0x1c,
             0x1,
-            0x0
+            0x0,
         ];
 
         let (_, account) = deploy_account_from_rosettanet(eth_address);
@@ -90,7 +90,7 @@ mod account_tests {
             0x55296d9471410304362b0e4fd0ab7e06,
             0x1b,
             0x0,
-            0x0
+            0x0,
         ];
         let (_, account) = deploy_account_from_rosettanet(eth_address);
 
@@ -113,7 +113,7 @@ mod account_tests {
             0x55296d9471410304362b0e4fd0ab7e06,
             0x1b,
             0x0,
-            0x0
+            0x0,
         ];
         let (_, account) = deploy_account_from_rosettanet(eth_address);
 
@@ -135,7 +135,7 @@ mod account_tests {
             0x0739cb3999ae6842528ce5d8ec01a7fc,
             0x1b,
             0x0,
-            0x0
+            0x0,
         ]; // r.low, r.high, s.low, s.high, v
 
         let (_, account) = deploy_account_from_rosettanet(eth_address);
@@ -158,7 +158,7 @@ mod account_tests {
             0x0739cb3999ae6842528ce5d8ec01a7fc,
             0x1b,
             0x0,
-            0x0
+            0x0,
         ]; // r.low, r.high, s.low, s.high, v
 
         let (_, account) = deploy_account_from_rosettanet(eth_address);
@@ -193,7 +193,7 @@ mod account_tests {
             0x5c7bf7e431e816e08e9329edcc014fe4,
             0x1c,
             0xde0b6b3a7640000,
-            0x0
+            0x0,
         ];
         let unsigned_tx_hash: u256 =
             0xbf4c65f85c5317b99259cedee5a69aacae0551f5a265d4df53714c9deb5add55;
@@ -237,7 +237,7 @@ mod account_tests {
             0x5c7bf7e431e816e08e9329edcc014fe4,
             0x1c,
             0xde0b6b3a7640000,
-            0x0
+            0x0,
         ];
         let unsigned_tx_hash: u256 =
             0xbf4c65f85c5317b99259cedee5a69aacae0551f5a265d4df53714c9deb5add55;
@@ -281,7 +281,7 @@ mod account_tests {
             0x21913827f62c0b6bc9643dd9a8892e75,
             0x1b,
             0xde0b6b3a7640000,
-            0x0
+            0x0,
         ];
 
         let unsigned_tx_hash: u256 =
@@ -325,7 +325,7 @@ mod account_tests {
                 0x042fa70d85ee84eab646a3b438a285ee,
                 0x000000000000000000000000b756b1bc,
                 0x000000000000000000000000000f4240,
-                0x00000000000000000000000000000000
+                0x00000000000000000000000000000000,
             ]
                 .span(),
         };
@@ -337,7 +337,7 @@ mod account_tests {
             0x419770f60d92f921b9d5434941b3891a,
             0x1c,
             0x0,
-            0x0
+            0x0,
         ];
         //let unsigned_tx_hash: u256 =
         //0xb2e837d9ee9c8d6e9bb40a9cf18eac862c6b4f9b0bbe5d2437abb9dcade6bab2;
@@ -380,7 +380,7 @@ mod account_tests {
                 0x042fa70d85ee84eab646a3b438a285ee,
                 0x000000000000000000000000b756b1bc,
                 0x000000000000000000000000000f4240,
-                0x00000000000000000000000000000000
+                0x00000000000000000000000000000000,
             ]
                 .span(),
         };
@@ -392,7 +392,7 @@ mod account_tests {
             0x419770f60d92f921b9d5434941b3891a,
             0x1c,
             0x0,
-            0x0
+            0x0,
         ];
         //let unsigned_tx_hash: u256 =
         //0xb2e837d9ee9c8d6e9bb40a9cf18eac862c6b4f9b0bbe5d2437abb9dcade6bab2;
@@ -435,7 +435,7 @@ mod account_tests {
                 0x042fa70d85ee84eab646a3b438a285ee,
                 0x000000000000000000000000b756b1bc,
                 0x000000000000000000000000000f4240,
-                0x00000000000000000000000000000000
+                0x00000000000000000000000000000000,
             ]
                 .span(),
         };
@@ -447,7 +447,7 @@ mod account_tests {
             0x348ea9530fd75922908d72503b041e4d,
             0x1c,
             0x0,
-            0x0
+            0x0,
         ];
         //let unsigned_tx_hash: u256 =
         //0xdba8cc62e6edeee140d6b73ae141c687f9738e00ad6a954dfbfd509d89aa7428;
@@ -490,7 +490,7 @@ mod account_tests {
                 0x042fa70d85ee84eab646a3b438a285ee,
                 0x000000000000000000000000b756b1bc,
                 0x000000000000000000000000000f4240,
-                0x00000000000000000000000000000000
+                0x00000000000000000000000000000000,
             ]
                 .span(),
         };
@@ -502,7 +502,7 @@ mod account_tests {
             0x348ea9530fd75922908d72503b041e4d,
             0x1c,
             0x0,
-            0x0
+            0x0,
         ];
         let unsigned_tx_hash: u256 =
             0xdba8cc62e6edeee140d6b73ae141c687f9738e00ad6a954dfbfd509d89aa7428;
@@ -550,7 +550,7 @@ mod account_tests {
             0x6542b3440f82443065a9dc1486deb5b7,
             0x1c,
             0x2386f26fc10000,
-            0x0
+            0x0,
         ];
         let unsigned_tx_hash: u256 =
             0x4efffa2e75fab48e0a7b03c45c53f8fffb98a89d6f457c44b98fd401ba287e29;
@@ -587,7 +587,7 @@ mod account_tests {
             gas_price: 0,
             gas_limit: 210000,
             value: 0,
-            calldata: array![0xf4acc7b5].span(), // sends 1000000 tokens
+            calldata: array![0xf4acc7b5].span() // sends 1000000 tokens
         };
 
         let signature = array![
@@ -597,7 +597,7 @@ mod account_tests {
             0x6a79d47f800e637b21026ba1591cee5b,
             0x1b,
             0x0,
-            0x0
+            0x0,
         ];
         let unsigned_tx_hash: u256 =
             0xdd014b10515a451a59e9f92a9bbfa7ce01cc208856b5862d38f88d17ee4cf3d8;
@@ -644,7 +644,7 @@ mod account_tests {
             0x57f669dd35be2b984cd4ab48c0a0c588,
             0x1c,
             0x1,
-            0x0
+            0x0,
         ];
 
         let (_, account, _) = deploy_funded_account_from_rosettanet(eth_address);
@@ -652,7 +652,7 @@ mod account_tests {
         start_cheat_nonce_global(tx.nonce.into());
         start_cheat_signature_global(signature.span());
         start_cheat_caller_address(
-            account.contract_address, starknet::contract_address_const::<0>()
+            account.contract_address, starknet::contract_address_const::<0>(),
         );
         let execution = account.__execute__(tx);
         stop_cheat_caller_address(account.contract_address);
@@ -690,19 +690,19 @@ mod account_tests {
             0x57f669dd35be2b984cd4ab48c0a0c588,
             0x1c,
             0x1FFF,
-            0x1FFF
+            0x1FFF,
         ];
 
         let (rosettanet, account, _) = deploy_funded_account_from_rosettanet(eth_address);
 
         let _ = deploy_account_from_existing_rosettanet(
-            receiver_address, rosettanet.contract_address
+            receiver_address, rosettanet.contract_address,
         );
 
         start_cheat_nonce_global(tx.nonce.into());
         start_cheat_signature_global(signature.span());
         start_cheat_caller_address(
-            account.contract_address, starknet::contract_address_const::<0>()
+            account.contract_address, starknet::contract_address_const::<0>(),
         );
         let execution = account.__execute__(tx);
         stop_cheat_caller_address(account.contract_address);
@@ -740,19 +740,19 @@ mod account_tests {
             0x57f669dd35be2b984cd4ab48c0a0c588,
             0x1c,
             0x1,
-            0x0
+            0x0,
         ];
 
         let (rosettanet, account) = deploy_account_from_rosettanet(eth_address);
 
         let _ = deploy_account_from_existing_rosettanet(
-            receiver_address, rosettanet.contract_address
+            receiver_address, rosettanet.contract_address,
         );
 
         start_cheat_nonce_global(tx.nonce.into());
         start_cheat_signature_global(signature.span());
         start_cheat_caller_address(
-            account.contract_address, starknet::contract_address_const::<0>()
+            account.contract_address, starknet::contract_address_const::<0>(),
         );
         let execution = account.__execute__(tx);
         stop_cheat_caller_address(account.contract_address);
@@ -789,20 +789,20 @@ mod account_tests {
             0x57f669dd35be2b984cd4ab48c0a0c588,
             0x1c,
             0x1,
-            0x0
+            0x0,
         ];
 
         let (rosettanet, account, strk) = deploy_funded_account_from_rosettanet(eth_address);
 
         let receiver = deploy_account_from_existing_rosettanet(
-            receiver_address, rosettanet.contract_address
+            receiver_address, rosettanet.contract_address,
         );
         assert_eq!(strk.balance_of(receiver.contract_address), 0);
 
         start_cheat_nonce_global(tx.nonce.into());
         start_cheat_signature_global(signature.span());
         start_cheat_caller_address(
-            account.contract_address, starknet::contract_address_const::<0>()
+            account.contract_address, starknet::contract_address_const::<0>(),
         );
         let execution = account.__execute__(tx);
         stop_cheat_caller_address(account.contract_address);
@@ -835,7 +835,7 @@ mod account_tests {
                 0x042fa70d85ee84eab646a3b438a285ee,
                 0x000000000000000000000000b756b1bc,
                 0x000000000000000000000000000f4240,
-                0x00000000000000000000000000000000
+                0x00000000000000000000000000000000,
             ]
                 .span(),
         };
@@ -847,25 +847,25 @@ mod account_tests {
             0x62b4b646ff3c09068d04eb98eec04413,
             0x1b,
             0x0,
-            0x0
+            0x0,
         ];
         let (rosettanet, account, _) = deploy_funded_account_from_rosettanet(eth_address);
         register_functions(rosettanet);
         let erc20 = deploy_erc20();
 
         manipulate_rosettanet_registry(
-            rosettanet.contract_address, erc20.contract_address, erc20_eth
+            rosettanet.contract_address, erc20.contract_address, erc20_eth,
         );
 
         let fallback_account_address = rosettanet
             .get_starknet_address_with_fallback(
-                0xb756b1bc042fa70d85ee84eab646a3b438a285ee.try_into().unwrap()
+                0xb756b1bc042fa70d85ee84eab646a3b438a285ee.try_into().unwrap(),
             );
 
         start_cheat_nonce_global(tx.nonce.into());
         start_cheat_signature_global(signature.span());
         start_cheat_caller_address(
-            account.contract_address, starknet::contract_address_const::<0>()
+            account.contract_address, starknet::contract_address_const::<0>(),
         );
         account.__execute__(tx);
         stop_cheat_caller_address(account.contract_address);
@@ -897,9 +897,9 @@ mod account_tests {
                 0x042fa70d85ee84eab646a3b438a285ee,
                 0x000000000000000000000000b756b1bc,
                 0x000000000000000000000000000f4240,
-                0x00000000000000000000000000000000
+                0x00000000000000000000000000000000,
             ]
-                .span(), // sends 1000000 tokens
+                .span() // sends 1000000 tokens
         };
 
         let signature = array![
@@ -909,14 +909,14 @@ mod account_tests {
             0x6dcaafc193c6f1ad9eb684ab8d87c49b,
             0x1c,
             0x0,
-            0x0
+            0x0,
         ];
         let (rosettanet, account, _) = deploy_funded_account_from_rosettanet(eth_address);
         register_functions(rosettanet);
 
         let receiver = deploy_account_from_existing_rosettanet(
             0xb756b1bc042fa70d85ee84eab646a3b438a285ee.try_into().unwrap(),
-            rosettanet.contract_address
+            rosettanet.contract_address,
         );
 
         let erc20 = deploy_erc20();
@@ -924,13 +924,13 @@ mod account_tests {
         erc20.mint(account.contract_address, 1500000); // Fund account
 
         manipulate_rosettanet_registry(
-            rosettanet.contract_address, erc20.contract_address, erc20_eth
+            rosettanet.contract_address, erc20.contract_address, erc20_eth,
         );
 
         start_cheat_nonce_global(tx.nonce.into());
         start_cheat_signature_global(signature.span());
         start_cheat_caller_address(
-            account.contract_address, starknet::contract_address_const::<0>()
+            account.contract_address, starknet::contract_address_const::<0>(),
         );
         let execution = account.__execute__(tx);
         stop_cheat_caller_address(account.contract_address);
@@ -964,9 +964,9 @@ mod account_tests {
                 0x042fa70d85ee84eab646a3b438a285ee,
                 0x000000000000000000000000b756b1bc,
                 0x000000000000000000000000000f4240,
-                0x00000000000000000000000000000000
+                0x00000000000000000000000000000000,
             ]
-                .span(), // sends 1000000 tokens
+                .span() // sends 1000000 tokens
         };
 
         let signature = array![
@@ -976,13 +976,13 @@ mod account_tests {
             0x62b4b646ff3c09068d04eb98eec04413,
             0x1b,
             0x0,
-            0x0
+            0x0,
         ];
         let (rosettanet, account, _) = deploy_funded_account_from_rosettanet(eth_address);
         register_functions(rosettanet);
         let receiver = deploy_account_from_existing_rosettanet(
             0xb756b1bc042fa70d85ee84eab646a3b438a285ee.try_into().unwrap(),
-            rosettanet.contract_address
+            rosettanet.contract_address,
         );
 
         let erc20 = deploy_erc20();
@@ -990,13 +990,13 @@ mod account_tests {
         erc20.mint(account.contract_address, 1500000); // Fund account
 
         manipulate_rosettanet_registry(
-            rosettanet.contract_address, erc20.contract_address, erc20_eth
+            rosettanet.contract_address, erc20.contract_address, erc20_eth,
         );
 
         start_cheat_nonce_global(tx.nonce.into());
         start_cheat_signature_global(signature.span());
         start_cheat_caller_address(
-            account.contract_address, starknet::contract_address_const::<0>()
+            account.contract_address, starknet::contract_address_const::<0>(),
         );
         let execution = account.__execute__(tx);
         stop_cheat_caller_address(account.contract_address);
@@ -1030,9 +1030,9 @@ mod account_tests {
                 0x042fa70d85ee84eab646a3b438a285ee,
                 0x000000000000000000000000b756b1bc,
                 0x000000000000000000000000000f4240,
-                0x00000000000000000000000000000000
+                0x00000000000000000000000000000000,
             ]
-                .span(), // sends 1000000 tokens
+                .span() // sends 1000000 tokens
         };
 
         let signature = array![
@@ -1042,14 +1042,14 @@ mod account_tests {
             0x62b4b646ff3c09068d04eb98eec04413,
             0x1b,
             0x0,
-            0x0
+            0x0,
         ];
         let (rosettanet, account, _) = deploy_funded_account_from_rosettanet(eth_address);
         register_functions(rosettanet);
 
         deploy_account_from_existing_rosettanet(
             0xb756b1bc042fa70d85ee84eab646a3b438a285ee.try_into().unwrap(),
-            rosettanet.contract_address
+            rosettanet.contract_address,
         );
 
         let erc20 = deploy_erc20();
@@ -1057,13 +1057,13 @@ mod account_tests {
         erc20.mint(account.contract_address, 500000); // Fund account but not enough
 
         manipulate_rosettanet_registry(
-            rosettanet.contract_address, erc20.contract_address, erc20_eth
+            rosettanet.contract_address, erc20.contract_address, erc20_eth,
         );
 
         start_cheat_nonce_global(tx.nonce.into());
         start_cheat_signature_global(signature.span());
         start_cheat_caller_address(
-            account.contract_address, starknet::contract_address_const::<0>()
+            account.contract_address, starknet::contract_address_const::<0>(),
         );
         account.__execute__(tx);
         stop_cheat_caller_address(account.contract_address);
@@ -1088,7 +1088,7 @@ mod account_tests {
             gas_price: 0,
             gas_limit: 210000,
             value: 0,
-            calldata: array![0xf4acc7b5].span(), // sends 1000000 tokens
+            calldata: array![0xf4acc7b5].span() // sends 1000000 tokens
         };
 
         let signature = array![
@@ -1098,7 +1098,7 @@ mod account_tests {
             0x6a79d47f800e637b21026ba1591cee5b,
             0x1b,
             0x0,
-            0x0
+            0x0,
         ];
         let (rosettanet, account, _) = deploy_funded_account_from_rosettanet(eth_address);
         deploy_account_from_existing_rosettanet(target, rosettanet.contract_address);
@@ -1106,7 +1106,7 @@ mod account_tests {
         start_cheat_nonce_global(tx.nonce.into());
         start_cheat_signature_global(signature.span());
         start_cheat_caller_address(
-            account.contract_address, starknet::contract_address_const::<0>()
+            account.contract_address, starknet::contract_address_const::<0>(),
         );
         account.__execute__(tx);
         stop_cheat_caller_address(account.contract_address);
@@ -1140,10 +1140,10 @@ mod account_tests {
             0x2344e2307c2852957a9bf7d25d0d7dbf,
             0x1c,
             0x2386F26FC10000,
-            0x0
+            0x0,
         ];
         let (rosettanet, account, strk) = deploy_specificly_funded_account_from_rosettanet(
-            eth_address, 20000000000000000_u256
+            eth_address, 20000000000000000_u256,
         );
 
         register_functions(rosettanet);
@@ -1154,7 +1154,7 @@ mod account_tests {
         start_cheat_nonce_global(tx.nonce.into());
         start_cheat_signature_global(signature.span());
         start_cheat_caller_address(
-            account.contract_address, starknet::contract_address_const::<0>()
+            account.contract_address, starknet::contract_address_const::<0>(),
         );
         account.__execute__(tx);
         stop_cheat_caller_address(account.contract_address);
@@ -1191,16 +1191,16 @@ mod account_tests {
             0x2344e2307c2852957a9bf7d25d0d7dbf,
             0x1c,
             0x2386F26FC10000,
-            0x0
+            0x0,
         ];
         let (_, account, _) = deploy_specificly_funded_account_from_rosettanet(
-            eth_address, 20000000000000000_u256
+            eth_address, 20000000000000000_u256,
         );
 
         start_cheat_nonce_global(tx.nonce.into());
         start_cheat_signature_global(signature.span());
         start_cheat_caller_address(
-            account.contract_address, starknet::contract_address_const::<0>()
+            account.contract_address, starknet::contract_address_const::<0>(),
         );
         account.__execute__(tx);
         stop_cheat_caller_address(account.contract_address);
@@ -1233,16 +1233,16 @@ mod account_tests {
             0x2344e2307c2852957a9bf7d25d0d7dbf,
             0x1c,
             0x2386F26FC10000,
-            0x0
+            0x0,
         ];
         let (_, account, _) = deploy_specificly_funded_account_from_rosettanet(
-            eth_address, 20000000000000000_u256
+            eth_address, 20000000000000000_u256,
         );
 
         start_cheat_nonce_global(tx.nonce.into());
         start_cheat_signature_global(signature.span());
         start_cheat_caller_address(
-            account.contract_address, starknet::contract_address_const::<0>()
+            account.contract_address, starknet::contract_address_const::<0>(),
         );
         account.__execute__(tx);
         stop_cheat_caller_address(account.contract_address);
@@ -1275,16 +1275,16 @@ mod account_tests {
             0x2344e2307c2852957a9bf7d25d0d7dbf,
             0x1c,
             0x2386F26FC10000,
-            0x0
+            0x0,
         ];
         let (_, account, _) = deploy_specificly_funded_account_from_rosettanet(
-            eth_address, 20000000000000000_u256
+            eth_address, 20000000000000000_u256,
         );
 
         start_cheat_nonce_global(tx.nonce.into());
         start_cheat_signature_global(signature.span());
         start_cheat_caller_address(
-            account.contract_address, starknet::contract_address_const::<0>()
+            account.contract_address, starknet::contract_address_const::<0>(),
         );
         account.__execute__(tx);
         stop_cheat_caller_address(account.contract_address);
@@ -1312,7 +1312,7 @@ mod account_tests {
                 0x095ea7b3,
                 0x1,
                 0xffffffffffffffffffffffffffffffff,
-                0xffffffffffffffffffffffffffffffff
+                0xffffffffffffffffffffffffffffffff,
             ]
                 .span(),
         };
@@ -1323,7 +1323,7 @@ mod account_tests {
             0x3658ebdd892fc2bec784a083eebd055d,
             0x1c,
             0x0,
-            0x0
+            0x0,
         ];
         let (rosettanet, account, _) = deploy_funded_account_from_rosettanet(eth_address);
         deploy_account_from_existing_rosettanet(target, rosettanet.contract_address);
@@ -1336,7 +1336,7 @@ mod account_tests {
         start_cheat_nonce_global(tx.nonce.into());
         start_cheat_signature_global(signature.span());
         start_cheat_caller_address(
-            account.contract_address, starknet::contract_address_const::<0>()
+            account.contract_address, starknet::contract_address_const::<0>(),
         );
         account.__validate__(tx);
         stop_cheat_caller_address(account.contract_address);
@@ -1370,7 +1370,7 @@ mod account_tests {
                 0x999999,
                 0x2,
                 0x654,
-                0x321
+                0x321,
             ]
                 .span(),
         };
@@ -1381,7 +1381,7 @@ mod account_tests {
             0x711d7b42f0c91ee717f4770dff7c7f00,
             0x1b,
             0x0,
-            0x0
+            0x0,
         ];
         let (_, account, _) = deploy_funded_account_from_rosettanet(eth_address);
 
@@ -1393,7 +1393,7 @@ mod account_tests {
         start_cheat_nonce_global(tx.nonce.into());
         start_cheat_signature_global(signature.span());
         start_cheat_caller_address(
-            account.contract_address, starknet::contract_address_const::<0>()
+            account.contract_address, starknet::contract_address_const::<0>(),
         );
         let validation = account.__validate__(tx);
         stop_cheat_caller_address(account.contract_address);
@@ -1430,7 +1430,7 @@ mod account_tests {
                 0x999999,
                 0x2,
                 0x654,
-                0x321
+                0x321,
             ]
                 .span(),
         };
@@ -1441,7 +1441,7 @@ mod account_tests {
             0x711d7b42f0c91ee717f4770dff7c7f00,
             0x1b,
             0x0,
-            0x0
+            0x0,
         ];
         let (_, account, _) = deploy_funded_account_from_rosettanet(eth_address);
 
@@ -1453,7 +1453,7 @@ mod account_tests {
         start_cheat_nonce_global(tx.nonce.into());
         start_cheat_signature_global(signature.span());
         start_cheat_caller_address(
-            account.contract_address, starknet::contract_address_const::<0>()
+            account.contract_address, starknet::contract_address_const::<0>(),
         );
         let validation = account.__validate__(tx);
         stop_cheat_caller_address(account.contract_address);
@@ -1481,7 +1481,7 @@ mod account_tests {
         let (_, account, strk) = deploy_funded_account_from_rosettanet(eth_address);
         assert_eq!(
             strk.contract_address.into(),
-            0xA551825F2E7D5313EE03B1DFE40E2A7B78B27A7FED40FA17AEC27E010BFA96
+            0xA551825F2E7D5313EE03B1DFE40E2A7B78B27A7FED40FA17AEC27E010BFA96,
         );
 
         let tx = RosettanetCall {
@@ -1512,7 +1512,7 @@ mod account_tests {
                 0x3,
                 strk_receiver_2,
                 strk_2_amount.low.into(),
-                strk_2_amount.high.into()
+                strk_2_amount.high.into(),
             ]
                 .span(),
         };
@@ -1524,7 +1524,7 @@ mod account_tests {
             0x680c7672f0b3a18c902a68350cf19b60,
             0x1b,
             0x0,
-            0x0
+            0x0,
         ];
 
         let unsigned_tx_hash: u256 =
@@ -1535,7 +1535,7 @@ mod account_tests {
         start_cheat_nonce_global(tx.nonce.into());
         start_cheat_signature_global(signature.span());
         start_cheat_caller_address(
-            account.contract_address, starknet::contract_address_const::<0>()
+            account.contract_address, starknet::contract_address_const::<0>(),
         );
         let execution = account.__execute__(tx);
         stop_cheat_caller_address(account.contract_address);
@@ -1576,7 +1576,7 @@ mod account_tests {
                 0x455448,
                 0xE4306A06B19FDC04FDF98CF3C00472F29254C0E1,
                 0x38D7EA4C68000,
-                0x0
+                0x0,
             ]
                 .span(),
         };
@@ -1588,7 +1588,7 @@ mod account_tests {
             0x74551833c56fee1df9cb2a2ac411c604,
             0x1b,
             0x0,
-            0x0
+            0x0,
         ];
 
         let (_, account, _) = deploy_funded_account_from_rosettanet(eth_address);
@@ -1601,7 +1601,7 @@ mod account_tests {
         start_cheat_nonce_global(tx.nonce.into());
         start_cheat_signature_global(signature.span());
         start_cheat_caller_address(
-            account.contract_address, starknet::contract_address_const::<0>()
+            account.contract_address, starknet::contract_address_const::<0>(),
         );
         let validation = account.__validate__(tx);
         stop_cheat_caller_address(account.contract_address);
@@ -1659,7 +1659,7 @@ mod account_tests {
                 0x000000000000000000000000000000000020c49ba5e353f80000000000000000,
                 0x3e8,
                 0x0,
-                0x0000000000000000000000000000000000011ebd39f990000f1fc7d3532a0ba8
+                0x0000000000000000000000000000000000011ebd39f990000f1fc7d3532a0ba8,
             ]
                 .span(),
         };
@@ -1671,7 +1671,7 @@ mod account_tests {
             0x5c42fa0d43e2416471a498caa7b39583,
             0x1b,
             0x0,
-            0x0
+            0x0,
         ];
 
         let (_, account, _) = deploy_funded_account_from_rosettanet(eth_address);
@@ -1684,7 +1684,7 @@ mod account_tests {
         start_cheat_nonce_global(tx.nonce.into());
         start_cheat_signature_global(signature.span());
         start_cheat_caller_address(
-            account.contract_address, starknet::contract_address_const::<0>()
+            account.contract_address, starknet::contract_address_const::<0>(),
         );
         let validation = account.__validate__(tx);
         stop_cheat_caller_address(account.contract_address);
@@ -1742,7 +1742,7 @@ mod account_tests {
                 0x000000000000000000000000000000000020c49ba5e353f80000000000000000,
                 0x3e8,
                 0x0,
-                0x0000000000000000000000000000000000011ebd39f990000f1fc7d3532a0ba8
+                0x0000000000000000000000000000000000011ebd39f990000f1fc7d3532a0ba8,
             ]
                 .span(),
         };
@@ -1754,7 +1754,7 @@ mod account_tests {
             0x5c42fa0d43e2416471a498caa7b39583,
             0x1b,
             0x0,
-            0x0
+            0x0,
         ];
 
         let (_, account, _) = deploy_funded_account_from_rosettanet(eth_address);
@@ -1767,7 +1767,7 @@ mod account_tests {
         start_cheat_nonce_global(tx.nonce.into());
         start_cheat_signature_global(signature.span());
         start_cheat_caller_address(
-            account.contract_address, starknet::contract_address_const::<0>()
+            account.contract_address, starknet::contract_address_const::<0>(),
         );
         //let validation = account.__validate__(tx);
         stop_cheat_caller_address(account.contract_address);

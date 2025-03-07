@@ -1,7 +1,7 @@
 use crate::test_utils::{deploy_rosettanet};
 //use rosettacontracts::rosettanet::{IRosettanetDispatcherTrait};
 use rosettacontracts::components::function_registry::{
-    IFunctionRegistryDispatcherTrait, IFunctionRegistryDispatcher
+    IFunctionRegistryDispatcherTrait, IFunctionRegistryDispatcher,
 };
 use rosettacontracts::utils::decoder::{EVMTypes};
 
@@ -10,12 +10,12 @@ fn test_register_function() {
     let rosettanet = deploy_rosettanet();
 
     let function_registry = IFunctionRegistryDispatcher {
-        contract_address: rosettanet.contract_address
+        contract_address: rosettanet.contract_address,
     };
 
     function_registry
         .register_function(
-            "transfer(address,uint256)", array![EVMTypes::Address, EVMTypes::Uint256].span()
+            "transfer(address,uint256)", array![EVMTypes::Address, EVMTypes::Uint256].span(),
         );
 
     let (entrypoint, directives) = function_registry.get_function_decoding(0xa9059cbb_u32);
@@ -29,12 +29,12 @@ fn test_register_function() {
 fn test_register_function_initial_byte_zero() {
     let rosettanet = deploy_rosettanet();
     let function_registry = IFunctionRegistryDispatcher {
-        contract_address: rosettanet.contract_address
+        contract_address: rosettanet.contract_address,
     };
 
     function_registry
         .register_function(
-            "approve(address,uint256)", array![EVMTypes::Address, EVMTypes::Uint256].span()
+            "approve(address,uint256)", array![EVMTypes::Address, EVMTypes::Uint256].span(),
         );
 
     let (entrypoint, directives) = function_registry.get_function_decoding(0x095ea7b3_u32);

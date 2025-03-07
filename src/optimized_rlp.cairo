@@ -84,7 +84,7 @@ pub impl OptimizedRLPImpl of OptimizedRLPTrait {
         while true {
             match inputs.pop_front() {
                 Option::Some(input) => { output.append(*input); },
-                Option::None => { break; }
+                Option::None => { break; },
             };
         };
 
@@ -161,7 +161,7 @@ mod tests {
         let max_fee_per_gas = OptimizedRLPTrait::encode_short_string(0x3b9aca00, 4).unwrap();
         let gas_limit = OptimizedRLPTrait::encode_short_string(0x5208, 2).unwrap();
         let to = OptimizedRLPTrait::encode_short_string(
-            0x000035cc6634c0532925a3b844bc454e4438f44e, 20
+            0x000035cc6634c0532925a3b844bc454e4438f44e, 20,
         )
             .unwrap(); // try with address with init zeros
         let value = OptimizedRLPTrait::encode_short_string(0xde0b6b3a7640000, 8).unwrap();
@@ -220,11 +220,11 @@ mod tests {
                 to,
                 value,
                 calldata,
-                access_list
+                access_list,
             ]
                 .span(),
             total_len,
-            0x2
+            0x2,
         );
 
         assert_eq!(result.len(), 517);
@@ -238,7 +238,7 @@ mod tests {
         let max_fee_per_gas = OptimizedRLPTrait::encode_short_string(0x3b9aca00, 4).unwrap();
         let gas_limit = OptimizedRLPTrait::encode_short_string(0x5208, 2).unwrap();
         let to = OptimizedRLPTrait::encode_short_string(
-            0x000035cc6634c0532925a3b844bc454e4438f44e, 20
+            0x000035cc6634c0532925a3b844bc454e4438f44e, 20,
         )
             .unwrap(); // try with address with init zeros
         let value = OptimizedRLPTrait::encode_short_string(0xde0b6b3a7640000, 8).unwrap();
@@ -265,11 +265,11 @@ mod tests {
                 to,
                 value,
                 data,
-                access_list
+                access_list,
             ]
                 .span(),
             total_len,
-            0x2
+            0x2,
         );
         assert_eq!(total_len, 47);
         assert_eq!(result.len(), 49);
@@ -289,7 +289,7 @@ mod tests {
         let gas_price = OptimizedRLPTrait::encode_short_string(0x3b9aca00, 4).unwrap();
         let gas_limit = OptimizedRLPTrait::encode_short_string(0x5208, 2).unwrap();
         let to = OptimizedRLPTrait::encode_short_string(
-            0x000035cc6634c0532925a3b844bc454e4438f44e, 20
+            0x000035cc6634c0532925a3b844bc454e4438f44e, 20,
         )
             .unwrap(); // try with address with init zeros
         let value = OptimizedRLPTrait::encode_short_string(0xde0b6b3a7640000, 8).unwrap();
@@ -309,7 +309,7 @@ mod tests {
         let result = OptimizedRLPTrait::encode_as_list(
             array![nonce, gas_price, gas_limit, to, value, data, chain_id, empty, empty].span(),
             total_len,
-            0
+            0,
         );
         assert_eq!(total_len, 43);
         assert_eq!(result.len(), 44);
@@ -318,12 +318,12 @@ mod tests {
     #[test]
     fn test_rlp_encode_list_long_multi() {
         let first_elem = OptimizedRLPTrait::encode_bytearray(
-            @"LONGSTRINGTHATINCLUDESMORETHAN55BYTESTESTESTESTESTESTESTESTE"
+            @"LONGSTRINGTHATINCLUDESMORETHAN55BYTESTESTESTESTESTESTESTESTE",
         )
             .unwrap();
         let second_elem = OptimizedRLPTrait::encode_bytearray(@"cat").unwrap();
         let result = OptimizedRLPTrait::encode_as_list(
-            array![first_elem, second_elem].span(), first_elem.len() + second_elem.len(), 0
+            array![first_elem, second_elem].span(), first_elem.len() + second_elem.len(), 0,
         );
 
         assert_eq!(result.len(), 68);
@@ -333,11 +333,11 @@ mod tests {
     #[test]
     fn test_rlp_encode_list_long() {
         let first_elem = OptimizedRLPTrait::encode_bytearray(
-            @"LONGSTRINGTHATINCLUDESMORETHAN55BYTESTESTESTESTESTESTESTESTE"
+            @"LONGSTRINGTHATINCLUDESMORETHAN55BYTESTESTESTESTESTESTESTESTE",
         )
             .unwrap();
         let result = OptimizedRLPTrait::encode_as_list(
-            array![first_elem].span(), first_elem.len(), 0
+            array![first_elem].span(), first_elem.len(), 0,
         );
 
         assert_eq!(result.len(), 64);
@@ -354,7 +354,7 @@ mod tests {
         let second_elem = OptimizedRLPTrait::encode_bytearray(@"gorilla").unwrap();
         assert_eq!(second_elem.len(), 8);
         let result = OptimizedRLPTrait::encode_as_list(
-            array![first_elem, second_elem].span(), first_elem.len() + second_elem.len(), 0
+            array![first_elem, second_elem].span(), first_elem.len() + second_elem.len(), 0,
         );
 
         assert_eq!(first_elem.len() + second_elem.len(), 12);
@@ -375,7 +375,7 @@ mod tests {
     fn test_rlp_encode_list_short() {
         let first_elem = OptimizedRLPTrait::encode_bytearray(@"cat").unwrap();
         let result = OptimizedRLPTrait::encode_as_list(
-            array![first_elem].span(), first_elem.len(), 0
+            array![first_elem].span(), first_elem.len(), 0,
         );
 
         assert_eq!(result.len(), 5);
@@ -441,7 +441,7 @@ mod tests {
     #[test]
     fn test_rlp_encode_bytearray_very_long() {
         let result = OptimizedRLPTrait::encode_bytearray(
-            @"TESTLONGSTRINGWITHLENGTHOFHIGHERTHAN56TESTESTESTAAAAAABCVCBCBveryTESTLONGSTRINGWITHLENGTHOFHIGHERTHAN56TESTESTESTAAAAAABCVCBCBveryTESTLONGSTRINGWITHLENGTHOFHIGHERTHAN56TESTESTESTAAAAAABCVCBCBveryTESTLONGSTRINGWITHLENGTHOFHIGHERTHAN56TESTESTESTAAAAAABCVCBCBveryTESTLONGSTRINGWITHLENGTHOFHIGHERTHAN56TESTESTESTAAAAAABCVCBCBvery"
+            @"TESTLONGSTRINGWITHLENGTHOFHIGHERTHAN56TESTESTESTAAAAAABCVCBCBveryTESTLONGSTRINGWITHLENGTHOFHIGHERTHAN56TESTESTESTAAAAAABCVCBCBveryTESTLONGSTRINGWITHLENGTHOFHIGHERTHAN56TESTESTESTAAAAAABCVCBCBveryTESTLONGSTRINGWITHLENGTHOFHIGHERTHAN56TESTESTESTAAAAAABCVCBCBveryTESTLONGSTRINGWITHLENGTHOFHIGHERTHAN56TESTESTESTAAAAAABCVCBCBvery",
         )
             .unwrap();
         // len 325
@@ -455,7 +455,7 @@ mod tests {
     #[test]
     fn test_rlp_encode_bytearray_long() {
         let result = OptimizedRLPTrait::encode_bytearray(
-            @"TESTLONGSTRINGWITHLENGTHOFHIGHERTHAN56TESTESTESTAAAAAABCVCBCB"
+            @"TESTLONGSTRINGWITHLENGTHOFHIGHERTHAN56TESTESTESTAAAAAABCVCBCB",
         )
             .unwrap(); // len 61
 
@@ -469,7 +469,7 @@ mod tests {
     #[test]
     fn test_rlp_encode_bytearray_mid() {
         let result = OptimizedRLPTrait::encode_bytearray(
-            @"TESTMIDSTRINGWITHLENGTHOFLOWERTHAN56FFAASDSASASDADASDAA"
+            @"TESTMIDSTRINGWITHLENGTHOFLOWERTHAN56FFAASDSASASDADASDAA",
         )
             .unwrap();
 

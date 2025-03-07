@@ -17,12 +17,12 @@ pub struct EVMCalldata {
     pub registry: ContractAddress,
     pub calldata: Bytes,
     pub offset: usize,
-    pub relative_offset: usize
+    pub relative_offset: usize,
 }
 
 pub trait AbiDecodeTrait {
     fn decode(
-        ref self: EVMCalldata, types: Span<EVMTypes>
+        ref self: EVMCalldata, types: Span<EVMTypes>,
     ) -> Span<felt252>; // Returns span of felt252 which directly will be passed to call_syscall
 }
 
@@ -132,7 +132,7 @@ pub enum EVMTypes {
     Bytes32, // Decoded as serialized ByteArray
     Bytes,
     String, // Same as bytes
-    Felt252, // It has to be encoded as uint256 on EVM
+    Felt252 // It has to be encoded as uint256 on EVM
 }
 
 fn has_dynamic(types: Span<EVMTypes>) -> bool {
@@ -140,7 +140,7 @@ fn has_dynamic(types: Span<EVMTypes>) -> bool {
     for evm_type in types {
         match evm_type {
             EVMTypes::Array => { result = true; },
-            _ => { continue; }
+            _ => { continue; },
         };
     };
 
@@ -256,7 +256,7 @@ pub impl EVMTypesImpl of AbiDecodeTrait {
                 EVMTypes::Bytes32 => { decode_bytes_32(ref self) },
                 EVMTypes::Bytes => { decode_bytes(ref self) },
                 EVMTypes::String => { decode_bytes(ref self) },
-                EVMTypes::Felt252 => { decode_felt252(ref self) }
+                EVMTypes::Felt252 => { decode_felt252(ref self) },
             };
             decoded.append_span(decoded_type);
         };
@@ -329,7 +329,7 @@ fn decode_bytes(ref ctx: EVMCalldata) -> Span<felt252> {
     let (defer_offset, data_start_offset) = ctx
         .calldata
         .read_u256(
-            ctx.offset
+            ctx.offset,
         ); // We will move back to defer_offset after complete reading this dynamic type
     ctx
         .offset = data_start_offset
@@ -363,7 +363,7 @@ fn decode_bytes(ref ctx: EVMCalldata) -> Span<felt252> {
         let last_word = U256BitShift::shr(last_slot, 256 - (last_slot_bytes * 8));
         ba
             .append_word(
-                last_word.try_into().unwrap(), last_slot_bytes.try_into().unwrap()
+                last_word.try_into().unwrap(), last_slot_bytes.try_into().unwrap(),
             ); // We can assume try_into is safe because we shifted bits line above.
     }
     ctx.offset = defer_offset;
@@ -495,7 +495,7 @@ mod tests {
             relative_offset: 0_usize,
             offset: 0_usize,
             calldata: data,
-            registry: starknet::contract_address_const::<0>()
+            registry: starknet::contract_address_const::<0>(),
         }
     }
 
@@ -507,7 +507,7 @@ mod tests {
         let mut calldata = cd(data);
         let decoded = calldata.decode(array![EVMTypes::Felt252].span());
         assert_eq!(
-            *decoded.at(0), 0x0000000000000ffff00000000000000000000000000000000000000000000020
+            *decoded.at(0), 0x0000000000000ffff00000000000000000000000000000000000000000000020,
         );
     }
 
@@ -519,7 +519,7 @@ mod tests {
         let mut calldata = cd(data);
         let decoded = calldata.decode(array![EVMTypes::Felt252].span());
         assert_eq!(
-            *decoded.at(0), 0x800000000000011000000000000000000000000000000000000000000000000
+            *decoded.at(0), 0x800000000000011000000000000000000000000000000000000000000000000,
         );
     }
 
@@ -566,7 +566,7 @@ mod tests {
         assert_eq!(*decoded.at(6), 0x4);
         assert_eq!(*decoded.at(7), 0x1);
         assert_eq!(
-            *decoded.at(8), 0x4C4F4E47535452494E474C4F4E4745525448414E3132333132333132333132
+            *decoded.at(8), 0x4C4F4E47535452494E474C4F4E4745525448414E3132333132333132333132,
         ); // LONGSTRINGLONGERTHAN12312312312
         assert_eq!(*decoded.at(9), 0x33313233415341534441534441444144); // 3123ASASDASDADAD
         assert_eq!(*decoded.at(10), 16);
@@ -659,15 +659,15 @@ mod tests {
                                     EVMTypes::Uint128,
                                     EVMTypes::Array(array![EVMTypes::Uint128].span()),
                                     EVMTypes::Uint256,
-                                    EVMTypes::Array(array![EVMTypes::Uint256].span())
+                                    EVMTypes::Array(array![EVMTypes::Uint256].span()),
                                 ]
-                                    .span()
-                            )
+                                    .span(),
+                            ),
                         ]
-                            .span()
-                    )
+                            .span(),
+                    ),
                 ]
-                    .span()
+                    .span(),
             );
         // [[123, [1,2,3,4,5,6], 7676, [347384]], [333, [0,5,6], 43, [343455]], [444, [10,10,10],
         // 33, [22,33,44,55,66]]]
@@ -754,15 +754,15 @@ mod tests {
                                 array![
                                     EVMTypes::Uint128,
                                     EVMTypes::Array(array![EVMTypes::Uint128].span()),
-                                    EVMTypes::Uint256
+                                    EVMTypes::Uint256,
                                 ]
-                                    .span()
-                            )
+                                    .span(),
+                            ),
                         ]
-                            .span()
-                    )
+                            .span(),
+                    ),
                 ]
-                    .span()
+                    .span(),
             );
 
         assert_eq!(*decoded.at(0), 0x2);
@@ -817,15 +817,15 @@ mod tests {
                             EVMTypes::Tuple(
                                 array![
                                     EVMTypes::Uint128,
-                                    EVMTypes::Array(array![EVMTypes::Uint128].span())
+                                    EVMTypes::Array(array![EVMTypes::Uint128].span()),
                                 ]
-                                    .span()
-                            )
+                                    .span(),
+                            ),
                         ]
-                            .span()
-                    )
+                            .span(),
+                    ),
                 ]
-                    .span()
+                    .span(),
             );
 
         assert_eq!(*decoded.at(0), 0x2);
@@ -851,57 +851,57 @@ mod tests {
 
         data
             .append_u256(
-                0x0000000000000000000000000000000000000000000000000000000000000020
+                0x0000000000000000000000000000000000000000000000000000000000000020,
             ); // 0x0 Array start offset
         data
             .append_u256(
-                0x0000000000000000000000000000000000000000000000000000000000000002
+                0x0000000000000000000000000000000000000000000000000000000000000002,
             ); // 0x20 Array length outer
         data
             .append_u256(
-                0x0000000000000000000000000000000000000000000000000000000000000040
+                0x0000000000000000000000000000000000000000000000000000000000000040,
             ); // 0x40 first element - tuple start offset
         data
             .append_u256(
-                0x0000000000000000000000000000000000000000000000000000000000000100
+                0x0000000000000000000000000000000000000000000000000000000000000100,
             ); // 0x60 second element - tuple start offset
         data
             .append_u256(
-                0x0000000000000000000000000000000000000000000000000000000000000040
+                0x0000000000000000000000000000000000000000000000000000000000000040,
             ); // 0x80 tuples inner dynamic data start offset
         data
             .append_u256(
-                0x000000000000000000000000000000000000000000000000000000000000007b
+                0x000000000000000000000000000000000000000000000000000000000000007b,
             ); // 0xa0 static uint128 (b)
         data
             .append_u256(
-                0x0000000000000000000000000000000000000000000000000000000000000003
+                0x0000000000000000000000000000000000000000000000000000000000000003,
             ); // 0xc0 inner array length
         data
             .append_u256(
-                0x0000000000000000000000000000000000000000000000000000000000000001
+                0x0000000000000000000000000000000000000000000000000000000000000001,
             ); // 0xe0 inner array first elem
         data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000002); // ...
         data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000004); // ...
         data
             .append_u256(
-                0x0000000000000000000000000000000000000000000000000000000000000040
+                0x0000000000000000000000000000000000000000000000000000000000000040,
             ); // second tuples inner dynamic data start offset
         data
             .append_u256(
-                0x0000000000000000000000000000000000000000000000000000000000000309
+                0x0000000000000000000000000000000000000000000000000000000000000309,
             ); // second tuples static uint128(b)
         data
             .append_u256(
-                0x0000000000000000000000000000000000000000000000000000000000000002
+                0x0000000000000000000000000000000000000000000000000000000000000002,
             ); // second tuple inner array length
         data
             .append_u256(
-                0x000000000000000000000000000000000000000000000000000000000000022b
+                0x000000000000000000000000000000000000000000000000000000000000022b,
             ); // elem
         data
             .append_u256(
-                0x000000000000000000000000000000000000000000000000000000000000029a
+                0x000000000000000000000000000000000000000000000000000000000000029a,
             ); // elem
 
         let mut calldata = cd(data);
@@ -913,15 +913,15 @@ mod tests {
                             EVMTypes::Tuple(
                                 array![
                                     EVMTypes::Array(array![EVMTypes::Uint128].span()),
-                                    EVMTypes::Uint128
+                                    EVMTypes::Uint128,
                                 ]
-                                    .span()
-                            )
+                                    .span(),
+                            ),
                         ]
-                            .span()
-                    )
+                            .span(),
+                    ),
                 ]
-                    .span()
+                    .span(),
             );
 
         // [ [ [1,2,4], 123], [ [555,666], 777] ]
@@ -943,43 +943,43 @@ mod tests {
 
         data
             .append_u256(
-                0x0000000000000000000000000000000000000000000000000000000000000020
+                0x0000000000000000000000000000000000000000000000000000000000000020,
             ); // 0:20
         data
             .append_u256(
-                0x0000000000000000000000000000000000000000000000000000000000000002
+                0x0000000000000000000000000000000000000000000000000000000000000002,
             ); // 20:40
         data
             .append_u256(
-                0x0000000000000000000000000000000000000000000000000000000000000040
+                0x0000000000000000000000000000000000000000000000000000000000000040,
             ); // 40:60
         data
             .append_u256(
-                0x00000000000000000000000000000000000000000000000000000000000000a0
+                0x00000000000000000000000000000000000000000000000000000000000000a0,
             ); // 60:80
         data
             .append_u256(
-                0x0000000000000000000000000000000000000000000000000000000000000002
+                0x0000000000000000000000000000000000000000000000000000000000000002,
             ); // 80:a0
         data
             .append_u256(
-                0x000000000000000000000000000000000000000000000000000000000000007b
+                0x000000000000000000000000000000000000000000000000000000000000007b,
             ); // a0:c0
         data
             .append_u256(
-                0x00000000000000000000000000000000000000000000000000000000000001bc
+                0x00000000000000000000000000000000000000000000000000000000000001bc,
             ); // c0:e0
         data
             .append_u256(
-                0x0000000000000000000000000000000000000000000000000000000000000002
+                0x0000000000000000000000000000000000000000000000000000000000000002,
             ); // e0:100
         data
             .append_u256(
-                0x000000000000000000000000000000000000000000000000000000000000022b
+                0x000000000000000000000000000000000000000000000000000000000000022b,
             ); // 100:120
         data
             .append_u256(
-                0x0000000000000000000000000000000000000000000000000000000000000021
+                0x0000000000000000000000000000000000000000000000000000000000000021,
             ); // 120:140
 
         let mut calldata = cd(data);
@@ -987,10 +987,10 @@ mod tests {
             .decode(
                 array![
                     EVMTypes::Array(
-                        array![EVMTypes::Array(array![EVMTypes::Uint128].span())].span()
-                    )
+                        array![EVMTypes::Array(array![EVMTypes::Uint128].span())].span(),
+                    ),
                 ]
-                    .span()
+                    .span(),
             );
 
         assert_eq!(*decoded.at(0), 0x2);
@@ -1029,10 +1029,10 @@ mod tests {
                     EVMTypes::Int128,
                     EVMTypes::Array(
                         array![EVMTypes::Tuple(array![EVMTypes::Uint128, EVMTypes::Uint128].span())]
-                            .span()
-                    )
+                            .span(),
+                    ),
                 ]
-                    .span()
+                    .span(),
             );
 
         assert_eq!(*decoded.at(0), 0x0);
@@ -1068,10 +1068,10 @@ mod tests {
                 array![
                     EVMTypes::Array(
                         array![EVMTypes::Tuple(array![EVMTypes::Uint128, EVMTypes::Uint128].span())]
-                            .span()
-                    )
+                            .span(),
+                    ),
                 ]
-                    .span()
+                    .span(),
             );
         assert_eq!(*decoded.at(0), 0x3);
         assert_eq!(*decoded.at(1), 0xb);
@@ -1114,7 +1114,7 @@ mod tests {
 
         let decoded = calldata
             .decode(
-                array![EVMTypes::Tuple(array![EVMTypes::Uint128, EVMTypes::Uint128].span())].span()
+                array![EVMTypes::Tuple(array![EVMTypes::Uint128, EVMTypes::Uint128].span())].span(),
             );
 
         assert_eq!(*decoded.at(0), 0x7b);
@@ -1132,7 +1132,7 @@ mod tests {
 
         let decoded = calldata
             .decode(
-                array![EVMTypes::Tuple(array![EVMTypes::Uint256, EVMTypes::Uint256].span())].span()
+                array![EVMTypes::Tuple(array![EVMTypes::Uint256, EVMTypes::Uint256].span())].span(),
             );
 
         assert_eq!(*decoded.at(0), 0x7b);
@@ -1191,7 +1191,7 @@ mod tests {
         let decoded = calldata.decode(array![EVMTypes::Bytes].span());
         assert_eq!(*decoded.at(0), 0x1);
         assert_eq!(
-            *decoded.at(1), 0xffffffffffffffffffaaaaaaaaaaaaaaaaaaafffffffffffffffffafafafaf
+            *decoded.at(1), 0xffffffffffffffffffaaaaaaaaaaaaaaaaaaafffffffffffffffffafafafaf,
         );
         assert_eq!(*decoded.at(2), 0xfa);
         assert_eq!(*decoded.at(3), 0x1);
@@ -1225,7 +1225,7 @@ mod tests {
         let decoded = calldata.decode(array![EVMTypes::Bytes].span());
         assert_eq!(*decoded.at(0), 0x1);
         assert_eq!(
-            *decoded.at(1), 0xffaabbffaabbffaabbffaabbffaabbffaabbffaabbffaabbffaabbffaabbff
+            *decoded.at(1), 0xffaabbffaabbffaabbffaabbffaabbffaabbffaabbffaabbffaabbffaabbff,
         );
         assert_eq!(*decoded.at(2), 0xaabbffaabbffaabbffaabbffaabbffaabbffaabbffaabbffaabb);
         assert_eq!(*decoded.at(3), 0x1a);
@@ -1255,7 +1255,7 @@ mod tests {
         let decoded = calldata.decode(array![EVMTypes::Bytes32].span());
         assert_eq!(*decoded.at(0), 0x1);
         assert_eq!(
-            *decoded.at(1), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+            *decoded.at(1), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff,
         );
         assert_eq!(*decoded.at(2), 0xff);
         assert_eq!(*decoded.at(3), 0x1);
@@ -1281,7 +1281,7 @@ mod tests {
 
         let decoded = calldata.decode(array![EVMTypes::Bytes31].span());
         assert_eq!(
-            *decoded.at(0), 0xff220000000000000000000000000000000000000000000000000000000000
+            *decoded.at(0), 0xff220000000000000000000000000000000000000000000000000000000000,
         );
     }
 

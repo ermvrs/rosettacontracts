@@ -1,7 +1,7 @@
 use starknet::{EthAddress};
 use snforge_std::{
     start_cheat_signature_global, stop_cheat_signature_global, start_cheat_nonce_global,
-    stop_cheat_nonce_global, start_cheat_caller_address, stop_cheat_caller_address
+    stop_cheat_nonce_global, start_cheat_caller_address, stop_cheat_caller_address,
 };
 
 use rosettacontracts::accounts::base::{IRosettaAccountDispatcherTrait};
@@ -12,7 +12,7 @@ use rosettacontracts::utils::decoder::{EVMTypes};
 use crate::test_utils::{
     deploy_account_from_rosettanet, register_function, deploy_funded_account_from_rosettanet,
     deploy_account_from_existing_rosettanet, manipulate_rosettanet_registry, deploy_erc20,
-    deploy_specificly_funded_account_from_rosettanet, deploy_weth
+    deploy_specificly_funded_account_from_rosettanet, deploy_weth,
 };
 use rosettacontracts::mocks::erc20::{IMockERC20DispatcherTrait};
 use rosettacontracts::mocks::weth::{IMockWETHDispatcherTrait};
@@ -28,7 +28,7 @@ fn test_signature_validation_eip1559() {
         0x57f669dd35be2b984cd4ab48c0a0c588,
         0x1c,
         0x1,
-        0x0
+        0x0,
     ];
 
     let (_, account) = deploy_account_from_rosettanet(eth_address);
@@ -48,7 +48,7 @@ fn test_signature_validation_legacy() {
         0x55296d9471410304362b0e4fd0ab7e06,
         0x1b,
         0x0,
-        0x0
+        0x0,
     ];
     let (_, account) = deploy_account_from_rosettanet(eth_address);
 
@@ -68,7 +68,7 @@ fn test_signature_validation_legacy_invalid() {
         0x55296d9471410304362b0e4fd0ab7e06,
         0x1b,
         0x0,
-        0x0
+        0x0,
     ];
     let (_, account) = deploy_account_from_rosettanet(eth_address);
 
@@ -87,7 +87,7 @@ fn test_signature_validation_eip1559_invalid() {
         0x0739cb3999ae6842528ce5d8ec01a7fc,
         0x1b,
         0x0,
-        0x0
+        0x0,
     ]; // r.low, r.high, s.low, s.high, v
 
     let (_, account) = deploy_account_from_rosettanet(eth_address);
@@ -118,7 +118,7 @@ fn test_transaction_validation_unsupported_tx_type() {
         0x5c7bf7e431e816e08e9329edcc014fe4,
         0x1c,
         0xde0b6b3a7640000,
-        0x0
+        0x0,
     ];
     let unsigned_tx_hash: u256 = 0xbf4c65f85c5317b99259cedee5a69aacae0551f5a265d4df53714c9deb5add55;
 
@@ -157,7 +157,7 @@ fn test_eip1559_transaction_validation_value_transfer_only() {
         0x5c7bf7e431e816e08e9329edcc014fe4,
         0x1c,
         0xde0b6b3a7640000,
-        0x0
+        0x0,
     ];
     let unsigned_tx_hash: u256 = 0xbf4c65f85c5317b99259cedee5a69aacae0551f5a265d4df53714c9deb5add55;
 
@@ -198,7 +198,7 @@ fn test_legacy_transaction_validation_value_transfer_only() {
         0x21913827f62c0b6bc9643dd9a8892e75,
         0x1b,
         0xde0b6b3a7640000,
-        0x0
+        0x0,
     ];
 
     let unsigned_tx_hash: u256 = 0x147b5df4a6e91fdbd967747f7b375f155e26225cec38d1e0310e925b2b7565e9;
@@ -238,7 +238,7 @@ fn test_legacy_transaction_validation_calldata() {
             0x000000000000000000000000b756b1bc,
             0x042fa70d85ee84eab646a3b438a285ee,
             0x00000000000000000000000000000000,
-            0x000000000000000000000000000f4240
+            0x000000000000000000000000000f4240,
         ]
             .span(),
     };
@@ -250,7 +250,7 @@ fn test_legacy_transaction_validation_calldata() {
         0x419770f60d92f921b9d5434941b3891a,
         0x1c,
         0x0,
-        0x0
+        0x0,
     ];
     let unsigned_tx_hash: u256 = 0xb2e837d9ee9c8d6e9bb40a9cf18eac862c6b4f9b0bbe5d2437abb9dcade6bab2;
 
@@ -289,7 +289,7 @@ fn test_eip1559_transaction_validation_calldata() {
             0x000000000000000000000000b756b1bc,
             0x042fa70d85ee84eab646a3b438a285ee,
             0x00000000000000000000000000000000,
-            0x000000000000000000000000000f4240
+            0x000000000000000000000000000f4240,
         ]
             .span(),
     };
@@ -301,7 +301,7 @@ fn test_eip1559_transaction_validation_calldata() {
         0x348ea9530fd75922908d72503b041e4d,
         0x1c,
         0x0,
-        0x0
+        0x0,
     ];
     //let unsigned_tx_hash: u256 =
     //0xdba8cc62e6edeee140d6b73ae141c687f9738e00ad6a954dfbfd509d89aa7428;
@@ -344,7 +344,7 @@ fn test_transaction_validation_calldata_and_value_transfer() {
         0x6542b3440f82443065a9dc1486deb5b7,
         0x1c,
         0x2386f26fc10000,
-        0x0
+        0x0,
     ];
     let unsigned_tx_hash: u256 = 0x4efffa2e75fab48e0a7b03c45c53f8fffb98a89d6f457c44b98fd401ba287e29;
 
@@ -383,7 +383,7 @@ fn test_legacy_transaction_validation_calldata_invalid_signature() {
             0x000000000000000000000000b756b1bc,
             0x042fa70d85ee84eab646a3b438a285ee,
             0x00000000000000000000000000000000,
-            0x000000000000000000000000000f4240
+            0x000000000000000000000000000f4240,
         ]
             .span(),
     };
@@ -395,7 +395,7 @@ fn test_legacy_transaction_validation_calldata_invalid_signature() {
         0x419770f60d92f921b9d5434941b3891a,
         0x1c,
         0x0,
-        0x0
+        0x0,
     ];
     //let unsigned_tx_hash: u256 =
     //0xb2e837d9ee9c8d6e9bb40a9cf18eac862c6b4f9b0bbe5d2437abb9dcade6bab2;
@@ -439,7 +439,7 @@ fn test_execute_value_transfer_wrong_value_on_sig() {
         0x57f669dd35be2b984cd4ab48c0a0c588,
         0x1c,
         0x1FFF,
-        0x1FFF
+        0x1FFF,
     ];
 
     let (rosettanet, account, _) = deploy_funded_account_from_rosettanet(eth_address);
@@ -483,7 +483,7 @@ fn test_execute_value_transfer_not_enough_balance() {
         0x57f669dd35be2b984cd4ab48c0a0c588,
         0x1c,
         0x1,
-        0x0
+        0x0,
     ];
 
     let (rosettanet, account) = deploy_account_from_rosettanet(eth_address);
@@ -526,13 +526,13 @@ fn test_execute_value_transfer() {
         0x57f669dd35be2b984cd4ab48c0a0c588,
         0x1c,
         0x1,
-        0x0
+        0x0,
     ];
 
     let (rosettanet, account, strk) = deploy_funded_account_from_rosettanet(eth_address);
 
     let receiver = deploy_account_from_existing_rosettanet(
-        receiver_address, rosettanet.contract_address
+        receiver_address, rosettanet.contract_address,
     );
     assert_eq!(strk.balance_of(receiver.contract_address), 0);
 
@@ -567,7 +567,7 @@ fn test_execute_erc20_transfer_receiver_not_registered() {
             0x000000000000000000000000b756b1bc,
             0x042fa70d85ee84eab646a3b438a285ee,
             0x00000000000000000000000000000000,
-            0x000000000000000000000000000f4240
+            0x000000000000000000000000000f4240,
         ]
             .span(),
     };
@@ -579,11 +579,13 @@ fn test_execute_erc20_transfer_receiver_not_registered() {
         0x62b4b646ff3c09068d04eb98eec04413,
         0x1b,
         0x0,
-        0x0
+        0x0,
     ];
     let (rosettanet, account, _) = deploy_funded_account_from_rosettanet(eth_address);
     register_function(
-        rosettanet, "transfer(address,uint256)", array![EVMTypes::Address, EVMTypes::Uint256].span()
+        rosettanet,
+        "transfer(address,uint256)",
+        array![EVMTypes::Address, EVMTypes::Uint256].span(),
     );
     let erc20 = deploy_erc20();
     erc20.mint(account.contract_address, 1500000);
@@ -592,7 +594,7 @@ fn test_execute_erc20_transfer_receiver_not_registered() {
 
     let fallback_account_address = rosettanet
         .get_starknet_address_with_fallback(
-            0xb756b1bc042fa70d85ee84eab646a3b438a285ee.try_into().unwrap()
+            0xb756b1bc042fa70d85ee84eab646a3b438a285ee.try_into().unwrap(),
         );
 
     start_cheat_nonce_global(tx.nonce.into());
@@ -625,9 +627,9 @@ fn test_execute_erc20_transfer_legacy() {
             0x000000000000000000000000b756b1bc,
             0x042fa70d85ee84eab646a3b438a285ee,
             0x00000000000000000000000000000000,
-            0x000000000000000000000000000f4240
+            0x000000000000000000000000000f4240,
         ]
-            .span(), // sends 1000000 tokens
+            .span() // sends 1000000 tokens
     };
 
     let signature = array![
@@ -637,15 +639,17 @@ fn test_execute_erc20_transfer_legacy() {
         0x6dcaafc193c6f1ad9eb684ab8d87c49b,
         0x1c,
         0x0,
-        0x0
+        0x0,
     ];
     let (rosettanet, account, _) = deploy_funded_account_from_rosettanet(eth_address);
     register_function(
-        rosettanet, "transfer(address,uint256)", array![EVMTypes::Address, EVMTypes::Uint256].span()
+        rosettanet,
+        "transfer(address,uint256)",
+        array![EVMTypes::Address, EVMTypes::Uint256].span(),
     );
 
     let receiver = deploy_account_from_existing_rosettanet(
-        0xb756b1bc042fa70d85ee84eab646a3b438a285ee.try_into().unwrap(), rosettanet.contract_address
+        0xb756b1bc042fa70d85ee84eab646a3b438a285ee.try_into().unwrap(), rosettanet.contract_address,
     );
 
     let erc20 = deploy_erc20();
@@ -686,9 +690,9 @@ fn test_execute_erc20_transfer() {
             0x000000000000000000000000b756b1bc,
             0x042fa70d85ee84eab646a3b438a285ee,
             0x00000000000000000000000000000000,
-            0x000000000000000000000000000f4240
+            0x000000000000000000000000000f4240,
         ]
-            .span(), // sends 1000000 tokens
+            .span() // sends 1000000 tokens
     };
 
     let signature = array![
@@ -698,14 +702,16 @@ fn test_execute_erc20_transfer() {
         0x62b4b646ff3c09068d04eb98eec04413,
         0x1b,
         0x0,
-        0x0
+        0x0,
     ];
     let (rosettanet, account, _) = deploy_funded_account_from_rosettanet(eth_address);
     register_function(
-        rosettanet, "transfer(address,uint256)", array![EVMTypes::Address, EVMTypes::Uint256].span()
+        rosettanet,
+        "transfer(address,uint256)",
+        array![EVMTypes::Address, EVMTypes::Uint256].span(),
     );
     let receiver = deploy_account_from_existing_rosettanet(
-        0xb756b1bc042fa70d85ee84eab646a3b438a285ee.try_into().unwrap(), rosettanet.contract_address
+        0xb756b1bc042fa70d85ee84eab646a3b438a285ee.try_into().unwrap(), rosettanet.contract_address,
     );
 
     let erc20 = deploy_erc20();
@@ -747,9 +753,9 @@ fn test_execute_erc20_transfer_exceeds_balance() {
             0x000000000000000000000000b756b1bc,
             0x042fa70d85ee84eab646a3b438a285ee,
             0x00000000000000000000000000000000,
-            0x000000000000000000000000000f4240
+            0x000000000000000000000000000f4240,
         ]
-            .span(), // sends 1000000 tokens
+            .span() // sends 1000000 tokens
     };
 
     let signature = array![
@@ -759,15 +765,17 @@ fn test_execute_erc20_transfer_exceeds_balance() {
         0x62b4b646ff3c09068d04eb98eec04413,
         0x1b,
         0x0,
-        0x0
+        0x0,
     ];
     let (rosettanet, account, _) = deploy_funded_account_from_rosettanet(eth_address);
     register_function(
-        rosettanet, "transfer(address,uint256)", array![EVMTypes::Address, EVMTypes::Uint256].span()
+        rosettanet,
+        "transfer(address,uint256)",
+        array![EVMTypes::Address, EVMTypes::Uint256].span(),
     );
 
     deploy_account_from_existing_rosettanet(
-        0xb756b1bc042fa70d85ee84eab646a3b438a285ee.try_into().unwrap(), rosettanet.contract_address
+        0xb756b1bc042fa70d85ee84eab646a3b438a285ee.try_into().unwrap(), rosettanet.contract_address,
     );
 
     let erc20 = deploy_erc20();
@@ -808,10 +816,10 @@ fn test_execute_value_transfer_and_call() {
         0x2344e2307c2852957a9bf7d25d0d7dbf,
         0x1c,
         0x2386F26FC10000,
-        0x0
+        0x0,
     ];
     let (rosettanet, account, strk) = deploy_specificly_funded_account_from_rosettanet(
-        eth_address, 20000000000000000_u256
+        eth_address, 20000000000000000_u256,
     );
 
     register_function(rosettanet, "deposit()", array![].span());
@@ -855,10 +863,10 @@ fn test_multicall_with_value() {
         0x2344e2307c2852957a9bf7d25d0d7dbf,
         0x1c,
         0x2386F26FC10000,
-        0x0
+        0x0,
     ];
     let (_, account, _) = deploy_specificly_funded_account_from_rosettanet(
-        eth_address, 20000000000000000_u256
+        eth_address, 20000000000000000_u256,
     );
 
     start_cheat_nonce_global(tx.nonce.into());
@@ -893,10 +901,10 @@ fn test_multicall_wrong_selector() {
         0x2344e2307c2852957a9bf7d25d0d7dbf,
         0x1c,
         0x2386F26FC10000,
-        0x0
+        0x0,
     ];
     let (_, account, _) = deploy_specificly_funded_account_from_rosettanet(
-        eth_address, 20000000000000000_u256
+        eth_address, 20000000000000000_u256,
     );
 
     start_cheat_nonce_global(tx.nonce.into());
@@ -926,7 +934,7 @@ fn test_validation_real_data_failing() {
             0x0,
             0x1,
             0xffffffffffffffffffffffffffffffff,
-            0xffffffffffffffffffffffffffffffff
+            0xffffffffffffffffffffffffffffffff,
         ]
             .span(),
     };
@@ -937,7 +945,7 @@ fn test_validation_real_data_failing() {
         0x3658ebdd892fc2bec784a083eebd055d,
         0x1c,
         0x0,
-        0x0
+        0x0,
     ];
     let (rosettanet, account, _) = deploy_funded_account_from_rosettanet(eth_address);
     deploy_account_from_existing_rosettanet(target, rosettanet.contract_address);
@@ -990,7 +998,7 @@ fn test_validate_multicall_transaction() {
             0x0,
             0x654,
             0x0,
-            0x321
+            0x321,
         ]
             .span(),
     };
@@ -1001,7 +1009,7 @@ fn test_validate_multicall_transaction() {
         0x711d7b42f0c91ee717f4770dff7c7f00,
         0x1b,
         0x0,
-        0x0
+        0x0,
     ];
     let (_, account, _) = deploy_funded_account_from_rosettanet(eth_address);
 
@@ -1056,7 +1064,7 @@ fn test_validate_multicall_transaction_wrong_signature() {
             0x0,
             0x654,
             0x0,
-            0x321
+            0x321,
         ]
             .span(),
     };
@@ -1067,7 +1075,7 @@ fn test_validate_multicall_transaction_wrong_signature() {
         0x711d7b42f0c91ee717f4770dff7c7f00,
         0x1b,
         0x0,
-        0x0
+        0x0,
     ];
     let (_, account, _) = deploy_funded_account_from_rosettanet(eth_address);
 
@@ -1141,7 +1149,7 @@ fn test_execute_multicall_transaction() {
             0x00000000000000000000000000000000,
             0x00000000000000000000000000000bb8,
             0x00000000000000000000000000000000,
-            0x00000000000000000000000000000000
+            0x00000000000000000000000000000000,
         ]
             .span(),
     };
@@ -1153,7 +1161,7 @@ fn test_execute_multicall_transaction() {
         0x6e815045d6e8dba8cfca66127f36410c,
         0x1b,
         0x0,
-        0x0
+        0x0,
     ];
 
     let unsigned_tx_hash: u256 = 0x942981158784d2e2f45f187022e9112fd987d666276d74b76ce656c9cbad80da;
@@ -1214,7 +1222,7 @@ fn test_multicall_validate_actual_values() {
             0x0,
             0x38D7EA4C68000,
             0x0,
-            0x0
+            0x0,
         ]
             .span(),
     };
@@ -1226,7 +1234,7 @@ fn test_multicall_validate_actual_values() {
         0x74551833c56fee1df9cb2a2ac411c604,
         0x1b,
         0x0,
-        0x0
+        0x0,
     ];
 
     let (_, account, _) = deploy_funded_account_from_rosettanet(eth_address);

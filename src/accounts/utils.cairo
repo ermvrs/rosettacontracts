@@ -20,15 +20,15 @@ fn rlp_encode_tx(call: RosettanetCall) -> @ByteArray {
     if call.tx_type == 0 {
         // Legacy tx
         let nonce = OptimizedRLPTrait::encode_short_string(
-            call.nonce.into(), get_byte_size(call.nonce.into())
+            call.nonce.into(), get_byte_size(call.nonce.into()),
         )
             .unwrap();
         let gas_price = OptimizedRLPTrait::encode_short_string(
-            call.gas_price.into(), get_byte_size(call.gas_price.into())
+            call.gas_price.into(), get_byte_size(call.gas_price.into()),
         )
             .unwrap();
         let gas_limit = OptimizedRLPTrait::encode_short_string(
-            call.gas_limit.into(), get_byte_size(call.gas_limit.into())
+            call.gas_limit.into(), get_byte_size(call.gas_limit.into()),
         )
             .unwrap();
         let to = OptimizedRLPTrait::encode_short_string(call.to.into(), 20).unwrap();
@@ -52,25 +52,25 @@ fn rlp_encode_tx(call: RosettanetCall) -> @ByteArray {
         let result = OptimizedRLPTrait::encode_as_list(
             array![nonce, gas_price, gas_limit, to, value, calldata, chain_id, empty, empty].span(),
             total_len,
-            0
+            0,
         );
 
         return result;
     } else {
         let nonce = OptimizedRLPTrait::encode_short_string(
-            call.nonce.into(), get_byte_size(call.nonce.into())
+            call.nonce.into(), get_byte_size(call.nonce.into()),
         )
             .unwrap();
         let max_priority_fee_per_gas = OptimizedRLPTrait::encode_short_string(
-            call.max_priority_fee_per_gas.into(), get_byte_size(call.max_priority_fee_per_gas)
+            call.max_priority_fee_per_gas.into(), get_byte_size(call.max_priority_fee_per_gas),
         )
             .unwrap();
         let max_fee_per_gas = OptimizedRLPTrait::encode_short_string(
-            call.max_fee_per_gas.into(), get_byte_size(call.max_fee_per_gas)
+            call.max_fee_per_gas.into(), get_byte_size(call.max_fee_per_gas),
         )
             .unwrap();
         let gas_limit = OptimizedRLPTrait::encode_short_string(
-            call.gas_limit.into(), get_byte_size(call.gas_limit.into())
+            call.gas_limit.into(), get_byte_size(call.gas_limit.into()),
         )
             .unwrap();
         let to = OptimizedRLPTrait::encode_short_string(call.to.into(), 20).unwrap();
@@ -99,11 +99,11 @@ fn rlp_encode_tx(call: RosettanetCall) -> @ByteArray {
                 to,
                 value,
                 calldata,
-                access_list
+                access_list,
             ]
                 .span(),
             total_len,
-            0x2
+            0x2,
         );
 
         return result;
@@ -115,7 +115,7 @@ fn convert_calldata(mut calldata: Span<u128>, with_signature: bool) -> @ByteArra
         return OptimizedRLPTrait::encode_bytearray(@"").unwrap();
     }
     return OptimizedRLPTrait::encode_bytearray(
-        convert_calldata_to_bytearray(calldata, with_signature)
+        convert_calldata_to_bytearray(calldata, with_signature),
     )
         .unwrap();
 }
@@ -166,7 +166,7 @@ pub fn span_to_array(span: Span<u128>) -> Array<u128> {
 }
 
 pub fn is_valid_eth_signature(
-    msg_hash: u256, eth_address: EthAddress, signature: RosettanetSignature
+    msg_hash: u256, eth_address: EthAddress, signature: RosettanetSignature,
 ) -> bool {
     let secp256_signature: Signature = signature_from_vrs(signature.v, signature.r, signature.s);
     verify_eth_signature(msg_hash, secp256_signature, eth_address);
@@ -196,8 +196,8 @@ mod tests {
         assert_eq!(
             tx_hash,
             u256 {
-                low: 0x59b1204cfc1f34f0be0f12910c1cf268, high: 0xe035616511002e798765243361a7d52f
-            }
+                low: 0x59b1204cfc1f34f0be0f12910c1cf268, high: 0xe035616511002e798765243361a7d52f,
+            },
         );
     }
 
@@ -219,8 +219,8 @@ mod tests {
         assert_eq!(
             tx_hash,
             u256 {
-                low: 0x5e26225cec38d1e0310e925b2b7565e9, high: 0x147b5df4a6e91fdbd967747f7b375f15
-            }
+                low: 0x5e26225cec38d1e0310e925b2b7565e9, high: 0x147b5df4a6e91fdbd967747f7b375f15,
+            },
         );
     }
 

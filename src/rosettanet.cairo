@@ -3,19 +3,19 @@ use starknet::{ContractAddress, EthAddress, ClassHash};
 pub trait IRosettanet<TState> {
     // Write methods
     fn register_contract(
-        ref self: TState, address: ContractAddress
+        ref self: TState, address: ContractAddress,
     ); // Registers existing starknet contract to registry
     fn deploy_account(
-        ref self: TState, eth_address: EthAddress
+        ref self: TState, eth_address: EthAddress,
     ) -> ContractAddress; // Deploys starknet account and returns address
     fn register_deployed_account(
-        ref self: TState, eth_address: EthAddress
+        ref self: TState, eth_address: EthAddress,
     ); // Registers account deployed not from this contract
     fn set_account_class(
-        ref self: TState, class: ClassHash
+        ref self: TState, class: ClassHash,
     ); // Sets account class, this function will be removed after stable account
     fn register_matched_addresses(
-        ref self: TState, sn_address: ContractAddress, eth_address: EthAddress
+        ref self: TState, sn_address: ContractAddress, eth_address: EthAddress,
     ); // Will be used during alpha
     fn upgrade(ref self: TState, class: ClassHash); // Upgrades contract
     fn change_dev(ref self: TState, dev: ContractAddress); // Changes dev
@@ -24,7 +24,7 @@ pub trait IRosettanet<TState> {
     fn get_ethereum_address(self: @TState, sn_address: ContractAddress) -> EthAddress;
     fn precalculate_starknet_account(self: @TState, eth_address: EthAddress) -> ContractAddress;
     fn get_starknet_address_with_fallback(
-        self: @TState, eth_address: EthAddress
+        self: @TState, eth_address: EthAddress,
     ) -> ContractAddress;
     fn latest_class(self: @TState) -> ClassHash;
     fn native_currency(self: @TState) -> ContractAddress;
@@ -39,17 +39,17 @@ pub mod Rosettanet {
     use core::poseidon::{poseidon_hash_span};
     use starknet::syscalls::{deploy_syscall, replace_class_syscall};
     use starknet::{
-        ContractAddress, EthAddress, ClassHash, get_contract_address, get_caller_address
+        ContractAddress, EthAddress, ClassHash, get_contract_address, get_caller_address,
     };
     use openzeppelin_utils::deployments::{calculate_contract_address_from_deploy_syscall};
     use rosettacontracts::accounts::base::{
-        IRosettaAccountDispatcher, IRosettaAccountDispatcherTrait
+        IRosettaAccountDispatcher, IRosettaAccountDispatcherTrait,
     };
     use rosettacontracts::utils::{calculate_sn_entrypoint, eth_function_signature_from_felts};
     use rosettacontracts::components::function_registry::{FunctionRegistryComponent};
 
     component!(
-        path: FunctionRegistryComponent, storage: function_registry, event: FunctionRegistryEvent
+        path: FunctionRegistryComponent, storage: function_registry, event: FunctionRegistryEvent,
     );
 
     #[abi(embed_v0)]
@@ -65,7 +65,7 @@ pub mod Rosettanet {
         Upgraded: Upgraded,
         PredeployedAccountRegistered: PredeployedAccountRegistered,
         DevAddressUpdated: DevAddressUpdated,
-        FunctionRegistryEvent: FunctionRegistryComponent::Event
+        FunctionRegistryEvent: FunctionRegistryComponent::Event,
     }
 
     #[derive(Drop, starknet::Event)]
@@ -119,7 +119,7 @@ pub mod Rosettanet {
         // They may need to upgrade to the latest hash after deployment.
         initial_class: ClassHash,
         dev: ContractAddress,
-        strk: ContractAddress
+        strk: ContractAddress,
     }
 
     #[constructor]
@@ -127,7 +127,7 @@ pub mod Rosettanet {
         ref self: ContractState,
         account_class: ClassHash,
         developer: ContractAddress,
-        strk: ContractAddress
+        strk: ContractAddress,
     ) {
         self.initial_class.write(account_class);
         self.latest_class.write(account_class);
@@ -145,7 +145,7 @@ pub mod Rosettanet {
         /// * `address` - Starknet Contract Address that going to be registered
         fn register_contract(ref self: ContractState, address: ContractAddress) {
             assert(
-                get_caller_address() == self.dev.read(), 'only dev'
+                get_caller_address() == self.dev.read(), 'only dev',
             ); // Access controlled for now
             let eth_address = self.generate_eth_address(address);
             self.update_registry(address, eth_address);
@@ -163,7 +163,7 @@ pub mod Rosettanet {
                 self.initial_class.read(),
                 eth_address_felt,
                 array![eth_address_felt, get_contract_address().into()].span(),
-                true
+                true,
             )
                 .unwrap();
 
@@ -183,7 +183,7 @@ pub mod Rosettanet {
             assert(
                 IRosettaAccountDispatcher { contract_address: precalculated_address }
                     .rosettanet() == get_contract_address(),
-                'wrong deployment'
+                'wrong deployment',
             );
             // TODO: Add tests for this function
             self.update_registry(precalculated_address, eth_address);
@@ -207,7 +207,7 @@ pub mod Rosettanet {
         /// * `sn_address` - Starknet address
         /// * `eth_address` - Ethereum address
         fn register_matched_addresses(
-            ref self: ContractState, sn_address: ContractAddress, eth_address: EthAddress
+            ref self: ContractState, sn_address: ContractAddress, eth_address: EthAddress,
         ) {
             assert(get_caller_address() == self.dev.read(), 'only dev');
 
@@ -259,14 +259,14 @@ pub mod Rosettanet {
         /// * `eth_address` - Ethereum address that going to be used to precalculate starknet
         /// contract address
         fn precalculate_starknet_account(
-            self: @ContractState, eth_address: EthAddress
+            self: @ContractState, eth_address: EthAddress,
         ) -> ContractAddress {
             let eth_address_felt: felt252 = eth_address.into();
             calculate_contract_address_from_deploy_syscall(
                 eth_address_felt,
                 self.initial_class.read(),
                 array![eth_address_felt, get_contract_address().into()].span(),
-                0.try_into().unwrap()
+                0.try_into().unwrap(),
             )
         }
 
@@ -277,7 +277,7 @@ pub mod Rosettanet {
         /// * * `eth_address` - Ethereum address that going to be used to calculate starknet
         /// contract address
         fn get_starknet_address_with_fallback(
-            self: @ContractState, eth_address: EthAddress
+            self: @ContractState, eth_address: EthAddress,
         ) -> ContractAddress {
             let address_on_registry: ContractAddress = self.eth_to_sn.entry(eth_address).read();
             if (address_on_registry.is_zero()) {
@@ -309,10 +309,14 @@ pub mod Rosettanet {
         /// * `sn_address` - Starknet contract address that going to be registered with eth_address
         /// * `eth_address` - Ethereum address that going to be registered with sn_address
         fn update_registry(
-            ref self: ContractState, sn_address: ContractAddress, eth_address: EthAddress
+            ref self: ContractState, sn_address: ContractAddress, eth_address: EthAddress,
         ) {
-            assert(self.sn_to_eth.entry(sn_address).read().is_zero(), 'Contract already registered');
-            assert(self.eth_to_sn.entry(eth_address).read().is_zero(), 'EthAddress already registered');
+            assert(
+                self.sn_to_eth.entry(sn_address).read().is_zero(), 'Contract already registered',
+            );
+            assert(
+                self.eth_to_sn.entry(eth_address).read().is_zero(), 'EthAddress already registered',
+            );
 
             self.sn_to_eth.entry(sn_address).write(eth_address);
             self.eth_to_sn.entry(eth_address).write(sn_address);
@@ -326,7 +330,7 @@ pub mod Rosettanet {
 
             let (_, eth_address) = DivRem::div_rem(
                 Into::<felt252, u256>::into(sn_hash),
-                0x10000000000000000000000000000000000000000_u256.try_into().unwrap()
+                0x10000000000000000000000000000000000000000_u256.try_into().unwrap(),
             );
 
             eth_address.try_into().unwrap()

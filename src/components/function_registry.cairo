@@ -13,7 +13,7 @@ pub mod FunctionRegistryComponent {
     use starknet::{ContractAddress};
     use starknet::storage::{
         StoragePointerReadAccess, StoragePointerWriteAccess, Map, StoragePathEntry, Vec, VecTrait,
-        MutableVecTrait
+        MutableVecTrait,
     };
     use crate::utils::decoder::{EVMTypes};
     use crate::components::utils::{calculate_function_selectors};
@@ -22,28 +22,28 @@ pub mod FunctionRegistryComponent {
     #[event]
     #[derive(Drop, Debug, PartialEq, starknet::Event)]
     pub enum Event {
-        FunctionRegistered: FunctionRegistered
+        FunctionRegistered: FunctionRegistered,
     }
 
     #[derive(Drop, Debug, PartialEq, starknet::Event)]
     pub struct FunctionRegistered {
         pub eth_selector: u32,
-        pub entrypoint: felt252
+        pub entrypoint: felt252,
     }
 
     #[storage]
     pub struct Storage {
         developers: Map<ContractAddress, bool>, // isDev?
         entrypoints: Map<u32, felt252>, // Ethereum function selector -> 
-        directives: Map<u32, Vec<felt252>>
+        directives: Map<u32, Vec<felt252>>,
     }
 
     #[embeddable_as(FunctionRegistryImpl)]
     impl FunctionRegistry<
-        TContractState, +HasComponent<TContractState>
+        TContractState, +HasComponent<TContractState>,
     > of super::IFunctionRegistry<ComponentState<TContractState>> {
         fn register_function(
-            ref self: ComponentState<TContractState>, fn_name: ByteArray, inputs: Span<EVMTypes>
+            ref self: ComponentState<TContractState>, fn_name: ByteArray, inputs: Span<EVMTypes>,
         ) {
             // TODO: add access control
             let (sn_entrypoint, eth_selector) = calculate_function_selectors(@fn_name);
@@ -53,17 +53,15 @@ pub mod FunctionRegistryComponent {
             inputs.serialize(ref inputs_serialized);
 
             let vector_serialized_directives = self.directives.entry(eth_selector);
-            for i in 0
-                ..inputs_serialized
-                    .len() {
-                        vector_serialized_directives.append().write(*inputs_serialized.at(i));
-                    };
+            for i in 0..inputs_serialized.len() {
+                vector_serialized_directives.append().write(*inputs_serialized.at(i));
+            };
 
             self.emit(FunctionRegistered { eth_selector, entrypoint: sn_entrypoint });
         }
         // Returns function entrypoint and decoding directives
         fn get_function_decoding(
-            self: @ComponentState<TContractState>, eth_selector: u32
+            self: @ComponentState<TContractState>, eth_selector: u32,
         ) -> (felt252, Span<EVMTypes>) {
             let entrypoint = self.entrypoints.entry(eth_selector).read();
 
@@ -71,11 +69,9 @@ pub mod FunctionRegistryComponent {
 
             let mut serialized_directives = array![];
 
-            for i in 0
-                ..vector_serialized_directives
-                    .len() {
-                        serialized_directives.append(vector_serialized_directives.at(i).read());
-                    };
+            for i in 0..vector_serialized_directives.len() {
+                serialized_directives.append(vector_serialized_directives.at(i).read());
+            };
 
             let mut serialized_directives = serialized_directives.span();
 
@@ -92,7 +88,7 @@ pub mod FunctionRegistryComponent {
 
     #[generate_trait]
     pub impl InternalImpl<
-        TContractState, +HasComponent<TContractState>
+        TContractState, +HasComponent<TContractState>,
     > of InternalTrait<TContractState> {
         fn initialize(ref self: ComponentState<TContractState>) {}
     }

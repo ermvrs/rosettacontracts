@@ -2,9 +2,7 @@ use snforge_std::{start_cheat_caller_address, stop_cheat_caller_address};
 
 use rosettacontracts::rosettanet::{IRosettanetDispatcherTrait};
 
-use crate::test_utils::{
-    developer, eth_account, deploy_rosettanet, deploy_and_set_account
-};
+use crate::test_utils::{developer, eth_account, deploy_rosettanet, deploy_and_set_account};
 
 
 #[test]
@@ -63,7 +61,7 @@ fn rosettanet_register_contract() {
     let rosettanet = deploy_rosettanet();
 
     start_cheat_caller_address(
-        rosettanet.contract_address, starknet::contract_address_const::<1>()
+        rosettanet.contract_address, starknet::contract_address_const::<1>(),
     );
     rosettanet.register_contract(1.try_into().unwrap());
     stop_cheat_caller_address(rosettanet.contract_address);
@@ -79,7 +77,7 @@ fn rosettanet_register_existing_contract() {
     let rosettanet = deploy_rosettanet();
 
     start_cheat_caller_address(
-        rosettanet.contract_address, starknet::contract_address_const::<1>()
+        rosettanet.contract_address, starknet::contract_address_const::<1>(),
     );
     rosettanet.register_contract(1.try_into().unwrap());
     rosettanet.register_contract(1.try_into().unwrap());
