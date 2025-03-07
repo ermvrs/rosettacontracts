@@ -33,13 +33,15 @@ pub trait IRosettanet<TState> {
 #[starknet::contract]
 pub mod Rosettanet {
     use core::num::traits::Zero;
-    use starknet::storage::{Map};
+    use starknet::storage::{
+        StoragePointerReadAccess, StoragePointerWriteAccess, StoragePathEntry, Map,
+    };
     use core::poseidon::{poseidon_hash_span};
     use starknet::syscalls::{deploy_syscall, replace_class_syscall};
     use starknet::{
         ContractAddress, EthAddress, ClassHash, get_contract_address, get_caller_address
     };
-    use openzeppelin::utils::deployments::{calculate_contract_address_from_deploy_syscall};
+    use openzeppelin_utils::deployments::{calculate_contract_address_from_deploy_syscall};
     use rosettacontracts::accounts::base::{
         IRosettaAccountDispatcher, IRosettaAccountDispatcherTrait
     };
@@ -241,7 +243,7 @@ pub mod Rosettanet {
         /// # Arguments
         /// * `eth_address` - Ethereum address
         fn get_starknet_address(self: @ContractState, eth_address: EthAddress) -> ContractAddress {
-            self.eth_to_sn.read(eth_address)
+            self.eth_to_sn.entry(eth_address).read()
         }
 
         /// Returns registered starknet contract address for specified ethereum address
@@ -249,7 +251,7 @@ pub mod Rosettanet {
         /// # Arguments
         /// * `sn_address` - Starknet contract address
         fn get_ethereum_address(self: @ContractState, sn_address: ContractAddress) -> EthAddress {
-            self.sn_to_eth.read(sn_address)
+            self.sn_to_eth.entry(sn_address).read()
         }
 
         /// Returns precalculated starknet address for accounts
@@ -277,7 +279,7 @@ pub mod Rosettanet {
         fn get_starknet_address_with_fallback(
             self: @ContractState, eth_address: EthAddress
         ) -> ContractAddress {
-            let address_on_registry: ContractAddress = self.eth_to_sn.read(eth_address);
+            let address_on_registry: ContractAddress = self.eth_to_sn.entry(eth_address).read();
             if (address_on_registry.is_zero()) {
                 return self.precalculate_starknet_account(eth_address);
             }
@@ -309,11 +311,11 @@ pub mod Rosettanet {
         fn update_registry(
             ref self: ContractState, sn_address: ContractAddress, eth_address: EthAddress
         ) {
-            assert(self.sn_to_eth.read(sn_address).is_zero(), 'Contract already registered');
-            assert(self.eth_to_sn.read(eth_address).is_zero(), 'EthAddress already registered');
+            assert(self.sn_to_eth.entry(sn_address).read().is_zero(), 'Contract already registered');
+            assert(self.eth_to_sn.entry(eth_address).read().is_zero(), 'EthAddress already registered');
 
-            self.sn_to_eth.write(sn_address, eth_address);
-            self.eth_to_sn.write(eth_address, sn_address);
+            self.sn_to_eth.entry(sn_address).write(eth_address);
+            self.eth_to_sn.entry(eth_address).write(sn_address);
         }
 
         /// Generates Ethereum address from starknet contract address

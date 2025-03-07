@@ -1,5 +1,6 @@
 use core::ops::DivAssign;
 use core::num::traits::{OverflowingMul, WideMul};
+use core::traits::{BitAnd, BitNot, BitOr};
 
 pub fn get_bit_at<
     T,

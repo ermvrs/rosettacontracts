@@ -31,7 +31,9 @@ pub trait IMockWETH<TState> {
 pub mod MockWETH {
     use openzeppelin_token::erc20::{ERC20Component, ERC20HooksEmptyImpl};
     use starknet::{ContractAddress, get_tx_info};
-
+    use starknet::storage::{
+        StoragePointerReadAccess, StoragePointerWriteAccess,
+    };
     component!(path: ERC20Component, storage: erc20, event: ERC20Event);
     // ERC20 Mixin
     #[abi(embed_v0)]

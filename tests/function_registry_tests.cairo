@@ -1,4 +1,4 @@
-use rosettacontracts_integrationtest::test_utils::{deploy_rosettanet};
+use crate::test_utils::{deploy_rosettanet};
 //use rosettacontracts::rosettanet::{IRosettanetDispatcherTrait};
 use rosettacontracts::components::function_registry::{
     IFunctionRegistryDispatcherTrait, IFunctionRegistryDispatcher

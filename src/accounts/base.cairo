@@ -48,7 +48,7 @@ pub mod RosettaAccount {
         IFunctionRegistryDispatcherTrait, IFunctionRegistryDispatcher
     };
     use crate::rosettanet::{IRosettanetDispatcher, IRosettanetDispatcherTrait};
-    use openzeppelin::utils::deployments::{calculate_contract_address_from_deploy_syscall};
+    use openzeppelin_utils::deployments::{calculate_contract_address_from_deploy_syscall};
 
     pub mod Errors {
         pub const INVALID_CALLER: felt252 = 'Rosetta: invalid caller';

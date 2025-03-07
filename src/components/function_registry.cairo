@@ -47,7 +47,7 @@ pub mod FunctionRegistryComponent {
         ) {
             // TODO: add access control
             let (sn_entrypoint, eth_selector) = calculate_function_selectors(@fn_name);
-            self.entrypoints.write(eth_selector, sn_entrypoint);
+            self.entrypoints.entry(eth_selector).write(sn_entrypoint);
 
             let mut inputs_serialized = array![];
             inputs.serialize(ref inputs_serialized);
@@ -65,7 +65,7 @@ pub mod FunctionRegistryComponent {
         fn get_function_decoding(
             self: @ComponentState<TContractState>, eth_selector: u32
         ) -> (felt252, Span<EVMTypes>) {
-            let entrypoint = self.entrypoints.read(eth_selector);
+            let entrypoint = self.entrypoints.entry(eth_selector).read();
 
             let vector_serialized_directives = self.directives.entry(eth_selector);
 
@@ -86,7 +86,7 @@ pub mod FunctionRegistryComponent {
         }
 
         fn is_dev(self: @ComponentState<TContractState>, dev: ContractAddress) -> bool {
-            self.developers.read(dev)
+            self.developers.entry(dev).read()
         }
     }
 

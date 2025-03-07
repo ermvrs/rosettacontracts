@@ -2,7 +2,7 @@ use snforge_std::{start_cheat_caller_address, stop_cheat_caller_address};
 
 use rosettacontracts::rosettanet::{IRosettanetDispatcherTrait};
 
-use rosettacontracts_integrationtest::test_utils::{
+use crate::test_utils::{
     developer, eth_account, deploy_rosettanet, deploy_and_set_account
 };
 
