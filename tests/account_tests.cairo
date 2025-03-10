@@ -2,6 +2,8 @@ use starknet::{EthAddress};
 use snforge_std::{
     start_cheat_signature_global, stop_cheat_signature_global, start_cheat_nonce_global,
     stop_cheat_nonce_global, start_cheat_caller_address, stop_cheat_caller_address,
+    start_cheat_resource_bounds_global, stop_cheat_resource_bounds_global,
+    start_cheat_transaction_version_global, stop_cheat_transaction_version_global,
 };
 
 use rosettacontracts::accounts::base::{IRosettaAccountDispatcherTrait};
@@ -12,7 +14,7 @@ use rosettacontracts::utils::decoder::{EVMTypes};
 use crate::test_utils::{
     deploy_account_from_rosettanet, register_function, deploy_funded_account_from_rosettanet,
     deploy_account_from_existing_rosettanet, manipulate_rosettanet_registry, deploy_erc20,
-    deploy_specificly_funded_account_from_rosettanet, deploy_weth,
+    deploy_specificly_funded_account_from_rosettanet, deploy_weth, create_resource_bounds,
 };
 use rosettacontracts::mocks::erc20::{IMockERC20DispatcherTrait};
 use rosettacontracts::mocks::weth::{IMockWETHDispatcherTrait};
@@ -169,7 +171,9 @@ fn test_eip1559_transaction_validation_value_transfer_only() {
 
     start_cheat_nonce_global(tx.nonce.into());
     start_cheat_signature_global(signature.span());
+    start_cheat_resource_bounds_global(create_resource_bounds(21000, 50742206232));
     let validation = account.__validate__(tx);
+    stop_cheat_resource_bounds_global();
     stop_cheat_signature_global();
     stop_cheat_nonce_global();
 
@@ -211,7 +215,175 @@ fn test_legacy_transaction_validation_value_transfer_only() {
 
     start_cheat_nonce_global(tx.nonce.into());
     start_cheat_signature_global(signature.span());
+    start_cheat_resource_bounds_global(create_resource_bounds(21000, 152345));
     let validation = account.__validate__(tx);
+    stop_cheat_resource_bounds_global();
+    stop_cheat_signature_global();
+    stop_cheat_nonce_global();
+
+    assert_eq!(validation, starknet::VALIDATED);
+}
+
+#[test]
+#[should_panic(expected: 'Nonce wrong')]
+fn test_legacy_transaction_wrong_nonce() {
+    // Example usdc transfer
+    let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
+    let tx = RosettanetCall {
+        tx_type: 0,
+        to: 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238
+            .try_into()
+            .unwrap(), // we dont need to deploy account, we only check validation here
+        nonce: 77,
+        max_priority_fee_per_gas: 0,
+        max_fee_per_gas: 0,
+        gas_price: 45235,
+        gas_limit: 21000,
+        value: 0,
+        calldata: array![
+            0xa9059cbb,
+            0x000000000000000000000000b756b1bc,
+            0x042fa70d85ee84eab646a3b438a285ee,
+            0x00000000000000000000000000000000,
+            0x000000000000000000000000000f4240,
+        ]
+            .span(),
+    };
+
+    let signature = array![
+        0xa242563ffb0771ea806fc160e0665583,
+        0x6279ab9f3ee976a5a0a47538ca5383be,
+        0xc8cfbaab64f80111d375dce2c52e896c,
+        0x419770f60d92f921b9d5434941b3891a,
+        0x1c,
+        0x0,
+        0x0,
+    ];
+    let unsigned_tx_hash: u256 = 0xb2e837d9ee9c8d6e9bb40a9cf18eac862c6b4f9b0bbe5d2437abb9dcade6bab2;
+
+    let generated_tx_hash: u256 = generate_tx_hash(tx);
+    assert_eq!(generated_tx_hash, unsigned_tx_hash);
+
+    let (_, account) = deploy_account_from_rosettanet(eth_address);
+    assert_eq!(account.get_ethereum_address(), eth_address);
+
+    start_cheat_nonce_global(234234);
+    start_cheat_signature_global(signature.span());
+    start_cheat_resource_bounds_global(create_resource_bounds(21000, 45235));
+    start_cheat_transaction_version_global(3);
+    let validation = account.__validate__(tx);
+    stop_cheat_transaction_version_global();
+    stop_cheat_resource_bounds_global();
+    stop_cheat_signature_global();
+    stop_cheat_nonce_global();
+
+    assert_eq!(validation, starknet::VALIDATED);
+}
+
+#[test]
+#[should_panic(expected: 'Wrong tx version')]
+fn test_legacy_transaction_wrong_tx_version() {
+    // Example usdc transfer
+    let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
+    let tx = RosettanetCall {
+        tx_type: 0,
+        to: 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238
+            .try_into()
+            .unwrap(), // we dont need to deploy account, we only check validation here
+        nonce: 77,
+        max_priority_fee_per_gas: 0,
+        max_fee_per_gas: 0,
+        gas_price: 45235,
+        gas_limit: 21000,
+        value: 0,
+        calldata: array![
+            0xa9059cbb,
+            0x000000000000000000000000b756b1bc,
+            0x042fa70d85ee84eab646a3b438a285ee,
+            0x00000000000000000000000000000000,
+            0x000000000000000000000000000f4240,
+        ]
+            .span(),
+    };
+
+    let signature = array![
+        0xa242563ffb0771ea806fc160e0665583,
+        0x6279ab9f3ee976a5a0a47538ca5383be,
+        0xc8cfbaab64f80111d375dce2c52e896c,
+        0x419770f60d92f921b9d5434941b3891a,
+        0x1c,
+        0x0,
+        0x0,
+    ];
+    let unsigned_tx_hash: u256 = 0xb2e837d9ee9c8d6e9bb40a9cf18eac862c6b4f9b0bbe5d2437abb9dcade6bab2;
+
+    let generated_tx_hash: u256 = generate_tx_hash(tx);
+    assert_eq!(generated_tx_hash, unsigned_tx_hash);
+
+    let (_, account) = deploy_account_from_rosettanet(eth_address);
+    assert_eq!(account.get_ethereum_address(), eth_address);
+
+    start_cheat_nonce_global(tx.nonce.into());
+    start_cheat_signature_global(signature.span());
+    start_cheat_resource_bounds_global(create_resource_bounds(21000, 400000));
+    start_cheat_transaction_version_global(2);
+    let validation = account.__validate__(tx);
+    stop_cheat_transaction_version_global();
+    stop_cheat_resource_bounds_global();
+    stop_cheat_signature_global();
+    stop_cheat_nonce_global();
+
+    assert_eq!(validation, starknet::VALIDATED);
+}
+
+#[test]
+#[should_panic(expected: 'Max price unit tx wrong')]
+fn test_legacy_transaction_wrong_gas() {
+    // Example usdc transfer
+    let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
+    let tx = RosettanetCall {
+        tx_type: 0,
+        to: 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238
+            .try_into()
+            .unwrap(), // we dont need to deploy account, we only check validation here
+        nonce: 77,
+        max_priority_fee_per_gas: 0,
+        max_fee_per_gas: 0,
+        gas_price: 45235,
+        gas_limit: 21000,
+        value: 0,
+        calldata: array![
+            0xa9059cbb,
+            0x000000000000000000000000b756b1bc,
+            0x042fa70d85ee84eab646a3b438a285ee,
+            0x00000000000000000000000000000000,
+            0x000000000000000000000000000f4240,
+        ]
+            .span(),
+    };
+
+    let signature = array![
+        0xa242563ffb0771ea806fc160e0665583,
+        0x6279ab9f3ee976a5a0a47538ca5383be,
+        0xc8cfbaab64f80111d375dce2c52e896c,
+        0x419770f60d92f921b9d5434941b3891a,
+        0x1c,
+        0x0,
+        0x0,
+    ];
+    let unsigned_tx_hash: u256 = 0xb2e837d9ee9c8d6e9bb40a9cf18eac862c6b4f9b0bbe5d2437abb9dcade6bab2;
+
+    let generated_tx_hash: u256 = generate_tx_hash(tx);
+    assert_eq!(generated_tx_hash, unsigned_tx_hash);
+
+    let (_, account) = deploy_account_from_rosettanet(eth_address);
+    assert_eq!(account.get_ethereum_address(), eth_address);
+
+    start_cheat_nonce_global(tx.nonce.into());
+    start_cheat_signature_global(signature.span());
+    start_cheat_resource_bounds_global(create_resource_bounds(21000, 400000));
+    let validation = account.__validate__(tx);
+    stop_cheat_resource_bounds_global();
     stop_cheat_signature_global();
     stop_cheat_nonce_global();
 
@@ -262,7 +434,9 @@ fn test_legacy_transaction_validation_calldata() {
 
     start_cheat_nonce_global(tx.nonce.into());
     start_cheat_signature_global(signature.span());
+    start_cheat_resource_bounds_global(create_resource_bounds(21000, 45235));
     let validation = account.__validate__(tx);
+    stop_cheat_resource_bounds_global();
     stop_cheat_signature_global();
     stop_cheat_nonce_global();
 
@@ -314,7 +488,9 @@ fn test_eip1559_transaction_validation_calldata() {
 
     start_cheat_nonce_global(tx.nonce.into());
     start_cheat_signature_global(signature.span());
+    start_cheat_resource_bounds_global(create_resource_bounds(45439, 18610805637));
     let validation = account.__validate__(tx);
+    stop_cheat_resource_bounds_global();
     stop_cheat_signature_global();
     stop_cheat_nonce_global();
 
@@ -355,7 +531,9 @@ fn test_transaction_validation_calldata_and_value_transfer() {
 
     start_cheat_nonce_global(tx.nonce.into());
     start_cheat_signature_global(signature.span());
+    start_cheat_resource_bounds_global(create_resource_bounds(28156, 46700970384));
     let validation = account.__validate__(tx);
+    stop_cheat_resource_bounds_global();
     stop_cheat_signature_global();
     stop_cheat_nonce_global();
 
@@ -408,7 +586,9 @@ fn test_legacy_transaction_validation_calldata_invalid_signature() {
 
     start_cheat_nonce_global(tx.nonce.into());
     start_cheat_signature_global(signature.span());
+    start_cheat_resource_bounds_global(create_resource_bounds(21000, 45235));
     account.__validate__(tx);
+    stop_cheat_resource_bounds_global();
     stop_cheat_signature_global();
     stop_cheat_nonce_global();
 }
@@ -957,7 +1137,9 @@ fn test_validation_real_data_failing() {
     start_cheat_nonce_global(tx.nonce.into());
     start_cheat_signature_global(signature.span());
     start_cheat_caller_address(account.contract_address, starknet::contract_address_const::<0>());
+    start_cheat_resource_bounds_global(create_resource_bounds(21000, 55));
     account.__validate__(tx);
+    stop_cheat_resource_bounds_global();
     stop_cheat_caller_address(account.contract_address);
     stop_cheat_signature_global();
     stop_cheat_nonce_global();
@@ -1020,7 +1202,9 @@ fn test_validate_multicall_transaction() {
     start_cheat_nonce_global(tx.nonce.into());
     start_cheat_signature_global(signature.span());
     start_cheat_caller_address(account.contract_address, starknet::contract_address_const::<0>());
+    start_cheat_resource_bounds_global(create_resource_bounds(21000, 55));
     let validation = account.__validate__(tx);
+    stop_cheat_resource_bounds_global();
     stop_cheat_caller_address(account.contract_address);
     stop_cheat_signature_global();
     stop_cheat_nonce_global();
@@ -1086,7 +1270,9 @@ fn test_validate_multicall_transaction_wrong_signature() {
     start_cheat_nonce_global(tx.nonce.into());
     start_cheat_signature_global(signature.span());
     start_cheat_caller_address(account.contract_address, starknet::contract_address_const::<0>());
+    start_cheat_resource_bounds_global(create_resource_bounds(21000, 55));
     let validation = account.__validate__(tx);
+    stop_cheat_resource_bounds_global();
     stop_cheat_caller_address(account.contract_address);
     stop_cheat_signature_global();
     stop_cheat_nonce_global();
@@ -1246,7 +1432,9 @@ fn test_multicall_validate_actual_values() {
     start_cheat_nonce_global(tx.nonce.into());
     start_cheat_signature_global(signature.span());
     start_cheat_caller_address(account.contract_address, starknet::contract_address_const::<0>());
+    start_cheat_resource_bounds_global(create_resource_bounds(21000, 55));
     let validation = account.__validate__(tx);
+    stop_cheat_resource_bounds_global();
     stop_cheat_caller_address(account.contract_address);
     stop_cheat_signature_global();
     stop_cheat_nonce_global();

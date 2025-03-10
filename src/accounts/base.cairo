@@ -31,14 +31,14 @@ pub mod RosettaAccount {
     use core::panic_with_felt252;
     use starknet::{
         ContractAddress, EthAddress, ClassHash, get_contract_address, get_caller_address,
-        get_tx_info, ResourcesBounds
+        get_tx_info, ResourcesBounds,
     };
     use starknet::syscalls::{
         call_contract_syscall, replace_class_syscall, get_class_hash_at_syscall,
     };
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use rosettacontracts::accounts::types::{
-        RosettanetSignature, RosettanetCall, RosettanetMulticall
+        RosettanetSignature, RosettanetCall, RosettanetMulticall,
     };
     use rosettacontracts::utils::decoder::{EVMCalldata, EVMTypesImpl};
     use crate::utils::bytes::{BytesTrait};
@@ -218,12 +218,12 @@ pub mod RosettaAccount {
             let self_eth_address: EthAddress = self.ethereum_address.read();
             assert(call.tx_type == 0 || call.tx_type == 2, 'Tx type not supported');
             let tx_info = get_tx_info().unbox();
-            
+
             assert(tx_info.version == 3, 'Wrong tx version'); // Verify is it correct?
             assert(tx_info.nonce == call.nonce.into(), 'Nonce wrong');
 
-            if(call.tx_type == 0) {
-                self.validate_resources(call.gas_limit, call.max_fee_per_gas);
+            if (call.tx_type == 0) {
+                self.validate_resources(call.gas_limit, call.gas_price);
             } else {
                 self.validate_resources(call.gas_limit, call.max_fee_per_gas);
             }
@@ -365,9 +365,12 @@ pub mod RosettaAccount {
 
             let resource_bounds: Span<ResourcesBounds> = tx_info.resource_bounds;
             for resource in resource_bounds {
-                if(*resource.resource == 'L1_GAS') {
+                if (*resource.resource == 'L1_GAS') {
                     assert(*resource.max_amount == max_amount, 'Max amount tx wrong');
-                    assert(*resource.max_price_per_unit == max_price_per_unit, 'Max price unit tx wrong');
+                    assert(
+                        *resource.max_price_per_unit == max_price_per_unit,
+                        'Max price unit tx wrong',
+                    );
                 }
             }
         }

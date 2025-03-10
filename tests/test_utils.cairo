@@ -1,6 +1,6 @@
 use snforge_std::{
     declare, ContractClassTrait, DeclareResultTrait, start_cheat_caller_address,
-    stop_cheat_caller_address
+    stop_cheat_caller_address,
 };
 use starknet::{ClassHash, ContractAddress, EthAddress, ResourcesBounds};
 use core::pedersen::PedersenTrait;
@@ -22,15 +22,16 @@ pub fn register_function(
     fn_registry.register_function(function, inputs);
 }
 
-fn create_resource_bounds(max_amount: u64, max_price_per_unit: u128) -> Span<ResourcesBounds> {
+pub fn create_resource_bounds(max_amount: u64, max_price_per_unit: u128) -> Span<ResourcesBounds> {
     let mut bounds = array![];
 
-    bounds.append(ResourcesBounds {
-        resource: 'L1_GAS',
-        max_amount: max_amount,
-        max_price_per_unit: max_price_per_unit
-    });
-    
+    bounds
+        .append(
+            ResourcesBounds {
+                resource: 'L1_GAS', max_amount: max_amount, max_price_per_unit: max_price_per_unit,
+            },
+        );
+
     bounds.span()
 }
 
