@@ -12,7 +12,7 @@ pub struct RosettanetCall {
     pub tx_type: u8, // 0: Legact, 1: Eip2930, 2: Eip1559
     pub to: EthAddress, // This has to be this account address for multicalls
     pub nonce: u64,
-    pub max_priority_fee_per_gas: u128,
+    pub max_priority_fee_per_gas: u128, // This prop not used in validation.
     pub max_fee_per_gas: u128,
     pub gas_price: u128, // On legacy transactions
     pub gas_limit: u64,

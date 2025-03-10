@@ -1,8 +1,8 @@
 use snforge_std::{
     declare, ContractClassTrait, DeclareResultTrait, start_cheat_caller_address,
-    stop_cheat_caller_address,
+    stop_cheat_caller_address
 };
-use starknet::{ClassHash, ContractAddress, EthAddress};
+use starknet::{ClassHash, ContractAddress, EthAddress, ResourcesBounds};
 use core::pedersen::PedersenTrait;
 use core::hash::{HashStateExTrait, HashStateTrait};
 use rosettacontracts::rosettanet::{IRosettanetDispatcher, IRosettanetDispatcherTrait};
@@ -20,6 +20,18 @@ pub fn register_function(
     let fn_registry = IFunctionRegistryDispatcher { contract_address: rosettanet.contract_address };
 
     fn_registry.register_function(function, inputs);
+}
+
+fn create_resource_bounds(max_amount: u64, max_price_per_unit: u128) -> Span<ResourcesBounds> {
+    let mut bounds = array![];
+
+    bounds.append(ResourcesBounds {
+        resource: 'L1_GAS',
+        max_amount: max_amount,
+        max_price_per_unit: max_price_per_unit
+    });
+    
+    bounds.span()
 }
 
 fn compute_hash_on_elements(data: Span<felt252>) -> felt252 {
