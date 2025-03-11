@@ -19,6 +19,8 @@ use crate::test_utils::{
 use rosettacontracts::mocks::erc20::{IMockERC20DispatcherTrait};
 use rosettacontracts::mocks::weth::{IMockWETHDispatcherTrait};
 
+use rosettacontracts::accounts::errors::AccountErrors::*;
+
 #[test]
 fn test_signature_validation_eip1559() {
     let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
@@ -98,7 +100,7 @@ fn test_signature_validation_eip1559_invalid() {
 }
 
 #[test]
-#[should_panic(expected: "Unsupported tx type")]
+#[should_panic(expected: 'ACC: nonsupported tx type')]
 fn test_transaction_validation_unsupported_tx_type() {
     let eth_address: EthAddress = 0x30ffDf2c33b929F749afE49D7aBf3f4B8D399B40.try_into().unwrap();
     let tx = RosettanetCall {
@@ -225,7 +227,7 @@ fn test_legacy_transaction_validation_value_transfer_only() {
 }
 
 #[test]
-#[should_panic(expected: 'Nonce wrong')]
+#[should_panic(expected: 'ACC: invalid nonce')]
 fn test_legacy_transaction_wrong_nonce() {
     // Example usdc transfer
     let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
@@ -281,7 +283,7 @@ fn test_legacy_transaction_wrong_nonce() {
 }
 
 #[test]
-#[should_panic(expected: 'Wrong tx version')]
+#[should_panic(expected: 'ACC: invalid tx version')]
 fn test_legacy_transaction_wrong_tx_version() {
     // Example usdc transfer
     let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
@@ -337,7 +339,7 @@ fn test_legacy_transaction_wrong_tx_version() {
 }
 
 #[test]
-#[should_panic(expected: 'Max price unit tx wrong')]
+#[should_panic(expected: 'ACC: max price unit wrong')]
 fn test_legacy_transaction_wrong_gas() {
     // Example usdc transfer
     let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
@@ -594,7 +596,7 @@ fn test_legacy_transaction_validation_calldata_invalid_signature() {
 }
 
 #[test]
-#[should_panic(expected: 'value sig-tx mismatch')]
+#[should_panic(expected: 'ACC: value on sign mismatch')]
 fn test_execute_value_transfer_wrong_value_on_sig() {
     let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
     let receiver_address: EthAddress = 0xB756B1BC042Fa70D85Ee84eab646a3b438A285Ee
@@ -1021,7 +1023,7 @@ fn test_execute_value_transfer_and_call() {
 }
 
 #[test]
-#[should_panic(expected: 'multicall value not zero')]
+#[should_panic(expected: 'ACC: multicall value non zero')]
 fn test_multicall_with_value() {
     let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
     let tx = RosettanetCall {
@@ -1059,7 +1061,7 @@ fn test_multicall_with_value() {
 }
 
 #[test]
-#[should_panic(expected: 'Rosetta: unimplemented feature')]
+#[should_panic(expected: 'ACC: unimplemented feature')]
 fn test_multicall_wrong_selector() {
     let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
     let tx = RosettanetCall {

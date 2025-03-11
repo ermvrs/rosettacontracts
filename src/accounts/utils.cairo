@@ -1,7 +1,9 @@
 use starknet::secp256_trait::{Signature, signature_from_vrs};
 use starknet::eth_signature::{verify_eth_signature};
 use starknet::{EthAddress};
+use core::panic_with_felt252;
 
+use crate::accounts::errors::AccountErrors::*;
 use crate::constants::{CHAIN_ID};
 use crate::accounts::types::{RosettanetCall, RosettanetSignature};
 use crate::optimized_rlp::{OptimizedRLPTrait, OptimizedRLPImpl, compute_keccak, u256_to_rlp_input};
@@ -15,7 +17,7 @@ pub fn generate_tx_hash(call: RosettanetCall) -> u256 {
 
 fn rlp_encode_tx(call: RosettanetCall) -> @ByteArray {
     if call.tx_type != 0 && call.tx_type != 2 {
-        panic!("Unsupported tx type");
+        panic_with_felt252(NONSUPPORTED_TX_TYPE)
     }
     if call.tx_type == 0 {
         // Legacy tx
@@ -34,8 +36,6 @@ fn rlp_encode_tx(call: RosettanetCall) -> @ByteArray {
         let to = OptimizedRLPTrait::encode_short_string(call.to.into(), 20).unwrap();
         let chain_id = OptimizedRLPTrait::encode_short_string(CHAIN_ID.into(), 4).unwrap();
         let value = OptimizedRLPTrait::encode_bytearray(u256_to_rlp_input(call.value)).unwrap();
-        //let value = OptimizedRLPTrait::encode_short_string(call.value.try_into().unwrap(),
-        //get_byte_size(call.value.low) + get_byte_size(call.value.high)).unwrap();
         let empty = OptimizedRLPTrait::encode_short_string(0x0, 0).unwrap();
 
         let calldata = convert_calldata(call.calldata, true);

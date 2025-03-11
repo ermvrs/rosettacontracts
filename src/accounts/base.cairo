@@ -51,14 +51,7 @@ pub mod RosettaAccount {
     };
     use crate::rosettanet::{IRosettanetDispatcher, IRosettanetDispatcherTrait};
     use openzeppelin_utils::deployments::{calculate_contract_address_from_deploy_syscall};
-
-    pub mod Errors {
-        pub const INVALID_CALLER: felt252 = 'Rosetta: invalid caller';
-        pub const INVALID_SIGNATURE: felt252 = 'Rosetta: invalid signature';
-        pub const INVALID_TX_VERSION: felt252 = 'Rosetta: invalid tx version';
-        pub const UNAUTHORIZED: felt252 = 'Rosetta: unauthorized';
-        pub const UNIMPLEMENTED_FEATURE: felt252 = 'Rosetta: unimplemented feature';
-    }
+    use crate::accounts::errors::AccountErrors::*;
 
     pub const TRANSFER_ENTRYPOINT: felt252 =
         0x83afd3f4caedc6eebf44246fe54e38c95e3179a5ec9ea81740eca5b482d12e;
@@ -77,11 +70,12 @@ pub mod RosettaAccount {
         self.ethereum_address.write(eth_address);
         self.registry.write(registry);
     }
+
     #[abi(embed_v0)]
     impl AccountImpl of super::IRosettaAccount<ContractState> {
         fn __execute__(self: @ContractState, call: RosettanetCall) -> Array<Span<felt252>> {
             let sender = get_caller_address();
-            assert(sender.is_zero(), Errors::INVALID_CALLER);
+            assert(sender.is_zero(), INVALID_CALLER);
 
             // Only try to register if its first tx
             if (call.nonce == 0 || call.nonce == 1) {
@@ -96,12 +90,12 @@ pub mod RosettaAccount {
 
             // Multicall or upgrade call
             if (call.to == self.ethereum_address.read()) {
-                // This is multicall
                 let mut calldata = call.calldata;
-                let selector: u32 = (*calldata.pop_front().unwrap()).try_into().unwrap();
-                //let selector: u32 = (*call.calldata.at(0)).try_into().unwrap();
+                let selector: u32 = (*calldata.pop_front().expect(CALLDATA_LEN_ZERO))
+                    .try_into()
+                    .expect(SELECTOR_HIGH);
                 if (selector == MULTICALL_SELECTOR) {
-                    assert(call.value == 0, 'multicall value not zero');
+                    assert(call.value == 0, MULTICALL_VALUE_NON_ZERO);
                     let context = prepare_multicall_context(
                         self.registry.read(), calldata,
                     ); // First calldata element removed inside this function
@@ -113,12 +107,12 @@ pub mod RosettaAccount {
                         .latest_class();
                     let current_hash: ClassHash = get_class_hash_at_syscall(get_contract_address())
                         .unwrap();
-                    assert(current_hash != latest_hash, 'no new upgrades');
+                    assert(current_hash != latest_hash, ALREADY_LATEST);
 
-                    replace_class_syscall(latest_hash).unwrap();
+                    replace_class_syscall(latest_hash).expect(UPGRADE_FAILS);
                     return array![array![latest_hash.into()].span()];
                 } else {
-                    panic_with_felt252(Errors::UNIMPLEMENTED_FEATURE);
+                    panic_with_felt252(UNIMPLEMENTED_FEATURE);
                 }
             }
 
@@ -126,19 +120,17 @@ pub mod RosettaAccount {
             if (call.value > 0) {
                 // Re-check value
                 let value_on_signature = self.get_transaction_value();
-                assert(call.value == value_on_signature, 'value sig-tx mismatch');
-                self.process_native_transfer(value_on_signature, sn_target); // sends strk
+                assert(call.value == value_on_signature, VALUE_SIGNATURE_MISMATCH);
+                self.process_native_transfer(value_on_signature, sn_target);
             }
 
             if (call.calldata.len() == 0) {
-                // do nothing
                 return array![array![].span()];
             }
 
             let mut calldata = call.calldata;
 
             self.execute_call(sn_target, calldata)
-            // self.nonce.write(self.nonce.read() + 1); // Problem here ???
         }
 
         fn __validate__(self: @ContractState, call: RosettanetCall) -> felt252 {
@@ -213,14 +205,15 @@ pub mod RosettaAccount {
 
     #[generate_trait]
     impl InternalImpl of InternalTrait {
-        // Optimized validation
         fn validate_transaction(self: @ContractState, call: RosettanetCall) -> felt252 {
             let self_eth_address: EthAddress = self.ethereum_address.read();
-            assert(call.tx_type == 0 || call.tx_type == 2, 'Tx type not supported');
+            assert(call.tx_type == 0 || call.tx_type == 2, NONSUPPORTED_TX_TYPE);
             let tx_info = get_tx_info().unbox();
 
-            assert(tx_info.version == 3, 'Wrong tx version'); // Verify is it correct?
-            assert(tx_info.nonce == call.nonce.into(), 'Nonce wrong');
+            assert(tx_info.version == 3, INVALID_TX_VERSION); //@audit Verify is it correct?
+            assert(
+                tx_info.nonce == call.nonce.into(), INVALID_NONCE,
+            ); // We cant handle nonce, so we can just check is it correct with signed data.
 
             if (call.tx_type == 0) {
                 self.validate_resources(call.gas_limit, call.gas_price);
@@ -229,11 +222,11 @@ pub mod RosettaAccount {
             }
 
             if (call.to == self_eth_address) {
-                let selector: u32 = (*call.calldata.at(0)).try_into().unwrap();
+                let selector: u32 = (*call.calldata.at(0)).try_into().expect(SELECTOR_HIGH);
 
                 assert(
                     ((selector == MULTICALL_SELECTOR) || (selector == UPGRADE_SELECTOR)),
-                    'selector is not internal',
+                    WRONG_INTERNAL_SELECTOR,
                 );
             }
 
@@ -241,12 +234,12 @@ pub mod RosettaAccount {
             let expected_hash = generate_tx_hash(call);
 
             let value_on_signature = self.get_transaction_value();
-            assert(call.value == value_on_signature, 'value sig-tx mismatch');
+            assert(call.value == value_on_signature, VALUE_SIGNATURE_MISMATCH);
 
             let signature = tx_info.signature; // Signature includes v,r,s
             assert(
                 self._is_valid_signature(expected_hash, signature, self_eth_address),
-                Errors::INVALID_SIGNATURE,
+                INVALID_SIGNATURE,
             );
             starknet::VALIDATED
         }
@@ -257,16 +250,16 @@ pub mod RosettaAccount {
             self: @ContractState, hash: u256, signature: Span<felt252>, eth_address: EthAddress,
         ) -> bool {
             // first 5 element signature, last 2 elements are value
-            assert(signature.len() == 7, 'Invalid Signature length');
+            assert(signature.len() == 7, INVALID_SIGNATURE_LENGTH);
             let r: u256 = u256 {
-                low: (*signature.at(0)).try_into().unwrap(),
-                high: (*signature.at(1)).try_into().unwrap(),
+                low: (*signature.at(0)).try_into().expect(SIGNATURE_R_LOW_HIGH),
+                high: (*signature.at(1)).try_into().expect(SIGNATURE_R_HIGH_HIGH),
             };
             let s: u256 = u256 {
-                low: (*signature.at(2)).try_into().unwrap(),
-                high: (*signature.at(3)).try_into().unwrap(),
+                low: (*signature.at(2)).try_into().expect(SIGNATURE_S_LOW_HIGH),
+                high: (*signature.at(3)).try_into().expect(SIGNATURE_S_HIGH_HIGH),
             };
-            let v: u32 = (*signature.at(4)).try_into().unwrap();
+            let v: u32 = (*signature.at(4)).try_into().expect(SIGNATURE_V_HIGH);
 
             let rosettanet_signature = RosettanetSignature { v: v, r: r, s: s };
 
@@ -278,10 +271,10 @@ pub mod RosettaAccount {
         fn get_transaction_value(self: @ContractState) -> u256 {
             let tx_info = get_tx_info().unbox();
             let signature = tx_info.signature;
-            assert(signature.len() == 7, 'signature len wrong');
+            assert(signature.len() == 7, INVALID_SIGNATURE_LENGTH);
             u256 {
-                low: (*signature.at(5)).try_into().expect('sig val low fail'),
-                high: (*signature.at(6)).try_into().expect('sig val high fail'),
+                low: (*signature.at(5)).try_into().expect(SIGNATURE_VALUE_HIGH),
+                high: (*signature.at(6)).try_into().expect(SIGNATURE_VALUE_HIGH),
             }
         }
 
@@ -289,8 +282,8 @@ pub mod RosettaAccount {
         fn process_native_transfer(
             self: @ContractState, value: u256, receiver: ContractAddress,
         ) -> Span<felt252> {
-            assert(value > 0, 'value zero');
-            assert(receiver != starknet::contract_address_const::<0>(), 'receiver zero');
+            assert(value > 0, VALUE_TRANSFER_ZERO);
+            assert(receiver != starknet::contract_address_const::<0>(), VALUE_RECEIVER_ZERO);
 
             let calldata: Span<felt252> = array![
                 receiver.into(), value.low.into(), value.high.into(),
@@ -298,32 +291,30 @@ pub mod RosettaAccount {
                 .span();
             // tx has to be reverted if not enough balance
             call_contract_syscall(self.native_currency(), TRANSFER_ENTRYPOINT, calldata)
-                .expect('native transfer fails')
+                .expect(VALUE_TRANSFER_FAILS)
         }
 
         fn execute_call(
             self: @ContractState, target: ContractAddress, mut calldata: Span<u128>,
         ) -> Array<Span<felt252>> {
             let registry = self.registry.read();
-            let selector: u32 = (*calldata.pop_front().unwrap()).try_into().unwrap();
+            let selector: u32 = (*calldata.pop_front().unwrap()).try_into().expect(SELECTOR_HIGH);
             let (entrypoint, directives) = IFunctionRegistryDispatcher {
                 contract_address: registry,
             }
                 .get_function_decoding(selector);
-            assert(entrypoint != 0x0, 'entrypoint not registered');
+            assert(entrypoint != 0x0, TARGET_FUNCTION_NOT_REGISTERED);
             let mut evm_calldata = EVMCalldata {
                 registry: registry,
                 offset: 0,
                 relative_offset: 0,
-                calldata: BytesTrait::new(
-                    calldata.len() * 16, span_to_array(calldata),
-                ) // DOES IT CONSUMES TOO MUCH GAS??
+                calldata: BytesTrait::new(calldata.len() * 16, span_to_array(calldata)),
             };
 
             let decoded_calldata = evm_calldata.decode(directives);
             let result: Span<felt252> = call_contract_syscall(target, entrypoint, decoded_calldata)
                 .unwrap();
-            // self.nonce.write(self.nonce.read() + 1); // Problem here ???
+
             array![result]
         }
 
@@ -338,11 +329,11 @@ pub mod RosettaAccount {
                     Option::None => { break; },
                     Option::Some(call) => {
                         let result: Span<felt252> = call_contract_syscall(
-                            (*call.to).try_into().expect('into target mc'),
+                            (*call.to).try_into().expect(MULTICALL_TARGET_NO_CONTRACT_ADDRESS),
                             *call.entrypoint,
                             *call.calldata,
                         )
-                            .expect('multicall fails');
+                            .expect(MULTICALL_CALL_FAILS);
                         results.append(result);
                     },
                 };
@@ -366,10 +357,9 @@ pub mod RosettaAccount {
             let resource_bounds: Span<ResourcesBounds> = tx_info.resource_bounds;
             for resource in resource_bounds {
                 if (*resource.resource == 'L1_GAS') {
-                    assert(*resource.max_amount == max_amount, 'Max amount tx wrong');
+                    assert(*resource.max_amount == max_amount, MAX_AMOUNT_WRONG);
                     assert(
-                        *resource.max_price_per_unit == max_price_per_unit,
-                        'Max price unit tx wrong',
+                        *resource.max_price_per_unit == max_price_per_unit, MAX_PRICE_UNIT_WRONG,
                     );
                 }
             }

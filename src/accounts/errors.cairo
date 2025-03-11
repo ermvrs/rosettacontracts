@@ -1,0 +1,33 @@
+pub mod AccountErrors {
+    pub const INVALID_CALLER: felt252 = 'ACC: invalid caller';
+    pub const INVALID_SIGNATURE: felt252 = 'ACC: invalid signature';
+    pub const INVALID_SIGNATURE_LENGTH: felt252 = 'ACC: invalid signature length';
+    pub const INVALID_TX_VERSION: felt252 = 'ACC: invalid tx version';
+    pub const INVALID_NONCE: felt252 = 'ACC: invalid nonce';
+    pub const NONSUPPORTED_TX_TYPE: felt252 = 'ACC: nonsupported tx type';
+    pub const UNAUTHORIZED: felt252 = 'ACC: unauthorized';
+    pub const UNIMPLEMENTED_FEATURE: felt252 = 'ACC: unimplemented feature';
+    pub const WRONG_INTERNAL_SELECTOR: felt252 = 'ACC: wrong internal selector';
+    pub const VALUE_SIGNATURE_MISMATCH: felt252 = 'ACC: value on sign mismatch';
+    pub const MULTICALL_VALUE_NON_ZERO: felt252 = 'ACC: multicall value non zero';
+    pub const VALUE_TRANSFER_ZERO: felt252 = 'ACC: value transfer zero';
+    pub const VALUE_RECEIVER_ZERO: felt252 = 'ACC: value receiver zero';
+    pub const VALUE_TRANSFER_FAILS: felt252 = 'ACC: value transfer failed';
+    pub const TARGET_FUNCTION_NOT_REGISTERED: felt252 = 'ACC: entrypoint not registered';
+    pub const MULTICALL_CALL_FAILS: felt252 = 'ACC: multicall failed';
+    pub const MAX_AMOUNT_WRONG: felt252 = 'ACC: max amount wrong';
+    pub const MAX_PRICE_UNIT_WRONG: felt252 = 'ACC: max price unit wrong';
+    pub const MULTICALL_TARGET_NO_CONTRACT_ADDRESS: felt252 = 'ACC: mc target conv failed';
+    pub const SELECTOR_HIGH: felt252 = 'ACC: selector not 4 bytes';
+    pub const SIGNATURE_VALUE_HIGH: felt252 = 'ACC: sign value high';
+    pub const SIGNATURE_R_LOW_HIGH: felt252 = 'ACC: sign r low not 128bits';
+    pub const SIGNATURE_R_HIGH_HIGH: felt252 = 'ACC: sign r high not 128bits';
+    pub const SIGNATURE_S_LOW_HIGH: felt252 = 'ACC: sign s low not 128bits';
+    pub const SIGNATURE_S_HIGH_HIGH: felt252 = 'ACC: sign s high not 128bits';
+    pub const SIGNATURE_V_HIGH: felt252 = 'ACC: sign v not 32 bits';
+    pub const CALLDATA_LEN_ZERO: felt252 = 'ACC: calldata length zero';
+    pub const ALREADY_LATEST: felt252 = 'ACC: already latest class';
+    pub const UPGRADE_FAILS: felt252 = 'ACC: upgrade syscall failed';
+    pub const MULTICALL_TO_ZERO: felt252 = 'ACC: multicall to zero';
+    pub const MULTICALL_ENTRYPOINT_ZERO: felt252 = 'ACC: multicall entrypoint zero';
+}

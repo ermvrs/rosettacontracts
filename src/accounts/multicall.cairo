@@ -5,6 +5,7 @@ use crate::utils::decoder::{EVMCalldata, EVMTypes, EVMTypesImpl};
 use crate::accounts::utils::{span_to_array};
 use starknet::ContractAddress;
 use crate::utils::bytes::{BytesTrait};
+use crate::accounts::errors::AccountErrors::*;
 
 // Pass calldata without function selector
 pub fn prepare_multicall_context(
@@ -59,19 +60,19 @@ fn prepare_multicall_context_from_serialized_calldata(
         }
 
         let to: felt252 = match calldata.pop_front() {
-            Option::None => { 0x0 }, // TODO: panic
+            Option::None => { 0x0 },
             Option::Some(val) => { (*val) },
         };
         if (to == 0x0) {
-            panic_with_felt252('multicall to wrong');
+            panic_with_felt252(MULTICALL_TO_ZERO);
         }
         let entrypoint: felt252 = match calldata.pop_front() {
-            Option::None => { 0x0 }, // TODO: panic
+            Option::None => { 0x0 },
             Option::Some(val) => { (*val) },
         };
 
         if (entrypoint == 0x0) {
-            panic_with_felt252('multicall entry wrong');
+            panic_with_felt252(MULTICALL_ENTRYPOINT_ZERO);
         }
 
         let calldata_length: u64 = match calldata.pop_front() {
@@ -87,7 +88,9 @@ fn prepare_multicall_context_from_serialized_calldata(
             }
 
             let value: felt252 = match calldata.pop_front() {
-                Option::None => { break; }, // TODO: panic
+                Option::None => {
+                    break;
+                }, // @audit not reverting here does it causes any security problem??
                 Option::Some(val) => { (*val) },
             };
 
