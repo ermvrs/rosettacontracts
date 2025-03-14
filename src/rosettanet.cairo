@@ -27,6 +27,7 @@ pub trait IRosettanet<TState> {
         self: @TState, eth_address: EthAddress,
     ) -> ContractAddress;
     fn latest_class(self: @TState) -> ClassHash;
+    fn is_account_class(self: @TState, class: ClassHash) -> bool;
     fn native_currency(self: @TState) -> ContractAddress;
     fn developer(self: @TState) -> ContractAddress;
 }
@@ -34,12 +35,12 @@ pub trait IRosettanet<TState> {
 pub mod Rosettanet {
     use core::num::traits::Zero;
     use starknet::storage::{
-        StoragePointerReadAccess, StoragePointerWriteAccess, StoragePathEntry, Map,
+        StoragePointerReadAccess, StoragePointerWriteAccess, StoragePathEntry, Map, Vec, VecTrait, MutableVecTrait
     };
     use core::poseidon::{poseidon_hash_span};
-    use starknet::syscalls::{deploy_syscall, replace_class_syscall};
+    use starknet::syscalls::{deploy_syscall, replace_class_syscall, get_class_hash_at_syscall};
     use starknet::{
-        ContractAddress, EthAddress, ClassHash, get_contract_address, get_caller_address,
+        ContractAddress, EthAddress, ClassHash, get_contract_address, get_caller_address, 
     };
     use openzeppelin_utils::deployments::{calculate_contract_address_from_deploy_syscall};
     use rosettacontracts::accounts::base::{
@@ -120,6 +121,7 @@ pub mod Rosettanet {
         initial_class: ClassHash,
         dev: ContractAddress,
         strk: ContractAddress,
+        class_history: Vec<ClassHash>
     }
 
     #[constructor]
@@ -129,6 +131,7 @@ pub mod Rosettanet {
         developer: ContractAddress,
         strk: ContractAddress,
     ) {
+        self.append_class_into_history(account_class);
         self.initial_class.write(account_class);
         self.latest_class.write(account_class);
         self.dev.write(developer);
@@ -144,9 +147,10 @@ pub mod Rosettanet {
         /// # Arguments
         /// * `address` - Starknet Contract Address that going to be registered
         fn register_contract(ref self: ContractState, address: ContractAddress) {
-            assert(
-                get_caller_address() == self.dev.read(), 'only dev',
-            ); // Access controlled for now
+            let contract_class = get_class_hash_at_syscall(address).unwrap();
+            assert(contract_class.into() != 0, 'Contract is not deployed');
+            self.assert_class_safe(contract_class);
+
             let eth_address = self.generate_eth_address(address);
             self.update_registry(address, eth_address);
 
@@ -196,6 +200,8 @@ pub mod Rosettanet {
         /// * `class` - New Rosettanet account class hash
         fn set_account_class(ref self: ContractState, class: ClassHash) {
             assert(get_caller_address() == self.dev.read(), 'only dev');
+
+            self.append_class_into_history(class);
 
             self.latest_class.write(class);
 
@@ -291,6 +297,19 @@ pub mod Rosettanet {
             self.latest_class.read()
         }
 
+        fn is_account_class(self: @ContractState, class: ClassHash) -> bool {
+            let mut is_account: bool = false;
+            for i in 0..self.class_history.len() {
+                //assert(class != self.class_history.at(i).read(), 'Class is account');
+                if(class == self.class_history.at(i).read()) {
+                    is_account = true;
+                    break;
+                }
+            };
+
+            is_account
+        }
+
         /// Returns native currency address on current network
         fn native_currency(self: @ContractState) -> ContractAddress {
             self.strk.read()
@@ -344,6 +363,16 @@ pub mod Rosettanet {
 
         fn calculate_ethereum_selector(self: @ContractState, fn_name: Span<felt252>) -> felt252 {
             eth_function_signature_from_felts(fn_name)
+        }
+
+        fn assert_class_safe(self: @ContractState, class: ClassHash) {
+            for i in 0..self.class_history.len() {
+                assert(class != self.class_history.at(i).read(), 'Class is account');
+            };
+        }
+
+        fn append_class_into_history(ref self: ContractState, class: ClassHash) {
+            self.class_history.append().write(class)
         }
     }
 }
