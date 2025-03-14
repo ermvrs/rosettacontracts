@@ -11,10 +11,13 @@ pub enum RLPError {
 #[generate_trait]
 pub impl OptimizedRLPImpl of OptimizedRLPTrait {
     // Store string with length less than 32
+    // Ethers encodes rlp nonce if zero it is 0x80 if 1 it is 0x01
     fn encode_short_string(input: felt252, len: usize) -> Result<@ByteArray, RLPError> {
         let mut output: ByteArray = Default::default();
         if len == 0 {
             output.append_word(0x80, 1);
+        } else if len == 1 && input.into() == 0_u256 {
+            output.append_word(0x80, 1); // @audit please take care of this encoding. It has to match with ethers
         } else if len == 1 && input.into() < 0x80_u256 {
             output.append_word(input, 1);
         } else if len < 32 {
@@ -504,6 +507,15 @@ mod tests {
 
         assert_eq!(result.at(0).unwrap(), 0x81);
         assert_eq!(result.at(1).unwrap(), 0xAF);
+    }
+
+    #[test]
+    fn test_rlp_short_string_zero() {
+        let data = 0x0;
+
+        let result = OptimizedRLPTrait::encode_short_string(data, 1).unwrap();
+
+        assert_eq!(result.at(0).unwrap(), 0x80);
     }
 
     #[test]

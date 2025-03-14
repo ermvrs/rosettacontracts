@@ -4,7 +4,7 @@ use rosettacontracts::accounts::types::{RosettanetCall};
 
 #[starknet::interface]
 pub trait IRosettaAccount<TState> {
-    fn __execute__(self: @TState, call: RosettanetCall) -> Array<Span<felt252>>;
+    fn __execute__(ref self: TState, call: RosettanetCall) -> Array<Span<felt252>>;
     fn __validate__(self: @TState, call: RosettanetCall) -> felt252;
     fn is_valid_signature(self: @TState, hash: u256, signature: Array<felt252>) -> felt252;
     fn supports_interface(self: @TState, interface_id: felt252) -> bool;
@@ -63,6 +63,7 @@ pub mod RosettaAccount {
     struct Storage {
         ethereum_address: EthAddress,
         registry: ContractAddress,
+        nonce: u64, // We have different nonce system then starknet. In most cases its equal to sn_nonce - 1
     }
 
     #[constructor]
@@ -73,14 +74,17 @@ pub mod RosettaAccount {
 
     #[abi(embed_v0)]
     impl AccountImpl of super::IRosettaAccount<ContractState> {
-        fn __execute__(self: @ContractState, call: RosettanetCall) -> Array<Span<felt252>> {
+        fn __execute__(ref self: ContractState, call: RosettanetCall) -> Array<Span<felt252>> {
             let sender = get_caller_address();
             assert(sender.is_zero(), INVALID_CALLER);
+            
+            let current_nonce = self.nonce.read();
 
             // Only try to register if its first tx
-            if (call.nonce == 0 || call.nonce == 1) {
-                self.register_account(); // Register this contract if not registered on registry
+            if (current_nonce == 0) {
+                self.register_account(); 
             }
+            self.nonce.write(current_nonce + 1);
 
             let eth_target: EthAddress = call.to;
             let sn_target: ContractAddress = IRosettanetDispatcher {
@@ -211,9 +215,8 @@ pub mod RosettaAccount {
             let tx_info = get_tx_info().unbox();
 
             assert(tx_info.version == 3, INVALID_TX_VERSION); //@audit Verify is it correct?
-            assert(
-                tx_info.nonce == call.nonce.into(), INVALID_NONCE,
-            ); // We cant handle nonce, so we can just check is it correct with signed data.
+
+            self.assert_nonce(call.nonce); // @audit will it cause any issue if we have our own nonce checks
 
             if (call.tx_type == 0) {
                 self.validate_resources(call.gas_limit, call.gas_price);
@@ -363,6 +366,12 @@ pub mod RosettaAccount {
                     );
                 }
             }
+        }
+
+        fn assert_nonce(self: @ContractState, eth_nonce: u64) {
+            let current_nonce = self.nonce.read();
+
+            assert(eth_nonce == current_nonce, INVALID_NONCE);
         }
     }
 }
