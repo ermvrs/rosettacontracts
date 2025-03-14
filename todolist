@@ -1,0 +1,5 @@
+## Todo list for contracts after MVP
+
+- To set new account classes on registry. We need to develop upgrade manager account to set as dev in registry.
+- Function registry must be decentralized. To achieve that, develop different algorithm for registry & entrypoint matching (same 4byte to different entrypoint)
+- Class to abi matching if possible
