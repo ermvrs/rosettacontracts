@@ -141,11 +141,11 @@ fn test_transaction_validation_unsupported_tx_type() {
 
 #[test]
 fn test_eip1559_transaction_validation_value_transfer_only() {
-    let eth_address: EthAddress = 0x30ffDf2c33b929F749afE49D7aBf3f4B8D399B40.try_into().unwrap();
+    let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
     let tx = RosettanetCall {
         tx_type: 2,
         to: 0xB756B1BC042Fa70D85Ee84eab646a3b438A285Ee.try_into().unwrap(),
-        nonce: 4,
+        nonce: 0,
         max_priority_fee_per_gas: 158129478,
         max_fee_per_gas: 50742206232,
         gas_price: 0,
@@ -155,15 +155,15 @@ fn test_eip1559_transaction_validation_value_transfer_only() {
     };
 
     let signature = array![
-        0x8bba859d5730ac5dc9363a3c4cb101dd,
-        0xb688a37cc78e902c27509be951232f94,
-        0xb0e9624f16c50a779023870d75cad640,
-        0x5c7bf7e431e816e08e9329edcc014fe4,
-        0x1c,
+        0x6f7a6066f3627f849b8a375c13e4f3e2,
+        0x3067d2d98a667ba070f5ea280b217dbd,
+        0xd92f9c8cb6427767d42612e94464c01b,
+        0x63fcefda762f5f2c3c4396756dd585d9,
+        0x1b,
         0xde0b6b3a7640000,
         0x0,
     ];
-    let unsigned_tx_hash: u256 = 0xbf4c65f85c5317b99259cedee5a69aacae0551f5a265d4df53714c9deb5add55;
+    let unsigned_tx_hash: u256 = 0x939bef480a462e4cc5a8cf57801237a54a4b306c1bac8da102dbec5ecb1ee1c6;
 
     let generated_tx_hash: u256 = generate_tx_hash(tx);
     assert_eq!(generated_tx_hash, unsigned_tx_hash);
@@ -188,7 +188,7 @@ fn test_legacy_transaction_validation_value_transfer_only() {
     let tx = RosettanetCall {
         tx_type: 0,
         to: 0xB756B1BC042Fa70D85Ee84eab646a3b438A285Ee.try_into().unwrap(),
-        nonce: 4,
+        nonce: 0,
         max_priority_fee_per_gas: 0,
         max_fee_per_gas: 0,
         gas_price: 152345,
@@ -198,16 +198,16 @@ fn test_legacy_transaction_validation_value_transfer_only() {
     };
 
     let signature = array![
-        0x584ebdc080c24d8b3d84e5342c9078a6,
-        0xcfb188b344b90a84ed7d38a6256b3427,
-        0x4537a84e51ec5819ee07de443874c7ea,
-        0x21913827f62c0b6bc9643dd9a8892e75,
+        0x81616b7dba2a4db9c40cb8c5adb8520c,
+        0xda3125b81fe3548011c59cc2cc45159e,
+        0xc93773a0f51c0405ec10d8970945cd90,
+        0x4bee80dfddbb70fb94aab57cda65a754,
         0x1b,
         0xde0b6b3a7640000,
         0x0,
     ];
 
-    let unsigned_tx_hash: u256 = 0x147b5df4a6e91fdbd967747f7b375f155e26225cec38d1e0310e925b2b7565e9;
+    let unsigned_tx_hash: u256 = 0x010f366b2188db8818f41583d22301a0499636470ec8ae21f8353543256d0924;
 
     let generated_tx_hash: u256 = generate_tx_hash(tx);
     assert_eq!(generated_tx_hash, unsigned_tx_hash);
@@ -348,7 +348,7 @@ fn test_legacy_transaction_wrong_gas() {
         to: 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238
             .try_into()
             .unwrap(), // we dont need to deploy account, we only check validation here
-        nonce: 77,
+        nonce: 0,
         max_priority_fee_per_gas: 0,
         max_fee_per_gas: 0,
         gas_price: 45235,
@@ -365,15 +365,15 @@ fn test_legacy_transaction_wrong_gas() {
     };
 
     let signature = array![
-        0xa242563ffb0771ea806fc160e0665583,
-        0x6279ab9f3ee976a5a0a47538ca5383be,
-        0xc8cfbaab64f80111d375dce2c52e896c,
-        0x419770f60d92f921b9d5434941b3891a,
-        0x1c,
+        0xe37dc7f258742f6e867ee4ea8abc0e0a,
+        0xea457961c92ad1a94e731eaf3d83d22,
+        0x503edc6c37b1c8eb30dc6af0ab0ab41e,
+        0x37b5691bc537a800ba90d70316e5a456,
+        0x1b,
         0x0,
         0x0,
     ];
-    let unsigned_tx_hash: u256 = 0xb2e837d9ee9c8d6e9bb40a9cf18eac862c6b4f9b0bbe5d2437abb9dcade6bab2;
+    let unsigned_tx_hash: u256 = 0x5b0ec3543f28c8d0929929446718b191fdf68a87ee42da6ac9e8849fa817b6f1;
 
     let generated_tx_hash: u256 = generate_tx_hash(tx);
     assert_eq!(generated_tx_hash, unsigned_tx_hash);
@@ -401,7 +401,7 @@ fn test_legacy_transaction_validation_calldata() {
         to: 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238
             .try_into()
             .unwrap(), // we dont need to deploy account, we only check validation here
-        nonce: 77,
+        nonce: 0,
         max_priority_fee_per_gas: 0,
         max_fee_per_gas: 0,
         gas_price: 45235,
@@ -418,15 +418,15 @@ fn test_legacy_transaction_validation_calldata() {
     };
 
     let signature = array![
-        0xa242563ffb0771ea806fc160e0665583,
-        0x6279ab9f3ee976a5a0a47538ca5383be,
-        0xc8cfbaab64f80111d375dce2c52e896c,
-        0x419770f60d92f921b9d5434941b3891a,
-        0x1c,
+        0xe37dc7f258742f6e867ee4ea8abc0e0a,
+        0xea457961c92ad1a94e731eaf3d83d22,
+        0x503edc6c37b1c8eb30dc6af0ab0ab41e,
+        0x37b5691bc537a800ba90d70316e5a456,
+        0x1b,
         0x0,
         0x0,
     ];
-    let unsigned_tx_hash: u256 = 0xb2e837d9ee9c8d6e9bb40a9cf18eac862c6b4f9b0bbe5d2437abb9dcade6bab2;
+    let unsigned_tx_hash: u256 = 0x5b0ec3543f28c8d0929929446718b191fdf68a87ee42da6ac9e8849fa817b6f1;
 
     let generated_tx_hash: u256 = generate_tx_hash(tx);
     assert_eq!(generated_tx_hash, unsigned_tx_hash);
@@ -448,13 +448,13 @@ fn test_legacy_transaction_validation_calldata() {
 #[test]
 fn test_eip1559_transaction_validation_calldata() {
     // Example usdc transfer
-    let eth_address: EthAddress = 0x30ffDf2c33b929F749afE49D7aBf3f4B8D399B40.try_into().unwrap();
+    let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
     let tx = RosettanetCall {
         tx_type: 2,
         to: 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238
             .try_into()
             .unwrap(), // we dont need to deploy account, we only check validation here
-        nonce: 77,
+        nonce: 0,
         max_priority_fee_per_gas: 1638611,
         max_fee_per_gas: 18610805637,
         gas_price: 0,
@@ -471,24 +471,23 @@ fn test_eip1559_transaction_validation_calldata() {
     };
 
     let signature = array![
-        0xde2c0c4c1d73a7231fad380bc6cd02c9,
-        0xc06cac1e37757fba67d6507da161962a,
-        0xf84189fa5966ffb604a19482893c0ce1,
-        0x348ea9530fd75922908d72503b041e4d,
-        0x1c,
+        0x2d346079783f0657d3fe825ee4cc951d,
+        0x542ea2752ad4f97508932ac7a577b3ab,
+        0x682c824cc19339131c2e6191cfb90f45,
+        0x78dcaab615b5451f2594a2d3acf75bf1,
+        0x1b,
         0x0,
         0x0,
     ];
-    //let unsigned_tx_hash: u256 =
-    //0xdba8cc62e6edeee140d6b73ae141c687f9738e00ad6a954dfbfd509d89aa7428;
+    let unsigned_tx_hash: u256 = 0xd4cf95b8d1f68b8393e78b5bd95c1abcea1afd063628cef7dc2066af962a799a;
 
-    //let generated_tx_hash: u256 = generate_tx_hash(tx);
-    //assert_eq!(generated_tx_hash, unsigned_tx_hash);
+    let generated_tx_hash: u256 = generate_tx_hash(tx);
+    assert_eq!(generated_tx_hash, unsigned_tx_hash);
 
     let (_, account) = deploy_account_from_rosettanet(eth_address);
     assert_eq!(account.get_ethereum_address(), eth_address);
 
-    start_cheat_nonce_global(tx.nonce.into());
+    start_cheat_nonce_global(1);
     start_cheat_signature_global(signature.span());
     start_cheat_resource_bounds_global(create_resource_bounds(45439, 18610805637));
     let validation = account.__validate__(tx);
@@ -501,12 +500,12 @@ fn test_eip1559_transaction_validation_calldata() {
 
 #[test]
 fn test_transaction_validation_calldata_and_value_transfer() {
-    let eth_address: EthAddress = 0x30ffDf2c33b929F749afE49D7aBf3f4B8D399B40.try_into().unwrap();
+    let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
     let target: EthAddress = 0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9.try_into().unwrap();
     let tx = RosettanetCall {
         tx_type: 2,
         to: target, // we dont need to deploy account, we only check validation here
-        nonce: 96,
+        nonce: 0,
         max_priority_fee_per_gas: 13620452,
         max_fee_per_gas: 46700970384,
         gas_price: 0,
@@ -516,15 +515,15 @@ fn test_transaction_validation_calldata_and_value_transfer() {
     };
 
     let signature = array![
-        0x8c316619b18a29fa6b36e2a8aa3e2a7a,
-        0x96b21fa5400b0ddf828efdaefa05dc8b,
-        0xd79f6b9c8bc8a8ed2fcc183fd1069f02,
-        0x6542b3440f82443065a9dc1486deb5b7,
+        0xf2f3fcbf0a9bb12e444f8d63e99a00bb,
+        0xbdb69810975e2dfd3bc79631916885a2,
+        0xafd200e43de6d5d01a9d0ed49a5c0da6,
+        0x369fc72b369c0ca44488608b2dd20e8a,
         0x1c,
         0x2386f26fc10000,
         0x0,
     ];
-    let unsigned_tx_hash: u256 = 0x4efffa2e75fab48e0a7b03c45c53f8fffb98a89d6f457c44b98fd401ba287e29;
+    let unsigned_tx_hash: u256 = 0xc8d78654ba51d1f9889df81bbed149391209ba71e787a5291a71a2438180ac39;
 
     let generated_tx_hash: u256 = generate_tx_hash(tx);
     assert_eq!(generated_tx_hash, unsigned_tx_hash);
@@ -552,7 +551,7 @@ fn test_legacy_transaction_validation_calldata_invalid_signature() {
         to: 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238
             .try_into()
             .unwrap(), // we dont need to deploy account, we only check validation here
-        nonce: 77,
+        nonce: 0,
         max_priority_fee_per_gas: 0,
         max_fee_per_gas: 0,
         gas_price: 45235,
@@ -1100,12 +1099,12 @@ fn test_multicall_wrong_selector() {
 
 #[test]
 fn test_validation_real_data_failing() {
-    let eth_address: EthAddress = 0x30ffDf2c33b929F749afE49D7aBf3f4B8D399B40.try_into().unwrap();
+    let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
     let target: EthAddress = 0xbec5832bd3f642d090891b4991da42fa4d5d9e2d.try_into().unwrap();
     let tx = RosettanetCall {
         to: target,
         tx_type: 2,
-        nonce: 1,
+        nonce: 0,
         max_priority_fee_per_gas: 55,
         max_fee_per_gas: 55,
         gas_price: 0,
@@ -1121,18 +1120,18 @@ fn test_validation_real_data_failing() {
             .span(),
     };
     let signature = array![
-        0x71b346721683b41b0b508fb699019c0f,
-        0x539d8bfcf7981d45eeab26c8582e0083,
-        0xa44cbc3542440773e63fa205526972dc,
-        0x3658ebdd892fc2bec784a083eebd055d,
-        0x1c,
+        0xf27b86a27ae43862e6e64081580df755,
+        0x8ee75676ef46e4d6ac52208cb1aefcc,
+        0x26bf4fe05e755d37cb6f0897d63bd3c3,
+        0x593a0778ec047fb37433dd7b3afa8b5c,
+        0x1b,
         0x0,
         0x0,
     ];
     let (rosettanet, account, _) = deploy_funded_account_from_rosettanet(eth_address);
     deploy_account_from_existing_rosettanet(target, rosettanet.contract_address);
 
-    let unsigned_tx_hash: u256 = 0xfd239b434a5033e678887a7d60fa5ace7f6cdbf110febe8d266bd947efb40c7b;
+    let unsigned_tx_hash: u256 = 0xa884f6c9d26ae3506a565e4ffa48941d12044648e39c25dd87a7e97760499d19;
     let generated_tx_hash: u256 = generate_tx_hash(tx);
     assert_eq!(generated_tx_hash, unsigned_tx_hash);
 
@@ -1149,11 +1148,11 @@ fn test_validation_real_data_failing() {
 
 #[test]
 fn test_validate_multicall_transaction() {
-    let eth_address: EthAddress = 0x30ffDf2c33b929F749afE49D7aBf3f4B8D399B40.try_into().unwrap();
+    let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
     let tx = RosettanetCall {
         to: eth_address, // Target is same bcs its feature call
         tx_type: 2,
-        nonce: 59,
+        nonce: 0,
         max_priority_fee_per_gas: 55,
         max_fee_per_gas: 55,
         gas_price: 0,
@@ -1161,43 +1160,53 @@ fn test_validate_multicall_transaction() {
         value: 0,
         calldata: array![
             0x76971d7f,
-            0x0,
-            0x2,
-            0x0,
-            0x123123,
-            0x0,
-            0x456456,
-            0x0,
-            0x2,
-            0x0,
-            0x111,
-            0x0,
-            0x222,
-            0x0,
-            0x888888,
-            0x0,
-            0x999999,
-            0x0,
-            0x2,
-            0x0,
-            0x654,
-            0x0,
-            0x321,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000020,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000002,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000040,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000100,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000123123,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000456456,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000060,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000002,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000111,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000222,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000888888,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000999999,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000060,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000002,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000654,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000321,
         ]
             .span(),
     };
     let signature = array![
-        0x42507df1d32b89c5c789fa3d5d70f9c9,
-        0xf30f73b6dfecb122e9c33e94d8d9c2ec,
-        0x7ed1b0a8c87e84909580b659562d251f,
-        0x711d7b42f0c91ee717f4770dff7c7f00,
+        0x9e9516edb1ea8f724a0b86e5eb50ec9a,
+        0x137a221f07c16e6534b55c60ed3aa2d3,
+        0x3da8a0978e492fcc0493864d69963785,
+        0x1e59b7003ad2af3e9561e7d49a217f37,
         0x1b,
         0x0,
         0x0,
     ];
     let (_, account, _) = deploy_funded_account_from_rosettanet(eth_address);
 
-    let unsigned_tx_hash: u256 = 0x66c3880f27b684f53da1f020f6995153435154c89a11e6c641fa5d137c9edfe8;
+    let unsigned_tx_hash: u256 = 0x9faa1cb60c7989dad181adb1096dd2a61ae16125ebc86017ce9062c0d9da39df;
     let generated_tx_hash: u256 = generate_tx_hash(tx);
     assert_eq!(generated_tx_hash, unsigned_tx_hash);
 
@@ -1217,11 +1226,11 @@ fn test_validate_multicall_transaction() {
 #[test]
 #[should_panic(expected: 'Invalid signature')]
 fn test_validate_multicall_transaction_wrong_signature() {
-    let eth_address: EthAddress = 0x30ffDf2c33b929F749afE49D7aBf3f4B8D399B40.try_into().unwrap();
+    let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
     let tx = RosettanetCall {
         to: eth_address, // Target is same bcs its feature call
         tx_type: 2,
-        nonce: 59,
+        nonce: 0,
         max_priority_fee_per_gas: 55,
         max_fee_per_gas: 55,
         gas_price: 0,
@@ -1229,28 +1238,38 @@ fn test_validate_multicall_transaction_wrong_signature() {
         value: 0,
         calldata: array![
             0x76971d7f,
-            0x0,
-            0x2,
-            0x0,
-            0x123123,
-            0x0,
-            0x456456,
-            0x0,
-            0x2,
-            0x0,
-            0x111,
-            0x0,
-            0x222,
-            0x0,
-            0x888888,
-            0x0,
-            0x999999,
-            0x0,
-            0x2,
-            0x0,
-            0x654,
-            0x0,
-            0x321,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000020,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000002,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000040,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000100,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000123123,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000456456,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000060,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000002,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000111,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000222,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000888888,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000999999,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000060,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000002,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000654,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000321,
         ]
             .span(),
     };
@@ -1265,11 +1284,11 @@ fn test_validate_multicall_transaction_wrong_signature() {
     ];
     let (_, account, _) = deploy_funded_account_from_rosettanet(eth_address);
 
-    let unsigned_tx_hash: u256 = 0x66c3880f27b684f53da1f020f6995153435154c89a11e6c641fa5d137c9edfe8;
+    let unsigned_tx_hash: u256 = 0x9faa1cb60c7989dad181adb1096dd2a61ae16125ebc86017ce9062c0d9da39df;
     let generated_tx_hash: u256 = generate_tx_hash(tx);
     assert_eq!(generated_tx_hash, unsigned_tx_hash);
 
-    start_cheat_nonce_global(tx.nonce.into());
+    start_cheat_nonce_global(1);
     start_cheat_signature_global(signature.span());
     start_cheat_caller_address(account.contract_address, starknet::contract_address_const::<0>());
     start_cheat_resource_bounds_global(create_resource_bounds(21000, 55));
@@ -1375,7 +1394,7 @@ fn test_multicall_validate_actual_values() {
     let tx = RosettanetCall {
         to: eth_address,
         tx_type: 2,
-        nonce: 1,
+        nonce: 0,
         max_priority_fee_per_gas: 55,
         max_fee_per_gas: 55,
         gas_price: 0,
@@ -1383,43 +1402,51 @@ fn test_multicall_validate_actual_values() {
         value: 0,
         calldata: array![
             0x76971d7f,
-            0x0,
-            0x2,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000020,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000002,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000040,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000120,
             0x049d36570d4e46f48e99674bd3fcc846,
             0x44ddd6b96f7c741b1562b82f9e004dc7,
             0x0083afd3f4caedc6eebf44246fe54e38,
             0xc95e3179a5ec9ea81740eca5b482d12e,
-            0x0,
-            0x3,
-            0x07D33254052409C04510C3652BC5BE56,
-            0x56F1EFF1B131C7C031592E3FA73F1F70,
-            0x0,
-            0x221B262DD8000,
-            0x0,
-            0x0,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000060,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000003,
+            0x07d33254052409c04510c3652bc5be56,
+            0x56f1eff1b131c7c031592e3fa73f1f70,
+            0x00000000000000000000000000000000,
+            0x0000000000000000000221b262dd8000,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000000,
             0x04c5772d1914fe6ce891b64eb35bf352,
             0x2aeae1315647314aac58b01137607f3f,
             0x00e5b455a836c7a254df57ed39d023d4,
             0x6b641b331162c6c0b369647056655409,
-            0x0,
-            0x4,
-            0x0,
-            0x455448,
-            0x000000000000000000000000E4306A06,
-            0xB19FDC04FDF98CF3C00472F29254C0E1,
-            0x0,
-            0x38D7EA4C68000,
-            0x0,
-            0x0,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000060,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000000003,
+            0x00000000000000000000000000000000,
+            0x00000000000000000000000000455448,
+            0x000000000000000000000000e4306a06,
+            0xb19fdc04fdf98cf3c00472f29254c0e1,
+            0x00000000000000000000000000000000,
+            0x000000000000000000038d7ea4c68000,
         ]
             .span(),
     };
 
     let signature = array![
-        0xf33158ce9a85ed8ba430d45faba907a6,
-        0xd0a3476ce415af96c1e40ae3cc16fab9,
-        0xfc09b9ed76e6f1abae8cf3b3732c92c2,
-        0x74551833c56fee1df9cb2a2ac411c604,
+        0x8e05eeda7b6eee7d51a6368316315985,
+        0x53b6fa69365273bab7d01ae6b0b7cd5a,
+        0x173e3c1c4714cff739fdfdd750444e2a,
+        0xe23fc865ebd6156e3b9da79bf099614,
         0x1b,
         0x0,
         0x0,
@@ -1427,7 +1454,7 @@ fn test_multicall_validate_actual_values() {
 
     let (_, account, _) = deploy_funded_account_from_rosettanet(eth_address);
 
-    let unsigned_tx_hash: u256 = 0x1f766a70ecbf4270faeff147ff3df9fee659426af425bab130f449e47be438eb;
+    let unsigned_tx_hash: u256 = 0xae202a1f7ecbdfbcb9707991617274c211bb89db235854d015a6ff5ee4151137;
     let generated_tx_hash: u256 = generate_tx_hash(tx);
     assert_eq!(generated_tx_hash, unsigned_tx_hash);
 
@@ -1443,6 +1470,133 @@ fn test_multicall_validate_actual_values() {
 
     assert_eq!(validation, starknet::VALIDATED);
 }
-// todo multicall tests
+
+#[test]
+fn test_eip1559_transaction_validation_first_transaction_different_nonce() {
+    let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
+    let tx = RosettanetCall {
+        tx_type: 2,
+        to: 0xB756B1BC042Fa70D85Ee84eab646a3b438A285Ee.try_into().unwrap(),
+        nonce: 0,
+        max_priority_fee_per_gas: 55,
+        max_fee_per_gas: 55,
+        gas_price: 0,
+        gas_limit: 21000,
+        value: 100,
+        calldata: array![].span(),
+    };
+
+    let signature = array![
+        0xd88f1332001bc417b7e35d96e1f5243b,
+        0x3572e8cf3accc63b5e9e3d87501b4a,
+        0x20104c9d60f58499afda372c7b19724,
+        0x5bb1ee81c2669729c255ac84b9c9ef65,
+        0x1b,
+        0x64,
+        0x0,
+    ];
+    let unsigned_tx_hash: u256 = 0x025c58064f05e7f76019d7c754a3f9257ba4567538d1fad14749903945028087;
+
+    let generated_tx_hash: u256 = generate_tx_hash(tx);
+    assert_eq!(generated_tx_hash, unsigned_tx_hash);
+
+    let (_, account) = deploy_account_from_rosettanet(eth_address);
+    assert_eq!(account.get_ethereum_address(), eth_address);
+
+    start_cheat_nonce_global(1);
+    start_cheat_signature_global(signature.span());
+    start_cheat_resource_bounds_global(create_resource_bounds(21000, 55));
+    let validation = account.__validate__(tx);
+    stop_cheat_resource_bounds_global();
+    stop_cheat_signature_global();
+    stop_cheat_nonce_global();
+
+    assert_eq!(validation, starknet::VALIDATED);
+}
+
+#[test]
+fn test_legacy_multicall_validation() {}
+
+#[test]
+fn test_eip1559_validate_second_nonce() {
+    let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
+    let target: EthAddress = 0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9.try_into().unwrap();
+    let tx = RosettanetCall {
+        to: target, // we dont need to deploy account, we only check validation here
+        tx_type: 2,
+        nonce: 96,
+        max_priority_fee_per_gas: 13620452,
+        max_fee_per_gas: 46700970384,
+        gas_price: 0,
+        gas_limit: 28156,
+        value: 10000000000000000,
+        calldata: array![0xd0e30db0].span(),
+    };
+
+    let signature = array![
+        0x6032b3e971d4c254e37e5ee46891d63e,
+        0xd09052bb95e3f38497e93e934b96860f,
+        0x3ba19d6fd34eaf4ad1b155397ecd056a,
+        0x2344e2307c2852957a9bf7d25d0d7dbf,
+        0x1c,
+        0x2386F26FC10000,
+        0x0,
+    ];
+    let (rosettanet, account, strk) = deploy_specificly_funded_account_from_rosettanet(
+        eth_address, 20000000000000000_u256,
+    );
+
+    register_function(rosettanet, "deposit()", array![].span());
+
+    let weth = deploy_weth();
+    manipulate_rosettanet_registry(rosettanet.contract_address, weth.contract_address, target);
+
+    start_cheat_nonce_global(tx.nonce.into());
+    start_cheat_signature_global(signature.span());
+    start_cheat_caller_address(account.contract_address, starknet::contract_address_const::<0>());
+    account.__execute__(tx);
+    stop_cheat_caller_address(account.contract_address);
+    stop_cheat_signature_global();
+    stop_cheat_nonce_global();
+
+    assert_eq!(strk.balance_of(weth.contract_address), tx.value);
+    assert_eq!(strk.balance_of(account.contract_address), 20000000000000000_u256 - tx.value);
+    assert_eq!(weth.last_deposit(), tx.value);
+
+    let target: EthAddress = 0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9.try_into().unwrap();
+    let tx = RosettanetCall {
+        to: target, // we dont need to deploy account, we only check validation here
+        tx_type: 2,
+        nonce: 1,
+        max_priority_fee_per_gas: 13620452,
+        max_fee_per_gas: 46700970384,
+        gas_price: 0,
+        gas_limit: 28156,
+        value: 10000000000000000,
+        calldata: array![0xd0e30db0].span(),
+    };
+
+    let signature = array![
+        0x86070d15a0fd24ac6f4ef4dade8c31f7,
+        0xd8369d5232a767a74d12e10f5db0fd24,
+        0xe53b184c32d903ce217cb2d3c1fb6c27,
+        0x350e5ac1c99163e07e9a7326ed166b3f,
+        0x1b,
+        0x2386f26fc10000,
+        0x0,
+    ];
+
+    start_cheat_nonce_global(tx.nonce.into());
+    start_cheat_signature_global(signature.span());
+    start_cheat_caller_address(account.contract_address, starknet::contract_address_const::<0>());
+    start_cheat_resource_bounds_global(create_resource_bounds(28156, 46700970384));
+    account.__validate__(tx);
+    stop_cheat_resource_bounds_global();
+    stop_cheat_caller_address(account.contract_address);
+    stop_cheat_signature_global();
+    stop_cheat_nonce_global();
+}
+// TODO NONCE DIFFERENT VALIDATION
+// TODO MULTICALL LEGACY VALIDATION
 
 
