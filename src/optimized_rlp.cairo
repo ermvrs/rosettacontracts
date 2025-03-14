@@ -21,6 +21,10 @@ pub impl OptimizedRLPImpl of OptimizedRLPTrait {
                 .append_word(
                     0x80, 1,
                 ); // @audit please take care of this encoding. It has to match with ethers
+                // @audit Ethers and web3js encoded 0 nonce as 0x80 instead of 0x00. This is why we added this case
+                // https://github.com/ethers-io/ethers.js/blob/main/src.ts/transaction/transaction.ts#L269
+                // Ethereums example : https://ethereum.org/en/developers/docs/data-structures-and-encoding/rlp/
+                
         } else if len == 1 && input.into() < 0x80_u256 {
             output.append_word(input, 1);
         } else if len < 32 {
