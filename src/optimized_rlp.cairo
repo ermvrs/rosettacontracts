@@ -17,7 +17,10 @@ pub impl OptimizedRLPImpl of OptimizedRLPTrait {
         if len == 0 {
             output.append_word(0x80, 1);
         } else if len == 1 && input.into() == 0_u256 {
-            output.append_word(0x80, 1); // @audit please take care of this encoding. It has to match with ethers
+            output
+                .append_word(
+                    0x80, 1,
+                ); // @audit please take care of this encoding. It has to match with ethers
         } else if len == 1 && input.into() < 0x80_u256 {
             output.append_word(input, 1);
         } else if len < 32 {

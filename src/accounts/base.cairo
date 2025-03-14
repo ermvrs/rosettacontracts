@@ -63,7 +63,7 @@ pub mod RosettaAccount {
     struct Storage {
         ethereum_address: EthAddress,
         registry: ContractAddress,
-        nonce: u64, // We have different nonce system then starknet. In most cases its equal to sn_nonce - 1
+        nonce: u64 // We have different nonce system then starknet. In most cases its equal to sn_nonce - 1
     }
 
     #[constructor]
@@ -77,12 +77,12 @@ pub mod RosettaAccount {
         fn __execute__(ref self: ContractState, call: RosettanetCall) -> Array<Span<felt252>> {
             let sender = get_caller_address();
             assert(sender.is_zero(), INVALID_CALLER);
-            
+
             let current_nonce = self.nonce.read();
 
             // Only try to register if its first tx
             if (current_nonce == 0) {
-                self.register_account(); 
+                self.register_account();
             }
             self.nonce.write(current_nonce + 1);
 
@@ -216,7 +216,10 @@ pub mod RosettaAccount {
 
             assert(tx_info.version == 3, INVALID_TX_VERSION); //@audit Verify is it correct?
 
-            self.assert_nonce(call.nonce); // @audit will it cause any issue if we have our own nonce checks
+            self
+                .assert_nonce(
+                    call.nonce,
+                ); // @audit will it cause any issue if we have our own nonce checks
 
             if (call.tx_type == 0) {
                 self.validate_resources(call.gas_limit, call.gas_price);
