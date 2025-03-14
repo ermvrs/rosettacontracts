@@ -35,12 +35,13 @@ pub trait IRosettanet<TState> {
 pub mod Rosettanet {
     use core::num::traits::Zero;
     use starknet::storage::{
-        StoragePointerReadAccess, StoragePointerWriteAccess, StoragePathEntry, Map, Vec, VecTrait, MutableVecTrait
+        StoragePointerReadAccess, StoragePointerWriteAccess, StoragePathEntry, Map, Vec, VecTrait,
+        MutableVecTrait,
     };
     use core::poseidon::{poseidon_hash_span};
     use starknet::syscalls::{deploy_syscall, replace_class_syscall, get_class_hash_at_syscall};
     use starknet::{
-        ContractAddress, EthAddress, ClassHash, get_contract_address, get_caller_address, 
+        ContractAddress, EthAddress, ClassHash, get_contract_address, get_caller_address,
     };
     use openzeppelin_utils::deployments::{calculate_contract_address_from_deploy_syscall};
     use rosettacontracts::accounts::base::{
@@ -121,7 +122,7 @@ pub mod Rosettanet {
         initial_class: ClassHash,
         dev: ContractAddress,
         strk: ContractAddress,
-        class_history: Vec<ClassHash>
+        class_history: Vec<ClassHash>,
     }
 
     #[constructor]
@@ -301,7 +302,7 @@ pub mod Rosettanet {
             let mut is_account: bool = false;
             for i in 0..self.class_history.len() {
                 //assert(class != self.class_history.at(i).read(), 'Class is account');
-                if(class == self.class_history.at(i).read()) {
+                if (class == self.class_history.at(i).read()) {
                     is_account = true;
                     break;
                 }

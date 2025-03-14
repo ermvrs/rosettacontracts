@@ -1,8 +1,12 @@
 use snforge_std::{start_cheat_caller_address, stop_cheat_caller_address};
 
 use rosettacontracts::rosettanet::{IRosettanetDispatcherTrait};
+use starknet::EthAddress;
 
-use crate::test_utils::{developer, eth_account, deploy_rosettanet, deploy_and_set_account};
+use crate::test_utils::{
+    developer, eth_account, deploy_rosettanet, deploy_and_set_account, deploy_weth,
+    deploy_account_from_rosettanet,
+};
 
 
 #[test]
@@ -63,10 +67,11 @@ fn rosettanet_register_contract() {
     start_cheat_caller_address(
         rosettanet.contract_address, starknet::contract_address_const::<1>(),
     );
-    rosettanet.register_contract(1.try_into().unwrap());
+    let weth = deploy_weth();
+    rosettanet.register_contract(weth.contract_address);
     stop_cheat_caller_address(rosettanet.contract_address);
 
-    let eth_address = rosettanet.get_ethereum_address(1.try_into().unwrap());
+    let eth_address = rosettanet.get_ethereum_address(weth.contract_address);
 
     assert_ne!(rosettanet.get_starknet_address(eth_address), 0.try_into().unwrap());
 }
@@ -79,7 +84,35 @@ fn rosettanet_register_existing_contract() {
     start_cheat_caller_address(
         rosettanet.contract_address, starknet::contract_address_const::<1>(),
     );
+    let weth = deploy_weth();
+    rosettanet.register_contract(weth.contract_address);
+    rosettanet.register_contract(weth.contract_address);
+    stop_cheat_caller_address(rosettanet.contract_address);
+}
+
+#[test]
+#[should_panic(expected: 'Contract is not deployed')]
+fn rosettanet_register_non_deployed_contract() {
+    let rosettanet = deploy_rosettanet();
+
+    start_cheat_caller_address(
+        rosettanet.contract_address, starknet::contract_address_const::<1>(),
+    );
+
     rosettanet.register_contract(1.try_into().unwrap());
-    rosettanet.register_contract(1.try_into().unwrap());
+    stop_cheat_caller_address(rosettanet.contract_address);
+}
+
+#[test]
+#[should_panic(expected: 'Class is account')]
+fn rosettanet_register_account_class_as_contract() {
+    let eth_address: EthAddress = 123.try_into().unwrap();
+    let (rosettanet, account) = deploy_account_from_rosettanet(eth_address);
+
+    start_cheat_caller_address(
+        rosettanet.contract_address, starknet::contract_address_const::<1>(),
+    );
+
+    rosettanet.register_contract(account.contract_address);
     stop_cheat_caller_address(rosettanet.contract_address);
 }
