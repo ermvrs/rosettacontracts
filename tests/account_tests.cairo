@@ -1524,7 +1524,7 @@ fn test_eip1559_validate_second_nonce() {
     let tx = RosettanetCall {
         to: target, // we dont need to deploy account, we only check validation here
         tx_type: 2,
-        nonce: 96,
+        nonce: 96, // No check on execution so this will be executed.
         max_priority_fee_per_gas: 13620452,
         max_fee_per_gas: 46700970384,
         gas_price: 0,
