@@ -19,6 +19,7 @@ pub trait IRosettaAccount<TState> {
     fn get_ethereum_address(self: @TState) -> EthAddress;
     fn rosettanet(self: @TState) -> ContractAddress;
     fn native_currency(self: @TState) -> ContractAddress;
+    fn nonce(self: @TState) -> u64;
     // Camel case
     fn isValidSignature(self: @TState, hash: u256, signature: Array<felt252>) -> felt252;
     fn getEthereumAddress(self: @TState) -> EthAddress;
@@ -190,6 +191,10 @@ pub mod RosettaAccount {
 
         fn native_currency(self: @ContractState) -> ContractAddress {
             IRosettanetDispatcher { contract_address: self.registry.read() }.native_currency()
+        }
+
+        fn nonce(self: @ContractState) -> u64 {
+            self.nonce.read()
         }
 
         fn isValidSignature(
