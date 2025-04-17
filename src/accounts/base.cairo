@@ -46,6 +46,7 @@ pub mod RosettaAccount {
     use rosettacontracts::accounts::utils::{
         generate_tx_hash, is_valid_eth_signature, span_to_array,
     };
+    use rosettacontracts::constants::{FEATURE_CALL_TARGET};
     use rosettacontracts::accounts::multicall::{prepare_multicall_context};
     use rosettacontracts::components::function_registry::{
         IFunctionRegistryDispatcherTrait, IFunctionRegistryDispatcher,
@@ -59,6 +60,7 @@ pub mod RosettaAccount {
     pub const MULTICALL_SELECTOR: u32 =
         0x76971d7f; // function multicall((uint256,uint256,uint256[])[])
     pub const UPGRADE_SELECTOR: u32 = 0x74d0bb9d; // function upgradeRosettanetAccount(uint256)
+
 
     #[storage]
     struct Storage {
@@ -88,13 +90,8 @@ pub mod RosettaAccount {
             self.nonce.write(current_nonce + 1);
 
             let eth_target: EthAddress = call.to;
-            let sn_target: ContractAddress = IRosettanetDispatcher {
-                contract_address: self.registry.read(),
-            }
-                .get_starknet_address_with_fallback(eth_target);
-
             // Multicall or upgrade call
-            if (call.to == self.ethereum_address.read()) {
+            if (call.to == FEATURE_CALL_TARGET.try_into().unwrap()) {
                 let mut calldata = call.calldata;
                 let selector: u32 = (*calldata.pop_front().expect(CALLDATA_LEN_ZERO))
                     .try_into()
@@ -120,6 +117,11 @@ pub mod RosettaAccount {
                     panic_with_felt252(UNIMPLEMENTED_FEATURE);
                 }
             }
+
+            let sn_target: ContractAddress = IRosettanetDispatcher {
+                contract_address: self.registry.read(),
+            }
+                .get_starknet_address_with_fallback(eth_target);
 
             // If value transfer, send STRK before calling contract
             if (call.value > 0) {
@@ -215,7 +217,6 @@ pub mod RosettaAccount {
     #[generate_trait]
     impl InternalImpl of InternalTrait {
         fn validate_transaction(self: @ContractState, call: RosettanetCall) -> felt252 {
-            let self_eth_address: EthAddress = self.ethereum_address.read();
             assert(call.tx_type == 0 || call.tx_type == 2, NONSUPPORTED_TX_TYPE);
             let tx_info = get_tx_info().unbox();
 
@@ -232,7 +233,7 @@ pub mod RosettaAccount {
                 self.validate_resources(call.gas_limit, call.max_fee_per_gas);
             }
 
-            if (call.to == self_eth_address) {
+            if (call.to == FEATURE_CALL_TARGET.try_into().unwrap()) {
                 let selector: u32 = (*call.calldata.at(0)).try_into().expect(SELECTOR_HIGH);
 
                 assert(
@@ -249,7 +250,7 @@ pub mod RosettaAccount {
 
             let signature = tx_info.signature; // Signature includes v,r,s
             assert(
-                self._is_valid_signature(expected_hash, signature, self_eth_address),
+                self._is_valid_signature(expected_hash, signature, self.ethereum_address.read()),
                 INVALID_SIGNATURE,
             );
             starknet::VALIDATED
