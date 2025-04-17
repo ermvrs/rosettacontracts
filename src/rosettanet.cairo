@@ -323,7 +323,8 @@ pub mod Rosettanet {
             self.dev.read()
         }
 
-        /// Returns featured eth target to call account contracts internal functions (multicall, upgrade)
+        /// Returns featured eth target to call account contracts internal functions (multicall,
+        /// upgrade)
         fn feature_target(self: @ContractState) -> EthAddress {
             FEATURE_CALL_TARGET.try_into().unwrap()
         }

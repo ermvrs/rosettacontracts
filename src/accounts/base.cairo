@@ -61,7 +61,6 @@ pub mod RosettaAccount {
         0x76971d7f; // function multicall((uint256,uint256,uint256[])[])
     pub const UPGRADE_SELECTOR: u32 = 0x74d0bb9d; // function upgradeRosettanetAccount(uint256)
 
-    
 
     #[storage]
     struct Storage {
