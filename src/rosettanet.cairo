@@ -30,6 +30,7 @@ pub trait IRosettanet<TState> {
     fn is_account_class(self: @TState, class: ClassHash) -> bool;
     fn native_currency(self: @TState) -> ContractAddress;
     fn developer(self: @TState) -> ContractAddress;
+    fn feature_target(self: @TState) -> EthAddress;
 }
 #[starknet::contract]
 pub mod Rosettanet {
@@ -49,6 +50,7 @@ pub mod Rosettanet {
     };
     use rosettacontracts::utils::{calculate_sn_entrypoint, eth_function_signature_from_felts};
     use rosettacontracts::components::function_registry::{FunctionRegistryComponent};
+    use rosettacontracts::constants::{FEATURE_CALL_TARGET};
 
     component!(
         path: FunctionRegistryComponent, storage: function_registry, event: FunctionRegistryEvent,
@@ -319,6 +321,11 @@ pub mod Rosettanet {
         /// Returns developer address
         fn developer(self: @ContractState) -> ContractAddress {
             self.dev.read()
+        }
+
+        /// Returns featured eth target to call account contracts internal functions (multicall, upgrade)
+        fn feature_target(self: @ContractState) -> EthAddress {
+            FEATURE_CALL_TARGET.try_into().unwrap()
         }
     }
 

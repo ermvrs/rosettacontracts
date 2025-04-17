@@ -1025,8 +1025,9 @@ fn test_execute_value_transfer_and_call() {
 #[should_panic(expected: 'ACC: multicall value non zero')]
 fn test_multicall_with_value() {
     let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
+    let feature_target: EthAddress = 0x4645415455524553.try_into().unwrap();
     let tx = RosettanetCall {
-        to: eth_address, // we dont need to deploy account, we only check validation here
+        to: feature_target, // we dont need to deploy account, we only check validation here
         tx_type: 2,
         nonce: 96,
         max_priority_fee_per_gas: 13620452,
@@ -1063,8 +1064,9 @@ fn test_multicall_with_value() {
 #[should_panic(expected: 'ACC: unimplemented feature')]
 fn test_multicall_wrong_selector() {
     let eth_address: EthAddress = 0xE4306a06B19Fdc04FDf98cF3c00472f29254c0e1.try_into().unwrap();
+    let feature_target: EthAddress = 0x4645415455524553.try_into().unwrap();
     let tx = RosettanetCall {
-        to: eth_address, // we dont need to deploy account, we only check validation here
+        to: feature_target, // we dont need to deploy account, we only check validation here
         tx_type: 2,
         nonce: 96,
         max_priority_fee_per_gas: 13620452,
@@ -1600,3 +1602,4 @@ fn test_eip1559_validate_second_nonce() {
 // TODO MULTICALL LEGACY VALIDATION
 
 
+// TODO: Multicall execution tests
