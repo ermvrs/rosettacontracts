@@ -514,7 +514,7 @@ mod tests {
         data.append_u256(0x0000000000000000000000000000000000000000000000000000000000000006);
 
         let mut calldata = cd(data);
-        let decoded = calldata.decode(array![EVMTypes::Uint256,EVMTypes::Tuple(array![EVMTypes::Uint256,EVMTypes::Tuple(array![EVMTypes::Uint256, EVMTypes::Array(array![EVMTypes::Uint256].span())].span())].span())].span());
+        let decoded = calldata.decode(array![EVMTypes::Uint256,EVMTypes::Tuple(array![EVMTypes::Uint256,EVMTypes::Tuple(array![EVMTypes::Uint256, EVMTypes::Array(array![EVMTypes::Uint256].span())].span())].span()), EVMTypes::Uint256].span());
         assert_eq!(
             *decoded.at(0), 0x0000000000000000000000000000000000000000000000000000000000000003,
         );
