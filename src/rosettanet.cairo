@@ -142,6 +142,8 @@ pub mod Rosettanet {
 
         let strk_eth_address = self.generate_eth_address(strk);
         self.update_registry(strk, strk_eth_address);
+
+        self.function_registry.initialize(developer);
     }
 
     #[abi(embed_v0)]

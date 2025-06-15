@@ -45,7 +45,10 @@ pub mod FunctionRegistryComponent {
         fn register_function(
             ref self: ComponentState<TContractState>, fn_name: ByteArray, inputs: Span<EVMTypes>,
         ) {
-            // TODO: add access control
+            assert!(
+                self.is_dev(get_caller_address()),
+                'Only developers can register functions',
+            );
             let (sn_entrypoint, eth_selector) = calculate_function_selectors(@fn_name);
             self.entrypoints.entry(eth_selector).write(sn_entrypoint);
 
@@ -90,6 +93,9 @@ pub mod FunctionRegistryComponent {
     pub impl InternalImpl<
         TContractState, +HasComponent<TContractState>,
     > of InternalTrait<TContractState> {
-        fn initialize(ref self: ComponentState<TContractState>) {}
+        fn initialize(ref self: ComponentState<TContractState>, dev: ContractAddress) {
+            // Initialize the developers map with the provided dev address
+            self.developers.entry(dev).write(true);
+        }
     }
 }
