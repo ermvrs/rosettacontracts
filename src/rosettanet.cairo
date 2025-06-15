@@ -252,6 +252,11 @@ pub mod Rosettanet {
         /// # Arguments
         /// * `eth_address` - Ethereum address
         fn get_starknet_address(self: @ContractState, eth_address: EthAddress) -> ContractAddress {
+            // If eth_address is zero, return zero address
+            // Otherwise, return registered address
+            if(eth_address.is_zero()) {
+                return ContractAddress::zero();
+            }
             self.eth_to_sn.entry(eth_address).read()
         }
 
@@ -260,6 +265,11 @@ pub mod Rosettanet {
         /// # Arguments
         /// * `sn_address` - Starknet contract address
         fn get_ethereum_address(self: @ContractState, sn_address: ContractAddress) -> EthAddress {
+            // If sn_address is zero, return zero address
+            // Otherwise, return registered address
+            if(sn_address.is_zero()) {
+                return EthAddress::zero();
+            }
             self.sn_to_eth.entry(sn_address).read()
         }
 
@@ -288,6 +298,9 @@ pub mod Rosettanet {
         fn get_starknet_address_with_fallback(
             self: @ContractState, eth_address: EthAddress,
         ) -> ContractAddress {
+            if(eth_address.is_zero()) {
+                return ContractAddress::zero();
+            }
             let address_on_registry: ContractAddress = self.eth_to_sn.entry(eth_address).read();
             if (address_on_registry.is_zero()) {
                 return self.precalculate_starknet_account(eth_address);
@@ -339,6 +352,12 @@ pub mod Rosettanet {
         fn update_registry(
             ref self: ContractState, sn_address: ContractAddress, eth_address: EthAddress,
         ) {
+            assert(
+                !sn_address.is_zero(), 'Starknet address cannot be zero',
+            );
+            assert(
+                !eth_address.is_zero(), 'Ethereum address cannot be zero',
+            );
             assert(
                 self.sn_to_eth.entry(sn_address).read().is_zero(), 'Contract already registered',
             );
