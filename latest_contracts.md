@@ -1,0 +1,3 @@
+Rosettanet Class: 0x449a79aef3d8f080821f1e32d5ce89580881ace5eeedabbd2d731cc29c17aef   
+Rosettanet Address: 0x077f635322daaec8b438dd4e4dc7e98b43b5a2a31e3f91b7034064a8b71a4efe   
+Account Class: 0x2a97c7efbc168789d643b229c4a1c5b76690a90aade984b0a72b4aa35a7c933   
