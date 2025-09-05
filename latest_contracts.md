@@ -1,4 +1,4 @@
-Rosettanet Class: 0x449a79aef3d8f080821f1e32d5ce89580881ace5eeedabbd2d731cc29c17aef   
-Rosettanet Address: 0x077f635322daaec8b438dd4e4dc7e98b43b5a2a31e3f91b7034064a8b71a4efe   
-Account Class: 0x2a97c7efbc168789d643b229c4a1c5b76690a90aade984b0a72b4aa35a7c933   
+Rosettanet Class: 0x0449a79aef3d8f080821f1e32d5ce89580881ace5eeedabbd2d731cc29c17aef   
+Rosettanet Address: 0x00b77a0dd0400c9d0a49832b3d5d53682b2d1f1bff1eabe46b72dce9aff0bc8a   
+Account Class: 0x004dd9ef00a3db7107fd77c013bccef90dfcf3d970fb791ee741eb32a67e9e6c   
 Validate Fee Estimator Address: 0x03eaf353b4e78e3c4daaf0bbf81a58171be1bbe13924a4ac07522ae60bdcd85e    

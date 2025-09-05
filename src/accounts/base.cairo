@@ -164,7 +164,7 @@ pub mod RosettaAccount {
         fn validate_rosettanet_call(self: @ContractState, call: RosettanetCall) -> Array<Span<felt252>> {
             let tx_info = get_tx_info().unbox();
             let expected_hash = generate_tx_hash(call);
-            let value_on_signature = self.get_transaction_value();
+            //let value_on_signature = self.get_transaction_value();
             let signature = tx_info.signature;
             let r: u256 = u256 {
                 low: (*signature.at(0)).try_into().expect(SIGNATURE_R_LOW_HIGH),
@@ -177,7 +177,7 @@ pub mod RosettaAccount {
             let v: u32 = (*signature.at(4)).try_into().expect(SIGNATURE_V_HIGH);
             let secp256_signature: Signature = signature_from_vrs(v, r, s);
 
-            let signature_check = is_eth_signature_valid(expected_hash, secp256_signature, self.ethereum_address.read());
+            //let signature_check = is_eth_signature_valid(expected_hash, secp256_signature, self.ethereum_address.read());
 
             array![array![].span()]
         }
