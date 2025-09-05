@@ -24,3 +24,5 @@ pub mod mocks {
 pub mod optimized_rlp;
 
 pub mod constants;
+
+pub mod validate_fee_estimator;
