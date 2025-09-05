@@ -7,6 +7,7 @@ pub trait IRosettaAccount<TState> {
     fn __execute__(ref self: TState, call: RosettanetCall) -> Array<Span<felt252>>;
     fn __validate__(self: @TState, call: RosettanetCall) -> felt252;
     fn is_valid_signature(self: @TState, hash: u256, signature: Array<felt252>) -> felt252;
+    fn validate_rosettanet_call(self: @TState, call: RosettanetCall) -> Array<Span<felt252>>;
     fn supports_interface(self: @TState, interface_id: felt252) -> bool;
     fn __validate_declare__(self: @TState, class_hash: felt252) -> felt252;
     fn __validate_deploy__(
@@ -38,6 +39,8 @@ pub mod RosettaAccount {
         call_contract_syscall, replace_class_syscall, get_class_hash_at_syscall,
     };
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+    use starknet::eth_signature::{is_eth_signature_valid};
+    use starknet::secp256_trait::{Signature, signature_from_vrs};
     use rosettacontracts::accounts::types::{
         RosettanetSignature, RosettanetCall, RosettanetMulticall,
     };
@@ -153,6 +156,30 @@ pub mod RosettaAccount {
             } else {
                 0
             }
+        }
+
+        // Function to estimate validation fee
+        // This function doesnt have any assertions. Its just to see 
+        // how many gas itll spend during validation.
+        fn validate_rosettanet_call(self: @ContractState, call: RosettanetCall) -> Array<Span<felt252>> {
+            let tx_info = get_tx_info().unbox();
+            let expected_hash = generate_tx_hash(call);
+            let value_on_signature = self.get_transaction_value();
+            let signature = tx_info.signature;
+            let r: u256 = u256 {
+                low: (*signature.at(0)).try_into().expect(SIGNATURE_R_LOW_HIGH),
+                high: (*signature.at(1)).try_into().expect(SIGNATURE_R_HIGH_HIGH),
+            };
+            let s: u256 = u256 {
+                low: (*signature.at(2)).try_into().expect(SIGNATURE_S_LOW_HIGH),
+                high: (*signature.at(3)).try_into().expect(SIGNATURE_S_HIGH_HIGH),
+            };
+            let v: u32 = (*signature.at(4)).try_into().expect(SIGNATURE_V_HIGH);
+            let secp256_signature: Signature = signature_from_vrs(v, r, s);
+
+            let signature_check = is_eth_signature_valid(expected_hash, secp256_signature, self.ethereum_address.read());
+
+            array![array![].span()]
         }
 
         fn supports_interface(self: @ContractState, interface_id: felt252) -> bool {

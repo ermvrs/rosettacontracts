@@ -257,7 +257,7 @@ pub mod Rosettanet {
             // If eth_address is zero, return zero address
             // Otherwise, return registered address
             if(eth_address.is_zero()) {
-                return ContractAddress::zero();
+                return 0.try_into().unwrap();
             }
             self.eth_to_sn.entry(eth_address).read()
         }
@@ -270,7 +270,7 @@ pub mod Rosettanet {
             // If sn_address is zero, return zero address
             // Otherwise, return registered address
             if(sn_address.is_zero()) {
-                return EthAddress::zero();
+                return 0.try_into().unwrap();
             }
             self.sn_to_eth.entry(sn_address).read()
         }
@@ -301,7 +301,7 @@ pub mod Rosettanet {
             self: @ContractState, eth_address: EthAddress,
         ) -> ContractAddress {
             if(eth_address.is_zero()) {
-                return ContractAddress::zero();
+                return 0.try_into().unwrap();
             }
             let address_on_registry: ContractAddress = self.eth_to_sn.entry(eth_address).read();
             if (address_on_registry.is_zero()) {
