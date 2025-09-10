@@ -394,14 +394,17 @@ pub mod RosettaAccount {
             let tx_info = get_tx_info().unbox();
 
             let resource_bounds: Span<ResourcesBounds> = tx_info.resource_bounds;
+            let total_gas_spent: u128 = 0;
             for resource in resource_bounds {
-                if (*resource.resource == 'L1_GAS') {
-                    assert(*resource.max_amount == max_amount, MAX_AMOUNT_WRONG);
+                if (*resource.resource == 'L2_GAS') {
+                    //assert(*resource.max_amount == max_amount, MAX_AMOUNT_WRONG);
                     assert(
                         *resource.max_price_per_unit == max_price_per_unit, MAX_PRICE_UNIT_WRONG,
                     );
                 }
+                total_gas_spent += *resource.max_amount;
             }
+            assert(total_gas_spent <= max_amount, MAX_AMOUNT_WRONG);
         }
 
         fn assert_nonce(self: @ContractState, eth_nonce: u64) {
