@@ -30,4 +30,7 @@ pub mod AccountErrors {
     pub const UPGRADE_FAILS: felt252 = 'ACC: upgrade syscall failed';
     pub const MULTICALL_TO_ZERO: felt252 = 'ACC: multicall to zero';
     pub const MULTICALL_ENTRYPOINT_ZERO: felt252 = 'ACC: multicall entrypoint zero';
+    pub const VALIDATE_DEPLOY_PARAM_MISMATCH: felt252 = 'ACC: deploy param mismatch';
+    pub const VALIDATE_DEPLOY_REGISTRY_ZERO: felt252 = 'ACC: registry address zero';
+    pub const VALIDATE_DEPLOY_DEPLOYED_ADDRESS_WRONG: felt252 = 'ACC: deployed address wrong';
 }

@@ -197,8 +197,8 @@ pub mod RosettaAccount {
             eth_address: EthAddress,
             registry: ContractAddress,
         ) -> felt252 {
-            assert(contract_address_salt == eth_address.into(), 'Salt and param mismatch');
-            assert(registry != starknet::contract_address_const::<0>(), 'registry zero');
+            assert(contract_address_salt == eth_address.into(), VALIDATE_DEPLOY_PARAM_MISMATCH);
+            assert(registry != starknet::contract_address_const::<0>(), VALIDATE_DEPLOY_REGISTRY_ZERO);
             let address = calculate_contract_address_from_deploy_syscall(
                 eth_address.into(),
                 class_hash.try_into().unwrap(),
@@ -206,7 +206,7 @@ pub mod RosettaAccount {
                 0.try_into().unwrap(),
             );
 
-            assert(address == get_contract_address(), 'deployed address wrong');
+            assert(address == get_contract_address(), VALIDATE_DEPLOY_DEPLOYED_ADDRESS_WRONG);
             starknet::VALIDATED
         }
 
