@@ -432,19 +432,46 @@ fn decode_bool(ref ctx: EVMCalldata) -> Span<felt252> {
 
 #[inline(always)]
 fn decode_uint(ref ctx: EVMCalldata, size: u32) -> Span<felt252> {
-    // TODO: maybe range check with size?
+    assert!(size > 0_u32, "decode_uint: invalid size");
+    assert!(size <= 256_u32, "decode_uint: invalid size");
+    assert!(size % 8_u32 == 0_u32, "decode_uint: invalid size");
     let (new_offset, value) = ctx.calldata.read_u256(ctx.offset);
     ctx.offset = new_offset;
+
+    if (size < 256_u32) {
+        let shift: u256 = size.try_into().unwrap();
+        let upper_bits = U256BitShift::shr(value, shift);
+        assert!(upper_bits == 0_u8.into(), "decode_uint: value too large for size");
+    }
     array![value.try_into().unwrap()].span()
 }
 
 #[inline(always)]
 fn decode_int(ref ctx: EVMCalldata, size: u32) -> Span<felt252> {
-    // Todo: add range checks maybe??
+    assert!(size > 0_u32, "decode_int: invalid size");
+    assert!(size <= 256_u32, "decode_int: invalid size");
+    assert!(size % 8_u32 == 0_u32, "decode_int: invalid size");
     let (new_offset, value) = ctx.calldata.read_u256(ctx.offset);
     ctx.offset = new_offset;
 
     let msb: bool = get_bit_at(value, 255);
+    let sign_bit_idx: u32 = size - 1_u32;
+    let sign_bit: bool = get_bit_at(value, sign_bit_idx.try_into().unwrap());
+    assert!(sign_bit == msb, "decode_int: inconsistent sign extension");
+
+    if (size < 256_u32) {
+        let shift: u256 = size.try_into().unwrap();
+        let upper_bits = U256BitShift::shr(value, shift);
+        if (msb) {
+            let expected = U256BitShift::shr(Bounded::MAX, shift);
+            assert!(
+                upper_bits == expected,
+                "decode_int: value does not fit into requested size",
+            );
+        } else {
+            assert!(upper_bits == 0_u8.into(), "decode_int: value does not fit into requested size");
+        }
+    }
     if (msb) {
         let u256_max: u256 = Bounded::MAX;
         let value = (u256_max - value) + 1; // Absolute value
